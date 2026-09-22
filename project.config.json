@@ -102,6 +102,27 @@
           "query": "",
           "launchMode": "default",
           "scene": null
+        },
+        {
+          "name": "加入黑光文学社",
+          "pathName": "pages/community/join/index",
+          "query": "from=my",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "社团名片",
+          "pathName": "pages/community/club/index",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "社区约定",
+          "pathName": "pages/community/rules/index",
+          "query": "from=join",
+          "launchMode": "default",
+          "scene": null
         }
       ]
     }

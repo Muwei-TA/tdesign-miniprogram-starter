@@ -1,0 +1,141 @@
+<view class="hg-page hg-join">
+  <hg-nav title="加入黑光文学社" />
+
+  <block wx:if="{{ loading }}">
+    <view class="hg-join__loading">
+      <view class="hg-join__skeleton hg-join__skeleton--emblem"></view>
+      <view class="hg-join__skeleton hg-join__skeleton--title"></view>
+      <view class="hg-join__skeleton hg-join__skeleton--line"></view>
+      <view class="hg-join__skeleton hg-join__skeleton--line hg-join__skeleton--short"></view>
+    </view>
+  </block>
+
+  <block wx:elif="{{ loadError }}">
+    <empty-state
+      icon="error-circle"
+      title="暂时读不到社团信息"
+      desc="{{ loadError }}"
+      action="再试一次"
+      bind:action="onRetry"
+    />
+  </block>
+
+  <empty-state
+    wx:elif="{{ !club }}"
+    icon="usergroup"
+    title="社团资料暂未开放"
+    desc="社团资料准备好后，这里会开放入社申请。"
+    action="再试一次"
+    bind:action="onRetry"
+  />
+
+  <block wx:else>
+    <view class="hg-join__hero">
+      <view class="hg-join__emblem" aria-label="黑光文学社社徽">黑</view>
+      <view class="hg-join__title">{{ club.name }}</view>
+      <view class="hg-join__slogan">{{ club.slogan }}</view>
+      <view class="hg-join__intro">{{ club.intro }}</view>
+    </view>
+
+    <view class="hg-join__notice">
+      <t-icon name="info-circle" size="30rpx" />
+      <text>加入需要管理员确认。提交申请不等于已经获得成员资格。</text>
+    </view>
+
+    <view
+      wx:if="{{ status !== 'idle' && status !== 'invalid_code' }}"
+      class="hg-join__status hg-join__status--{{ statusMeta.tone }}"
+    >
+      <view class="hg-join__status-icon">
+        <t-icon name="{{ statusMeta.icon }}" size="38rpx" />
+      </view>
+      <view class="hg-join__status-main">
+        <view class="hg-join__status-title">{{ statusMeta.label }}</view>
+        <view class="hg-join__status-desc">{{ statusMeta.desc }}</view>
+        <view wx:if="{{ appliedAtText }}" class="hg-join__status-time">{{ appliedAtText }}</view>
+        <view wx:if="{{ statusReason }}" class="hg-join__status-reason">{{ statusReason }}</view>
+      </view>
+    </view>
+
+    <view wx:if="{{ status === 'pending' || status === 'duplicate' }}" class="hg-join__status-actions">
+      <view class="hg-join__secondary" bindtap="onRefreshStatus" aria-role="button">刷新申请状态</view>
+      <view class="hg-join__text-action" bindtap="onContact" aria-role="button">联系管理员</view>
+    </view>
+
+    <view wx:if="{{ status === 'active' }}" class="hg-join__status-actions">
+      <view class="hg-join__primary" bindtap="onReturnOrigin" aria-role="button">回到刚才的地方</view>
+      <view class="hg-join__secondary" bindtap="onClubTap" aria-role="button">查看社团名片</view>
+    </view>
+
+    <view wx:if="{{ status === 'rejected' }}" class="hg-join__status-actions">
+      <view class="hg-join__primary" bindtap="onContact" aria-role="button">联系社团管理员</view>
+    </view>
+
+    <view wx:if="{{ status === 'idle' || status === 'invalid_code' || status === 'rejected' }}" class="hg-join__form">
+      <view class="hg-join__section-title">填写申请</view>
+
+      <view class="hg-join__field">
+        <text class="hg-join__label">你想使用的昵称</text>
+        <input
+          class="hg-join__input"
+          value="{{ form.displayName }}"
+          maxlength="20"
+          placeholder="给自己取一个名字"
+          bindinput="onNameInput"
+        />
+        <text class="hg-join__hint">这是你选择的社内署名，不需要填写真实姓名。</text>
+      </view>
+
+      <view class="hg-join__field">
+        <text class="hg-join__label">邀请码</text>
+        <input
+          class="hg-join__input"
+          value="{{ form.inviteCode }}"
+          maxlength="32"
+          placeholder="向社团联系人获取"
+          bindinput="onInviteInput"
+        />
+        <text class="hg-join__hint">邀请码只提交给服务端校验，不会显示在公开资料里。</text>
+      </view>
+
+      <view class="hg-join__agreement">
+        <checkbox-group bindchange="onRulesChange">
+          <label class="hg-join__check-row">
+            <checkbox value="rules" checked="{{ rulesAgreed }}" />
+            <text>我已阅读并同意</text>
+            <text class="hg-join__link" catchtap="onRulesTap">《社区约定》</text>
+          </label>
+        </checkbox-group>
+        <checkbox-group bindchange="onPrivacyChange">
+          <label class="hg-join__check-row">
+            <checkbox value="privacy" checked="{{ privacyAgreed }}" />
+            <text>我已阅读</text>
+            <text class="hg-join__link" catchtap="onPrivacyTap">隐私告知</text>
+          </label>
+        </checkbox-group>
+      </view>
+
+      <view
+        class="hg-join__submit {{ submitting ? 'hg-join__submit--disabled' : '' }}"
+        bindtap="onSubmit"
+        aria-role="button"
+      >
+        {{ submitting ? '提交中…' : (status === 'rejected' ? '重新提交申请' : '提交入社申请') }}
+      </view>
+    </view>
+
+    <view wx:if="{{ status === 'invalid_code' }}" class="hg-join__inline-error">
+      <t-icon name="error-circle" size="28rpx" />
+      <text>{{ statusReason || statusMeta.desc }}</text>
+    </view>
+
+    <view wx:if="{{ status === 'idle' && statusReason }}" class="hg-join__inline-error">
+      <t-icon name="error-circle" size="28rpx" />
+      <text>{{ statusReason }}</text>
+    </view>
+
+    <view class="hg-join__footnote">
+      申请只使用微信会话、自选昵称和邀请码。我们不会索取手机号、位置、学号或通讯录。
+    </view>
+  </block>
+</view>

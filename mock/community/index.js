@@ -8,6 +8,7 @@ import { formatRelativeTime, excerpt } from '~/utils/format';
  * 刻意不做界面开关——角色切换是开发调试手段，不是产品赋予用户的权限。
  */
 const MOCK_ROLE = 'member';
+let MOCK_APPLICATION = null;
 
 const CAPABILITIES = {
   // 公开发布在 G0 核验完成前保持关闭（docs/01 1.6 / 1.7）
@@ -88,6 +89,29 @@ export default function registerCommunityMock() {
     capabilities: CAPABILITIES,
     club: CLUB,
   }));
+
+  // ---------- 入社申请 ----------
+  // Mock 只模拟状态机，不保存或验证任何真实邀请码；真实校验由后端完成。
+  route('GET /membership/applications/mine', () => {
+    if (isMember()) return { state: 'active', reason: '', appliedAtText: '' };
+    return MOCK_APPLICATION || { state: 'none', reason: '' };
+  });
+
+  route('POST /membership/applications', ({ body }) => {
+    if (isMember()) return fail(409, 'conflict', '你已经是社内成员');
+    if (!body.displayName || !body.inviteCode || !body.rulesVersion) {
+      return fail(422, 'invalid_input', '请完整填写申请信息');
+    }
+    if (MOCK_APPLICATION && MOCK_APPLICATION.state === 'pending') {
+      return { state: 'pending', applicationId: 'mock-membership-application' };
+    }
+    MOCK_APPLICATION = {
+      state: 'pending',
+      reason: '',
+      appliedAtText: '刚刚提交',
+    };
+    return { state: 'pending', applicationId: 'mock-membership-application' };
+  });
 
   // ---------- 内容流 ----------
   route('GET /posts', ({ query }) => {
@@ -254,4 +278,15 @@ export default function registerCommunityMock() {
     memberSince: '2026 年 3 月加入',
     stats: { posts: 6, bookmarks: 3, topics: 1 },
   }));
+
+  // ---------- 数据权利异步任务 ----------
+  route('POST /me/exports', () => {
+    if (!isMember()) return fail(403, 'membership_invalid', '社内内容需要有效的成员资格');
+    return { state: 'queued' };
+  });
+
+  route('DELETE /me/account', ({ body }) => {
+    if (!body || body.confirm !== '注销') return fail(422, 'invalid_input', '请输入「注销」以确认');
+    return { state: 'pending' };
+  });
 }

@@ -1,0 +1,83 @@
+<view class="hg-page hg-club">
+  <hg-nav title="社团名片" />
+
+  <block wx:if="{{ loading }}">
+    <view class="hg-club__loading">
+      <view class="hg-club__skeleton hg-club__skeleton--hero"></view>
+      <view class="hg-club__skeleton hg-club__skeleton--line"></view>
+      <view class="hg-club__skeleton hg-club__skeleton--line hg-club__skeleton--short"></view>
+    </view>
+  </block>
+
+  <block wx:elif="{{ loadError }}">
+    <empty-state
+      icon="error-circle"
+      title="暂时读不到社团资料"
+      desc="{{ loadError }}"
+      action="再试一次"
+      bind:action="onRetry"
+    />
+  </block>
+
+  <empty-state
+    wx:elif="{{ !club }}"
+    icon="usergroup"
+    title="社团资料暂未开放"
+    desc="等资料准备好后，这里会介绍社团与近期公告。"
+    action="再试一次"
+    bind:action="onRetry"
+  />
+
+  <block wx:else>
+    <view class="hg-club__hero">
+      <view class="hg-club__emblem" aria-label="{{ club.name }}社徽">黑</view>
+      <view class="hg-club__hero-main">
+        <view class="hg-club__name">{{ club.name }}</view>
+        <view class="hg-club__slogan">{{ club.slogan }}</view>
+      </view>
+    </view>
+
+    <view class="hg-club__intro">{{ club.intro }}</view>
+
+    <view class="hg-club__section-title">近期公告与活动</view>
+    <view class="hg-club__empty-event">
+      <t-icon name="calendar" size="38rpx" />
+      <view class="hg-club__empty-event-main">
+        <view class="hg-club__empty-event-title">这里还没有新的公告</view>
+        <view class="hg-club__empty-event-desc"
+          >有活动时会在这里说明时间和地点。不会收集报名名单，也不会锁定名额。</view
+        >
+      </view>
+    </view>
+
+    <view class="hg-club__section-title">社区约定</view>
+    <view class="hg-club__rules" bindtap="onRulesTap" aria-role="button">
+      <view class="hg-club__rules-main">
+        <view class="hg-club__rules-title">一起把这里留给每一种表达</view>
+        <view class="hg-club__rules-desc"
+          >当前版本 {{ club.rulesVersion || 'v1.1' }} · 社团约定、平台要求与法律义务分层说明</view
+        >
+      </view>
+      <t-icon name="chevron-right" size="34rpx" />
+    </view>
+
+    <view class="hg-club__membership">
+      <view class="hg-club__membership-icon">
+        <t-icon name="{{ memberStatus === 'active' ? 'check-circle' : 'usergroup-add' }}" size="40rpx" />
+      </view>
+      <view class="hg-club__membership-main">
+        <view class="hg-club__membership-title">{{ memberStatusText.title }}</view>
+        <view class="hg-club__membership-desc">{{ memberStatusText.desc }}</view>
+        <view wx:if="{{ applicationReason }}" class="hg-club__membership-reason">{{ applicationReason }}</view>
+      </view>
+    </view>
+
+    <view wx:if="{{ memberStatus !== 'active' }}" class="hg-club__join" bindtap="onJoinTap" aria-role="button">
+      {{ memberStatusText.action || '申请加入' }}
+    </view>
+
+    <view class="hg-club__footnote">
+      访客只能看到公开的社团介绍。成员名册、联系方式与社内活动细节不会出现在这里。
+    </view>
+  </block>
+</view>

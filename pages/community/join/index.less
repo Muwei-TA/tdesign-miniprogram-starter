@@ -1,0 +1,255 @@
+@import '/styles/tokens.less';
+@import '/styles/mixins.less';
+
+.hg-join {
+  padding-bottom: 64rpx;
+
+  &__hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: @hg-sp-3 @hg-page-x 0;
+    padding: @hg-sp-5 @hg-block-x @hg-sp-4;
+    background: @hg-green-mist;
+    border-radius: @hg-radius-lg;
+  }
+
+  &__emblem {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 152rpx;
+    height: 152rpx;
+    border: 2rpx solid @hg-green;
+    border-radius: 50%;
+    color: @hg-green;
+    font-family: @hg-font-serif;
+    font-size: 66rpx;
+    line-height: 1;
+  }
+
+  &__title {
+    margin-top: @hg-sp-3;
+    color: @hg-ink;
+    .hg-serif(@hg-fs-display);
+  }
+
+  &__slogan {
+    margin-top: @hg-sp-1;
+    color: @hg-green;
+    font-family: @hg-font-serif;
+    font-size: @hg-fs-sm;
+  }
+
+  &__intro {
+    margin-top: @hg-sp-3;
+    color: @hg-ink-2;
+    font-size: @hg-fs-sm;
+    line-height: @hg-lh-base;
+    text-align: center;
+  }
+
+  &__notice {
+    .hg-notice();
+
+    margin: @hg-sp-3 @hg-page-x 0;
+  }
+
+  &__form {
+    margin: @hg-sp-5 @hg-page-x 0;
+  }
+
+  &__section-title {
+    margin-bottom: @hg-sp-3;
+    color: @hg-ink;
+    .hg-serif(@hg-fs-h2);
+  }
+
+  &__field {
+    margin-bottom: @hg-sp-4;
+  }
+
+  &__label {
+    display: block;
+    margin-bottom: @hg-sp-2;
+    color: @hg-ink;
+    font-size: @hg-fs-sm;
+  }
+
+  &__input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 88rpx;
+    padding: 0 @hg-sp-3;
+    background: @hg-surface;
+    border: 1rpx solid @hg-line;
+    border-radius: @hg-radius-md;
+    color: @hg-ink;
+    font-size: @hg-fs-body;
+  }
+
+  &__hint {
+    display: block;
+    margin-top: @hg-sp-1;
+    color: @hg-ink-4;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+  }
+
+  &__agreement {
+    padding: @hg-sp-2 0 @hg-sp-1;
+  }
+
+  &__check-row {
+    display: flex;
+    align-items: center;
+    min-height: @hg-touch-min;
+    color: @hg-ink-2;
+    font-size: @hg-fs-sm;
+  }
+
+  &__link {
+    margin-left: @hg-sp-1;
+    color: @hg-green;
+    text-decoration: underline;
+  }
+
+  &__submit,
+  &__primary {
+    .hg-btn-primary();
+
+    margin-top: @hg-sp-3;
+  }
+
+  &__submit--disabled {
+    opacity: 0.55;
+  }
+
+  &__status {
+    display: flex;
+    gap: @hg-sp-2;
+    margin: @hg-sp-4 @hg-page-x 0;
+    padding: @hg-sp-3;
+    border: 1rpx solid @hg-line;
+    border-radius: @hg-radius-md;
+  }
+
+  &__status--notice {
+    background: @hg-clay-soft;
+    color: @hg-clay-ink;
+  }
+
+  &__status--danger {
+    background: @hg-clay-soft;
+    color: @hg-danger;
+  }
+
+  &__status--success {
+    background: @hg-green-soft;
+    color: @hg-green;
+  }
+
+  &__status--neutral {
+    background: @hg-surface;
+    color: @hg-ink-2;
+  }
+
+  &__status-icon {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    width: 44rpx;
+    padding-top: 2rpx;
+  }
+
+  &__status-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__status-title {
+    font-size: @hg-fs-body;
+    font-weight: 600;
+  }
+
+  &__status-desc,
+  &__status-reason,
+  &__status-time {
+    margin-top: @hg-sp-1;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+  }
+
+  &__status-reason {
+    padding-top: @hg-sp-1;
+    border-top: 1rpx solid fade(@hg-danger, 20%);
+  }
+
+  &__status-actions {
+    margin: 0 @hg-page-x;
+  }
+
+  &__secondary {
+    .hg-btn-secondary();
+
+    margin-top: @hg-sp-2;
+  }
+
+  &__text-action {
+    min-height: @hg-touch-min;
+    padding-top: @hg-sp-2;
+    color: @hg-green;
+    font-size: @hg-fs-sm;
+    line-height: @hg-touch-min;
+    text-align: center;
+  }
+
+  &__inline-error {
+    display: flex;
+    align-items: flex-start;
+    gap: @hg-sp-1;
+    margin: @hg-sp-2 @hg-page-x 0;
+    color: @hg-danger;
+    font-size: @hg-fs-sm;
+    line-height: @hg-lh-base;
+  }
+
+  &__footnote {
+    margin: @hg-sp-5 @hg-page-x 0;
+    color: @hg-ink-4;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+    text-align: center;
+  }
+
+  &__loading {
+    margin: 64rpx @hg-page-x;
+    text-align: center;
+  }
+
+  &__skeleton {
+    margin: @hg-sp-2 auto;
+    background: @hg-surface-sunk;
+    border-radius: @hg-radius-md;
+
+    &--emblem {
+      width: 152rpx;
+      height: 152rpx;
+      border-radius: 50%;
+    }
+
+    &--title {
+      width: 320rpx;
+      height: 52rpx;
+    }
+
+    &--line {
+      width: 92%;
+      height: 28rpx;
+    }
+
+    &--short {
+      width: 66%;
+    }
+  }
+}

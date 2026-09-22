@@ -7,7 +7,7 @@
     {
       "root": "pages/community",
       "name": "community",
-      "pages": ["post/index", "result/index"]
+      "pages": ["post/index", "result/index", "join/index", "club/index", "rules/index"]
     },
     {
       "root": "pages/message",
