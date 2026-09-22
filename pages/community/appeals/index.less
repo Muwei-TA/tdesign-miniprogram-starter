@@ -45,7 +45,8 @@
 
   &__hint,
   &__label,
-  &__loading {
+  &__loading,
+  &__selected {
     color: @hg-ink-4;
     font-size: @hg-fs-2xs;
     line-height: @hg-lh-base;
@@ -53,6 +54,30 @@
 
   &__hint {
     margin-top: @hg-sp-1;
+  }
+
+  &__choose {
+    margin-top: @hg-sp-3;
+    padding: @hg-sp-3;
+    background: @hg-surface-sunk;
+    border-radius: @hg-radius-md;
+  }
+
+  &__choose-text {
+    color: @hg-ink-2;
+    font-size: @hg-fs-sm;
+    line-height: @hg-lh-base;
+  }
+
+  &__choose-btn {
+    .hg-btn-secondary();
+
+    margin-top: @hg-sp-2;
+  }
+
+  &__selected {
+    margin-top: @hg-sp-3;
+    color: @hg-green;
   }
 
   &__field {
@@ -64,7 +89,6 @@
     margin-bottom: @hg-sp-1;
   }
 
-  &__input,
   &__textarea {
     box-sizing: border-box;
     width: 100%;
@@ -73,10 +97,6 @@
     border-radius: @hg-radius-sm;
     color: @hg-ink;
     font-size: @hg-fs-sm;
-  }
-
-  &__input {
-    min-height: 76rpx;
   }
 
   &__textarea {
@@ -122,17 +142,6 @@
     color: @hg-green;
     font-size: @hg-fs-sm;
     font-weight: 600;
-  }
-
-  &__version,
-  &__meta {
-    color: @hg-ink-4;
-    font-size: @hg-fs-2xs;
-  }
-
-  &__meta {
-    margin-top: @hg-sp-2;
-    word-break: break-all;
   }
 
   &__reason,

@@ -1,4 +1,5 @@
 import { fetchMyAppeals, createAppeal } from '~/services/governance';
+import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();
 
@@ -56,6 +57,10 @@ Page({
 
   onRetry() {
     this.loadAppeals();
+  },
+
+  onMyContent() {
+    navigateTo('/pages/community/my-content/index?tab=pending');
   },
 
   onPostIdInput(e) {

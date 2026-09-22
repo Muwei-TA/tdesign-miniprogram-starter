@@ -278,6 +278,10 @@ Page({
   async onItemDetail(e) {
     const item = this.data.items.find((entry) => entry.id === e.detail.id);
     if (!item) return;
+    if (item.queue === 'content') {
+      navigateTo(`/pages/community/post/index?id=${encodeURIComponent(item.id)}&from=admin`);
+      return;
+    }
     if (!item.assetIds.length) {
       wx.showModal({
         title: item.title || '管理条目',

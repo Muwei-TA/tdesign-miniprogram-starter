@@ -188,9 +188,13 @@ const componentSource = readFileSync(join(ROOT, 'components/moderation-item/inde
 assert.match(pageSource, /expectedVersion: item\.version/);
 assert.match(pageSource, /item\.queue === 'comment'/);
 assert.match(pageSource, /decideComment/);
+assert.match(pageSource, /pages\/community\/post\/index\?id=\$\{encodeURIComponent\(item\.id\)\}/);
 assert.match(pageSource, /请填写处理理由/);
 assert.match(pageSource, /session\.role === 'admin'|session\.role === 'moderator'/);
 assert.match(componentSource, /bindtap="onAction"/);
 assert.match(componentSource, /树洞身份/);
+assert.match(componentSource, /item\.queue === 'content'/);
+assert.match(componentSource, /查看内容/);
+assert.match(componentSource, /查看摘要/);
 
 console.log('OK: moderation queue DTO whitelist, action reasons, expectedVersion, and decision routes passed');
