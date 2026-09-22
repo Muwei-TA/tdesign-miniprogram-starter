@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const SKIP = new Set(['node_modules', '.git', '.session_tmps', '.github', 'docs', 'scripts']);
+const SKIP = new Set(['node_modules', '.git', '.session_tmps', '.github', 'docs', 'scripts', 'cloudfunctions']);
 const NPM_ROOT = join(ROOT, 'miniprogram_npm');
 
 const BUILTIN_TAGS = new Set([

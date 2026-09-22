@@ -17,6 +17,12 @@ const STATE_TEXT = {
     primary: '查看我的发布',
     tab: 'pending',
   },
+  rejected: {
+    title: '这条内容需要修改',
+    desc: '内容未通过安全检查，原文已保留。可以在我的内容查看处理说明。',
+    primary: '查看处理说明',
+    tab: 'pending',
+  },
   published: {
     title: '已在设定范围内展示',
     desc: '现在符合范围的读者可以看到它了。',
@@ -64,7 +70,10 @@ Page({
   },
 
   onPrimary() {
-    // P10 尚未实现时给出明确提示，不做静默失败
+    if (this.data.state === 'published' && this.data.id) {
+      navigateTo(`/pages/community/post/index?id=${encodeURIComponent(this.data.id)}&from=result`);
+      return;
+    }
     navigateTo(`/pages/community/my-content/index?tab=${this.data.tab}`);
   },
 

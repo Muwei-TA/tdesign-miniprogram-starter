@@ -494,6 +494,7 @@ export function createUploadIntent({ mediaType, size, duration, mimeType }, idem
 export function uploadImage(assetId, contentBase64, idempotencyKey) {
   return request(endpoints.assetUpload, {
     method: 'POST',
+    timeout: 30000,
     data: { assetId, contentBase64 },
     idempotencyKey,
   });
@@ -503,6 +504,7 @@ export function uploadImage(assetId, contentBase64, idempotencyKey) {
 export function confirmUpload(assetId, idempotencyKey) {
   return request(endpoints.assetConfirm, {
     method: 'POST',
+    timeout: 30000,
     data: { assetId },
     idempotencyKey,
   });

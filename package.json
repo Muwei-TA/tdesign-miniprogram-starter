@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
+    "check": "node scripts/check.mjs",
     "lint": "npx eslint ./ --no-eslintrc -c ./.eslintrc.js",
     "lint:fix": "npm run lint:fix-eslint && npm run lint:fix-prettier",
     "lint:fix-eslint": "eslint --ext .js,.ts ./ --max-warnings 0 --ignore-path .gitignore --ignore-path .eslintignore --fix",

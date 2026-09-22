@@ -1,0 +1,52 @@
+{
+  "environment": "shudong-d4g4blap4a5069a28",
+  "appid": "wx39773ed34aa30776",
+  "verifiedAt": "2026-09-23T01:28:00+08:00",
+  "textPost": {
+    "id": "df912774-fe9c-4e31-b74d-412d02db3ff1",
+    "state": "published",
+    "version": 2,
+    "scope": "club",
+    "path": "native simulator input -> preview -> submit -> wx content check -> published result"
+  },
+  "comment": {
+    "id": "b8ba47e4-22b2-4a58-95ee-7d495f52685a",
+    "state": "published",
+    "path": "native textarea input and submit -> server check -> detail renders count 1"
+  },
+  "image": {
+    "assetId": "bd740f16-d05e-447f-8704-72bef2d5bf8d",
+    "status": "verified",
+    "cleanedBytes": 675,
+    "dimensions": [
+      48,
+      48
+    ],
+    "format": "jpeg",
+    "postId": "d93b0b67-5893-4202-879f-de9e5773a867",
+    "postState": "published",
+    "anonymousIdentityHidden": true,
+    "downloadPreview": "blocked: downloadFile domain not configured"
+  },
+  "privateNote": {
+    "id": "0c0f9e22-7a04-41f8-87fe-ce89a83ec428",
+    "state": "private_saved",
+    "forgedOwnerManagementRequest": "not_accessible"
+  },
+  "tests": {
+    "backendPassed": 111,
+    "frontendSuitesPassed": 8,
+    "lint": "pass both repositories",
+    "structuralCheck": "pass; 22 frontend pages, 56 API actions"
+  },
+  "preview": {
+    "totalBytes": 1371384,
+    "mainBytes": 1166399
+  },
+  "remaining": [
+    "downloadFile domain configuration and real download retest",
+    "physical-device acceptance",
+    "SCF timer OpenAPI token -501001; foreground owner review works, background failures escalate to manual",
+    "WeChat platform review and production release not performed"
+  ]
+}

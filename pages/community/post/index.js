@@ -196,14 +196,15 @@ Page({
 
     submitComment(this.data.id, { body, replyToId, identityMode: this.data.commentIdentityMode }, idempotencyKey)
       .then((result) => {
-        if (!result || result.state !== 'pending') throw new Error('回应状态暂时无法确认');
+        if (!result || !['pending', 'published', 'rejected'].includes(result.state)) throw new Error('回应状态暂时无法确认');
         this.setData({
           commentSubmitting: false,
           commentResetKey: this.data.commentResetKey + 1,
           commentFingerprint: '',
           commentIdempotencyKey: '',
         });
-        wx.showToast({ title: '已收到，等待审核', icon: 'none' });
+        const title = { published: '回应已发布', rejected: '回应未通过安全检查', pending: '已收到，等待审核' }[result.state];
+        wx.showToast({ title, icon: 'none' });
         app.eventBus.emit('post-changed', { id: this.data.id, action: 'comment' });
       })
       .catch((err) => {

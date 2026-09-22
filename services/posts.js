@@ -38,7 +38,7 @@ export function fetchPostDetail(id) {
  * @param {string} idempotencyKey 随草稿持久化，超时重试复用同一键
  */
 export function submitPost(payload, idempotencyKey = createIdempotencyKey('post')) {
-  return request(endpoints.posts, { method: 'POST', data: payload, idempotencyKey });
+  return request(endpoints.posts, { method: 'POST', data: payload, idempotencyKey, timeout: 30000 });
 }
 
 /** 首版只允许缩小范围；扩大需新建内容（docs/05 5.4） */
@@ -73,6 +73,7 @@ export function fetchComments(id, cursor = '') {
 export function submitComment(id, { body, replyToId = '', identityMode = 'named' }, idempotencyKey) {
   return request(withPath(endpoints.postComments, { id }), {
     method: 'POST',
+    timeout: 30000,
     data: { body: String(body || '').trim(), replyToId, identityMode },
     idempotencyKey: idempotencyKey || createIdempotencyKey('comment'),
   });
