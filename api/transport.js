@@ -102,6 +102,7 @@ const ROUTES = [
 
   // 媒体。
   { method: 'POST', pattern: '/assets/upload-intents', action: 'assets/intent' },
+  { method: 'POST', pattern: '/assets/upload', action: 'assets/upload' },
   { method: 'POST', pattern: '/assets/confirm', action: 'assets/confirm' },
   { method: 'GET', pattern: '/assets/:id', action: 'assets/status', map: ({ params }) => ({ assetId: params.id }) },
 

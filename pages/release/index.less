@@ -150,6 +150,33 @@
     border-radius: 50%;
   }
 
+  &__thumb-status {
+    position: absolute;
+    left: 8rpx;
+    right: 8rpx;
+    bottom: 8rpx;
+    padding: 6rpx 8rpx;
+    overflow: hidden;
+    background: rgba(35, 54, 39, 0.78);
+    border-radius: 8rpx;
+    color: #fff;
+    font-size: @hg-fs-2xs;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__thumb-retry {
+    position: absolute;
+    right: 8rpx;
+    top: 8rpx;
+    padding: 6rpx 12rpx;
+    background: @hg-green;
+    border-radius: 8rpx;
+    color: #fff;
+    font-size: @hg-fs-2xs;
+  }
+
   &__thumb-note {
     width: 100%;
     font-size: @hg-fs-2xs;
@@ -249,6 +276,15 @@
     .hg-btn-secondary();
 
     flex: 1;
+  }
+
+  &__btn-cancel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 140rpx;
+    color: @hg-danger;
+    font-size: @hg-fs-xs;
   }
 
   &__btn-primary {

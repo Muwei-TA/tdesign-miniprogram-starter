@@ -64,6 +64,7 @@
         value="{{ title }}"
         maxlength="{{ titleLimit }}"
         placeholder="给这篇文章一个标题"
+        disabled="{{ submitting }}"
         bindinput="onTitleInput"
       />
 
@@ -72,6 +73,7 @@
         value="{{ body }}"
         maxlength="{{ bodyLimit }}"
         placeholder="{{ mode === 'article' ? '从任意一句开始写。空行会被保留。' : '一句话也可以。今天你想留下什么？' }}"
+        disabled="{{ submitting }}"
         bindinput="onBodyInput"
         adjust-position
         show-confirm-bar="{{ false }}"
@@ -100,15 +102,19 @@
       </view>
 
       <view wx:if="{{ images.length > 0 }}" class="hg-compose__thumbs">
-        <view wx:for="{{ images }}" wx:key="*this" class="hg-compose__thumb">
+        <view wx:for="{{ images }}" wx:key="key" class="hg-compose__thumb">
           <image
             class="hg-compose__thumb-img"
-            src="{{ item }}"
+            src="{{ item.previewPath || item.localPath || item.url }}"
             mode="aspectFill"
             data-index="{{ index }}"
             bindtap="onPreviewImage"
           />
+          <view wx:if="{{ item.status !== 'verified' }}" class="hg-compose__thumb-status">
+            {{ item.status === 'failed' ? (item.error || '上传失败') : (item.status === 'canceled' ? '已取消' : '处理中…') }}
+          </view>
           <view
+            wx:if="{{ !submitting }}"
             class="hg-compose__thumb-remove"
             data-index="{{ index }}"
             catchtap="onRemoveImage"
@@ -117,8 +123,20 @@
           >
             <t-icon name="close" size="24rpx" />
           </view>
+          <view
+            wx:if="{{ !submitting && (item.status === 'failed' || item.status === 'canceled') }}"
+            class="hg-compose__thumb-retry"
+            data-index="{{ index }}"
+            catchtap="onRetryImage"
+            aria-role="button"
+          >
+            重试
+          </view>
         </view>
-        <view class="hg-compose__thumb-note">最多 {{ imageLimit }} 张，单张不超过 10MB</view>
+        <view class="hg-compose__thumb-note">
+          <text wx:if="{{ uploadPhase === 'media' }}">图片上传与审核中，完成前不能发布。</text>
+          <text wx:else>最多 {{ imageLimit }} 张，压缩后单张不超过 2MiB</text>
+        </view>
       </view>
     </view>
 
@@ -179,6 +197,9 @@
 
     <view class="hg-compose__footer">
       <view class="hg-compose__btn-secondary" bindtap="onSaveDraft" aria-role="button">存草稿</view>
+      <view wx:if="{{ submitting && uploadPhase === 'media' }}" class="hg-compose__btn-cancel" bindtap="onCancelUpload" aria-role="button">
+        取消上传
+      </view>
       <view
         class="hg-compose__btn-primary {{ submitting || !canPublish ? 'hg-compose__btn-primary--disabled' : '' }}"
         bindtap="onPreviewOpen"

@@ -33,6 +33,8 @@ export default {
   searchSuggestions: '/search/suggestions',
 
   uploadIntents: '/assets/upload-intents',
+  assetUpload: '/assets/upload',
+  assetConfirm: '/assets/confirm',
   assetDetail: '/assets/:id',
 
   reports: '/reports',

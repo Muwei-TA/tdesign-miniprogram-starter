@@ -35,6 +35,22 @@ assert.deepEqual(plain(resolveTransport('/assets/a-1', 'GET', {})), {
   action: 'assets/status',
   payload: { assetId: 'a-1' },
 });
+assert.deepEqual(plain(resolveTransport('/assets/upload', 'POST', {
+  assetId: 'a-1',
+  contentBase64: 'iVBORw0KGgo=',
+  idempotencyKey: 'asset-upload-1',
+})), {
+  action: 'assets/upload',
+  payload: {
+    assetId: 'a-1',
+    contentBase64: 'iVBORw0KGgo=',
+    idempotencyKey: 'asset-upload-1',
+  },
+});
+assert.deepEqual(plain(resolveTransport('/assets/confirm', 'POST', { assetId: 'a-1' })), {
+  action: 'assets/confirm',
+  payload: { assetId: 'a-1' },
+});
 assert.deepEqual(plain(resolveTransport('/me/contents?tab=topics&cursor=c2', 'GET', {})), {
   action: 'me/topics',
   payload: { cursor: 'c2' },

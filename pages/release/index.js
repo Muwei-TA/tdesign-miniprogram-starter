@@ -1,7 +1,14 @@
 import { submitPost } from '~/services/posts';
 import { saveDraft, getDraft, removeDraft } from '~/services/drafts';
 import { bootstrapSession } from '~/services/session';
-import { LIMITS, validateImages } from '~/services/uploads';
+import {
+  IMAGE_STATUS,
+  LIMITS,
+  normalizeImageItem,
+  prepareImageFiles,
+  uploadImages,
+  validateImages,
+} from '~/services/uploads';
 import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();
@@ -9,6 +16,11 @@ const app = getApp();
 const MAX_FRAGMENT = 2000;
 const MAX_ARTICLE = 20000;
 const MAX_TITLE = 60;
+
+function imagePath(item) {
+  if (typeof item === 'string') return item;
+  return item && (item.previewPath || item.localPath || item.url) ? item.previewPath || item.localPath || item.url : '';
+}
 
 Page({
   data: {
@@ -28,6 +40,8 @@ Page({
     scopeVisible: false,
     previewVisible: false,
     submitting: false,
+    uploadPhase: '',
+    uploadIndex: -1,
 
     session: null,
     sessionReady: false,
@@ -50,6 +64,7 @@ Page({
   },
 
   onUnload() {
+    if (this.uploadControl) this.uploadControl.canceled = true;
     app.eventBus.off('session-changed', this.onSessionChanged);
     if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
     this.persistDraft({ silent: true });
@@ -119,7 +134,7 @@ Page({
           mode: draft.kind === 'article' ? 'article' : 'fragment',
           title: draft.title || '',
           body: draft.body || '',
-          images: draft.images || [],
+          images: (draft.images || []).map(normalizeImageItem),
           visibility: draft.visibility || 'club',
           identityMode: draft.identityMode || 'named',
           commentsEnabled: draft.commentsEnabled !== false,
@@ -190,6 +205,7 @@ Page({
   },
 
   onChooseImage() {
+    if (this.data.submitting) return;
     if (this.data.capabilities.uploads !== true) {
       wx.showModal({
         title: '图片暂未开放',
@@ -202,17 +218,33 @@ Page({
       wx.showToast({ title: '图片与视频只能选一种', icon: 'none' });
       return;
     }
+    const remaining = LIMITS.imageCount - this.data.images.length;
+    if (remaining <= 0) {
+      wx.showToast({ title: `一条内容最多 ${LIMITS.imageCount} 张图片`, icon: 'none' });
+      return;
+    }
     wx.chooseMedia({
-      count: LIMITS.imageCount - this.data.images.length,
+      count: remaining,
       mediaType: ['image'],
-      success: (res) => {
-        const check = validateImages(res.tempFiles, this.data.images.length);
+      success: async (res) => {
+        const files = res.tempFiles || [];
+        const check = validateImages(files, this.data.images.length, { allowCompression: true });
         if (!check.ok) {
           wx.showToast({ title: check.message, icon: 'none' });
           return;
         }
-        const images = this.data.images.concat(res.tempFiles.map((file) => file.tempFilePath));
-        this.setData({ images }, () => this.persistDraft({ silent: true }));
+        try {
+          const prepared = await prepareImageFiles(files, this.data.images.length);
+          const images = this.data.images.concat(prepared);
+          this.setData({ images }, () => this.persistDraft({ silent: true }));
+        } catch (err) {
+          wx.showToast({ title: err.message || '图片无法处理，请重新选择', icon: 'none' });
+        }
+      },
+      fail: (err) => {
+        if (!/cancel/i.test(String(err && (err.errMsg || err.message)))) {
+          wx.showToast({ title: '选择图片失败，请重试', icon: 'none' });
+        }
       },
     });
   },
@@ -230,15 +262,64 @@ Page({
   },
 
   onRemoveImage(e) {
+    if (this.data.submitting) return;
     const { index } = e.currentTarget.dataset;
     const images = this.data.images.slice();
     images.splice(index, 1);
-    this.setData({ images });
+    this.setData({ images }, () => this.persistDraft({ silent: true }));
   },
 
   onPreviewImage(e) {
     const { index } = e.currentTarget.dataset;
-    wx.previewImage({ current: this.data.images[index], urls: this.data.images });
+    const urls = this.data.images.map(imagePath).filter(Boolean);
+    wx.previewImage({ current: imagePath(this.data.images[index]), urls });
+  },
+
+  onRetryImage(e) {
+    if (this.data.submitting) return;
+    const index = Number(e.currentTarget.dataset.index);
+    if (!Number.isInteger(index) || !this.data.images[index]) return;
+    if (this.data.images[index].retryable === false) {
+      wx.showToast({ title: '请移除后重新选择这张图片', icon: 'none' });
+      return;
+    }
+    this.setData({ submitting: true });
+    this.runImageUploads([index])
+      .catch((err) => {
+        wx.showToast({ title: err.message || '图片上传未完成', icon: 'none' });
+      })
+      .finally(() => this.setData({ submitting: false, uploadPhase: '' }));
+  },
+
+  onCancelUpload() {
+    if (!this.data.submitting || !this.uploadControl) return;
+    this.uploadControl.canceled = true;
+  },
+
+  async runImageUploads(indices = null) {
+    if (this.data.capabilities.uploads !== true || this.data.images.length === 0) return this.data.images;
+    this.uploadControl = { canceled: false };
+    this.setData({ uploadPhase: 'media', uploadIndex: indices && indices.length ? indices[0] : -1 });
+    try {
+      const images = await uploadImages(this.data.images, {
+        indices,
+        control: this.uploadControl,
+        pollIntervalMs: 1000,
+        onItemChange: (next, index) => {
+          this.setData({ images: next, uploadIndex: index }, () => this.persistDraft({ silent: true }));
+        },
+      });
+      this.setData({ images, uploadPhase: '', uploadIndex: -1 }, () => this.persistDraft({ silent: true }));
+      return images;
+    } catch (err) {
+      const images = err.items || this.data.images;
+      this.setData({ images, uploadPhase: '', uploadIndex: err.index === undefined ? -1 : err.index }, () => {
+        this.persistDraft({ silent: true });
+      });
+      throw err;
+    } finally {
+      this.uploadControl = null;
+    }
   },
 
   onScopeOpen() {
@@ -290,6 +371,7 @@ Page({
   validate() {
     const { mode, title, body, images, collectionId, consentGranted, capabilities } = this.data;
     if (capabilities.publishing !== true) return '发布功能暂未开放';
+    if (this.data.video && capabilities.video !== true) return '视频上传暂未开放，请移除视频后重试';
     if (images.length > 0 && capabilities.uploads !== true) return '图片上传暂未开放，请先移除图片或保存草稿';
     if (!body.trim() && images.length === 0 && !this.data.video) return '写一点内容，或者选一张图片';
     if (mode === 'article' && !title.trim()) return '文章需要一个标题';
@@ -378,13 +460,21 @@ Page({
     const draft = this.persistDraft({ silent: true });
     const idempotencyKey = (draft && draft.idempotencyKey) || this.data.idempotencyKey;
 
-    this.setData({ submitting: true, previewVisible: false });
+    this.setData({ submitting: true, uploadPhase: this.data.images.length ? 'media' : 'post', previewVisible: false });
     try {
+      const { images: currentImages } = this.data;
+      let images = currentImages;
+      if (images.length > 0) {
+        images = await this.runImageUploads();
+        const pendingImage = images.find((image) => image.status !== IMAGE_STATUS.VERIFIED || !image.assetId);
+        if (pendingImage) throw new Error(pendingImage.error || '图片仍在处理中，请稍后重试');
+      }
+
       const payload = {
         kind: this.data.mode,
         title: this.data.title.trim(),
         body: this.data.body,
-        assetIds: [],
+        assetIds: images.filter((image) => image.status === IMAGE_STATUS.VERIFIED).map((image) => image.assetId),
         visibility: this.data.visibility,
         identityMode: this.data.identityMode,
         topicId: this.data.topic ? this.data.topic.id : '',
@@ -401,12 +491,15 @@ Page({
       // redirectTo：返回栈不残留编辑器
       wx.redirectTo({ url: `/pages/community/result/index?${query}` });
     } catch (err) {
-      this.setData({ submitting: false });
+      this.setData({ submitting: false, uploadPhase: '' });
+      this.persistDraft({ silent: true });
       wx.showModal({
-        title: '提交未完成',
-        content: `${err.message || '请稍后重试'}。内容已保存为草稿，可以稍后重试提交。`,
+        title: err.code === 'canceled' ? '上传已取消' : '提交未完成',
+        content: `${err.message || '请稍后重试'}。内容已保存为草稿，可以稍后恢复。`,
         showCancel: false,
       });
+    } finally {
+      this.setData({ submitting: false, uploadPhase: '' });
     }
   },
 });

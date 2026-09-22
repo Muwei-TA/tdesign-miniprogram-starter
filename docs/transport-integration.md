@@ -58,8 +58,9 @@ Mock 只用于明确的开发预览：临时把 `isMock` 改为 `true`，应用�
 | `/search` | GET | `search/query` | `q`、`scope`、`cursor` |
 | `/search/suggestions` | GET | `search/suggestions` | — |
 | `/search/private` | GET | `search/private` | `q` |
-| `/assets/upload-intents` | POST | `assets/intent` | `mediaType`、`size`、`duration`、`mimeType` |
-| `/assets/confirm` | POST | `assets/confirm` | `assetId`、`fileId` |
+| `/assets/upload-intents` | POST | `assets/intent` | `mediaType=image`、压缩后 `size`、`mimeType` + intent 幂等键 |
+| `/assets/upload` | POST | `assets/upload` | `assetId`、`contentBase64` + upload 幂等键；服务端清洗并绑定 fileId |
+| `/assets/confirm` | POST | `assets/confirm` | `assetId` + confirm 幂等键；不传 `fileId` |
 | `/assets/:id` | GET | `assets/status` | `assetId` |
 | `/admin/queues/:queue` | GET | `admin/queue` | `queue`、`cursor` |
 | `/admin/reviews/:id/decision` | POST | `admin/content/decide` | `id` + 决策字段 |
@@ -69,7 +70,9 @@ Mock 只用于明确的开发预览：临时把 `isMock` 改为 `true`，应用�
 
 ## 弱网与幂等
 
-`request(url, { idempotencyKey })` 会把键合并进 `payload.idempotencyKey`。`POST /posts` 和 `POST /posts/:id/comments` 的键由草稿或调用方生成并持久化；请求超时、网络中断后使用原键再次调用，后端 `claimIdempotency` 会返回首次结果。键不再放进 HTTP header，也不依赖 Bearer 会话。
+`request(url, { idempotencyKey })` 会把键合并进 `payload.idempotencyKey`。`POST /posts` 和 `POST /posts/:id/comments` 的键由草稿或调用方生成并持久化；图片 intent、upload、confirm 也各自保存稳定键。请求超时、网络中断后使用原键再次调用，后端 `claimIdempotency` 会返回首次结果。键不再放进 HTTP header，也不依赖 Bearer 会话。
+
+图片选择后先由 `wx.compressImage` 压缩，再由文件系统读取 base64 并检查实际 JPEG/PNG 头与 2MiB 解码大小。上传服务逐个轮询 `assets/status`，只有 `verified` 的 `assetId` 才进入 `posts/create`；审核超时、网络失败或用户取消都会保留附件状态和草稿，重试不会重新上传已经 verified 的图片。`capabilities.uploads` 为 false 时页面入口保持关闭。
 
 ## 验证
 
@@ -77,6 +80,7 @@ Mock 只用于明确的开发预览：临时把 `isMock` 改为 `true`，应用�
 
 ```bash
 node tests/transport.test.mjs
+node tests/uploads.test.mjs
 node scripts/check.mjs
 npm run lint
 ```
