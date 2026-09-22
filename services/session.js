@@ -1,4 +1,4 @@
-import request, { SESSION_TOKEN_KEY } from '~/api/request';
+import request from '~/api/request';
 import endpoints from '~/api/endpoints';
 
 /**
@@ -10,6 +10,7 @@ const GUEST_SESSION = {
   role: 'guest',
   memberStatus: 'none',
   user: null,
+  club: null,
   capabilities: {
     publicScope: false,
     video: false,
@@ -26,6 +27,7 @@ function normalize(payload) {
     role: payload.role || 'guest',
     memberStatus: payload.memberStatus || 'none',
     user: payload.user || null,
+    club: payload.club || null,
     capabilities: {
       publicScope: false,
       video: false,
@@ -63,14 +65,12 @@ export function isAdmin() {
   return current.role === 'admin' || current.role === 'moderator';
 }
 
-/** 微信登录换取后端会话；平台密钥只在服务端使用 */
-export async function loginWithWechat(code) {
-  const payload = await request(endpoints.sessionWechat, { method: 'POST', data: { code } });
-  if (payload && payload.sessionToken) {
-    wx.setStorageSync(SESSION_TOKEN_KEY, payload.sessionToken);
-  }
-  current = normalize(payload);
-  return current;
+/**
+ * 保留旧调用名以兼容页面，但小程序 CloudBase 身份由微信自动注入。
+ * 不调用 /session/wechat，也不交换或保存 session token。
+ */
+export async function loginWithWechat() {
+  return bootstrapSession();
 }
 
 /**
@@ -82,11 +82,10 @@ export function clearAccountScope() {
   try {
     const { keys } = wx.getStorageInfoSync();
     keys
-      .filter((key) => key === SESSION_TOKEN_KEY || (userId && key.startsWith(`hg:${userId}:`)))
+      .filter((key) => userId && key.startsWith(`hg:${userId}:`))
       .forEach((key) => wx.removeStorageSync(key));
   } catch (err) {
-    // storage 读取失败时至少移除会话票据
-    wx.removeStorageSync(SESSION_TOKEN_KEY);
+    // storage 读取失败时保持内存态切换为访客；下次启动会重新建立账号作用域。
   }
   current = { ...GUEST_SESSION };
   return current;

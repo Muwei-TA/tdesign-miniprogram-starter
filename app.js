@@ -21,8 +21,18 @@ App({
   eventBus: createBus(),
 
   onLaunch() {
+    this.initCloudBase();
     this.checkUpdate();
     this.initSession();
+  },
+
+  /** CloudBase 小程序身份由微信自动注入，不再交换或持久化会话令牌。 */
+  initCloudBase() {
+    if (config.isMock || !wx.cloud || typeof wx.cloud.init !== 'function') return;
+    wx.cloud.init({
+      env: config.env,
+      traceUser: config.traceUser,
+    });
   },
 
   checkUpdate() {
