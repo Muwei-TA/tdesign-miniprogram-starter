@@ -1,0 +1,133 @@
+// 底部弹层与表单字段的共用样式。
+// 在页面/组件的 less 中 @import '/styles/sheet.less' 使用，避免重复实现。
+@import './tokens.less';
+@import './mixins.less';
+
+.hg-sheet {
+  padding: 44rpx @hg-sp-5 60rpx;
+  background: @hg-paper;
+  border-radius: @hg-radius-xl @hg-radius-xl 0 0;
+  .hg-safe-bottom(0rpx);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: @hg-sp-2;
+  }
+
+  &__title {
+    .hg-serif(40rpx);
+  }
+
+  &__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 68rpx;
+    min-height: 68rpx;
+    color: #8b9c7e;
+  }
+
+  &__option {
+    display: flex;
+    align-items: center;
+    gap: @hg-sp-3;
+    padding: 30rpx 0;
+    border-bottom: 1rpx solid @hg-line;
+    color: #7a956d;
+  }
+
+  &__option-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__option-title {
+    font-size: @hg-fs-body;
+    font-weight: 500;
+    color: @hg-ink;
+  }
+
+  &__option-desc {
+    margin-top: 4rpx;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+    color: @hg-ink-3;
+  }
+
+  &__check {
+    color: #567747;
+  }
+
+  &__notice {
+    .hg-notice();
+  }
+
+  &__submit {
+    .hg-btn-primary();
+
+    margin-top: @hg-sp-4;
+
+    &--disabled {
+      opacity: 0.5;
+    }
+  }
+
+  &__text {
+    font-size: @hg-fs-sm;
+    line-height: @hg-lh-loose;
+    color: @hg-ink-2;
+    .hg-prewrap();
+  }
+}
+
+.hg-field {
+  margin-top: @hg-sp-4;
+
+  &__label {
+    display: block;
+    margin-bottom: @hg-sp-2;
+    font-size: @hg-fs-xs;
+    color: #829374;
+  }
+
+  &__input,
+  &__textarea {
+    width: 100%;
+    padding: 22rpx @hg-sp-3;
+    background: @hg-surface;
+    border: 1rpx solid #dce2d0;
+    border-radius: @hg-radius-md;
+    font-size: @hg-fs-body;
+    color: @hg-ink;
+    box-sizing: border-box;
+  }
+
+  &__textarea {
+    min-height: 160rpx;
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: @hg-sp-2;
+  }
+
+  &__chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 66rpx;
+    padding: 0 24rpx;
+    border: 1rpx solid @hg-green-line;
+    border-radius: @hg-radius-pill;
+    color: #7b916c;
+    font-size: @hg-fs-xs;
+
+    &--on {
+      background: @hg-green;
+      border-color: transparent;
+      color: #f5f4e9;
+    }
+  }
+}

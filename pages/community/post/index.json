@@ -1,0 +1,12 @@
+{
+  "navigationStyle": "custom",
+  "backgroundTextStyle": "dark",
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-popup": "tdesign-miniprogram/popup/popup",
+    "hg-nav": "/components/hg-nav/index",
+    "visibility-badge": "/components/visibility-badge/index",
+    "empty-state": "/components/empty-state/index",
+    "scope-picker": "/components/scope-picker/index"
+  }
+}

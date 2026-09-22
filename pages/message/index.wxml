@@ -1,25 +1,59 @@
-<wxs src="./index.wxs" module="utils" />
+<view class="hg-page hg-message">
+  <hg-nav title="消息">
+    <view slot="right" class="hg-message__readall" bindtap="onReadAll" aria-role="button">全部已读</view>
+  </hg-nav>
 
-<nav nav-type="title" title-text="全部消息"></nav>
-<scroll-view
-  class="message-list"
-  scroll-y
-  refresher-enabled
-  refresher-triggered="{{ loading }}"
-  bindrefresherrefresh="getMessageList"
->
-  <t-cell
-    wx:for="{{ messageList }}"
-    wx:key="index"
-    t-class-image="avatar"
-    t-class-description="content {{ utils.isRead(item.messages) ? '' : 'unread' }}"
-    image="{{ item.avatar }}"
-    title="{{ item.name }}"
-    description="{{ item.messages[item.messages.length - 1].content }}"
-    hover
-    bind:tap="toChat"
-    data-user-id="{{ item.userId }}"
-  >
-    <t-badge slot="right-icon" count="{{ utils.computeUnreadNum(item.messages) }}" class="wrapper" />
-  </t-cell>
-</scroll-view>
+  <view class="hg-message__segmented">
+    <view
+      wx:for="{{ tabs }}"
+      wx:key="value"
+      class="hg-message__seg {{ tab === item.value ? 'hg-message__seg--on' : '' }}"
+      data-value="{{ item.value }}"
+      bindtap="onTabTap"
+      aria-role="button"
+    >
+      {{ item.label }}
+    </view>
+  </view>
+
+  <view class="hg-message__list" wx:if="{{ list.length > 0 }}">
+    <view
+      wx:for="{{ list }}"
+      wx:key="id"
+      class="hg-message__row"
+      data-id="{{ item.id }}"
+      bindtap="onItemTap"
+      aria-role="button"
+    >
+      <view class="hg-message__icon">
+        <t-icon name="{{ item.icon }}" size="34rpx" />
+      </view>
+      <view class="hg-message__main">
+        <view class="hg-message__title">{{ item.title }}</view>
+        <view wx:if="{{ item.summary }}" class="hg-message__summary">{{ item.summary }}</view>
+        <view class="hg-message__time">{{ item.createdAtText }}</view>
+      </view>
+      <view wx:if="{{ !item.read }}" class="hg-message__dot"></view>
+    </view>
+  </view>
+
+  <empty-state
+    wx:elif="{{ errorText }}"
+    icon="error-circle"
+    title="没能读到消息"
+    desc="{{ errorText }}"
+    action="再试一次"
+    bind:action="onRetry"
+  />
+
+  <empty-state
+    wx:elif="{{ !loading }}"
+    icon="notification"
+    title="现在没有新消息"
+    desc="有人回应你的内容时，\n会在这里提醒你。"
+  />
+
+  <view class="hg-footnote">
+    首版没有私信会话。通知文案保持中性，不包含私密正文与树洞身份的真实映射。
+  </view>
+</view>

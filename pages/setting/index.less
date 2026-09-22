@@ -1,3 +1,57 @@
-.cell-group-class {
-  margin: 32rpx !important;
+@import '/styles/tokens.less';
+@import '/styles/mixins.less';
+
+.hg-setting {
+  &__group {
+    margin-top: @hg-sp-4;
+    padding: 0 @hg-page-x;
+  }
+
+  &__group-title {
+    margin-bottom: @hg-sp-2;
+    font-size: @hg-fs-xs;
+    letter-spacing: 2rpx;
+    color: @hg-ink-4;
+  }
+
+  &__menu {
+    .hg-card();
+
+    padding: 0 @hg-sp-3;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: @hg-sp-3;
+    min-height: 116rpx;
+    padding: @hg-sp-2 0;
+    border-bottom: 1rpx solid @hg-line;
+    color: @hg-ink-4;
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  &__row-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__row-title {
+    font-size: @hg-fs-body;
+    color: @hg-ink;
+  }
+
+  &__row-sub {
+    margin-top: 4rpx;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+    color: @hg-ink-4;
+  }
+
+  &__danger {
+    color: @hg-danger;
+  }
 }

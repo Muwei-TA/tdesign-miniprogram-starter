@@ -1,0 +1,35 @@
+<t-popup visible="{{ visible }}" placement="bottom" bind:visible-change="onClose">
+  <view class="hg-sheet">
+    <view class="hg-sheet__head">
+      <view class="hg-sheet__title">{{ mode === 'shrink' ? '缩小可见范围' : '谁可以看见' }}</view>
+      <view class="hg-sheet__close" bindtap="onClose" aria-role="button" aria-label="关闭">
+        <t-icon name="close" size="40rpx" />
+      </view>
+    </view>
+
+    <view
+      wx:for="{{ options }}"
+      wx:key="value"
+      class="hg-sheet__option"
+      data-value="{{ item.value }}"
+      bindtap="onSelect"
+      aria-role="button"
+      aria-label="{{ item.title }}"
+    >
+      <t-icon name="{{ item.icon }}" size="40rpx" />
+      <view class="hg-sheet__option-main">
+        <view class="hg-sheet__option-title">{{ item.title }}</view>
+        <view class="hg-sheet__option-desc">{{ item.desc }}</view>
+      </view>
+      <t-icon wx:if="{{ value === item.value }}" class="hg-sheet__check" name="check" size="38rpx" />
+    </view>
+
+    <!-- 公开能力未开放时必须说明原因，而不是静默隐藏选项 -->
+    <view wx:if="{{ !allowPublic }}" class="hg-sheet__notice">
+      公开发布尚未开放。主体资质与内容治理能力核验完成后才会启用。
+    </view>
+    <view wx:if="{{ mode === 'shrink' }}" class="hg-sheet__notice">
+      首版只能缩小范围。需要更大受众时请新建一条内容，并重新确认身份与授权。
+    </view>
+  </view>
+</t-popup>

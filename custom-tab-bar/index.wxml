@@ -1,5 +1,18 @@
-<t-tab-bar value="{{ value }}" theme="tag" split="{{ false }}" bind:change="handleChange">
-  <t-tab-bar-item icon="home" value="home">首页</t-tab-bar-item>
-  <t-tab-bar-item icon="chat" value="message" badge-props="{{ { count: unreadNum } }}">消息</t-tab-bar-item>
-  <t-tab-bar-item icon="user" value="my">我的</t-tab-bar-item>
-</t-tab-bar>
+<view class="hg-tabbar">
+  <view
+    class="hg-tabbar__item {{ value === item.value ? 'hg-tabbar__item--on' : '' }}"
+    wx:for="{{ list }}"
+    wx:key="value"
+    data-value="{{ item.value }}"
+    bindtap="handleChange"
+    aria-role="button"
+    aria-label="{{ item.label }}"
+  >
+    <t-icon
+      class="hg-tabbar__icon"
+      name="{{ value === item.value ? item.iconActive : item.icon }}"
+      size="44rpx"
+    />
+    <text class="hg-tabbar__label">{{ item.label }}</text>
+  </view>
+</view>

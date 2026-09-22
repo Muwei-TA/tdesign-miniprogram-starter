@@ -1,23 +1,27 @@
+// 兼容层：保留模板原有变量名，值统一指向 styles/tokens.less
+// 新代码请直接 @import '/styles/tokens.less'，不要新增此文件中的变量。
+@import './styles/tokens.less';
+
 // common
 @navbar-padding-top: 20px;
 @nav-bar-height: 60px;
-@tab-bar-height: 112rpx;
+@tab-bar-height: @hg-tab-bar-height;
 
 // font-size
-@font-size-default: 16px;
-@font-size-small: 14px;
-@font-size-mini: 12px;
+@font-size-default: @hg-fs-body;
+@font-size-small: @hg-fs-sm;
+@font-size-mini: @hg-fs-xs;
 
 // color
-@bg-color: #f3f3f3;
-@bg-color-white: #ffffff;
+@bg-color: @hg-paper;
+@bg-color-white: @hg-surface;
 
-@brand7-normal: #0052d9;
-@gy1: #000000e6;
-@gy2: #00000099;
-@gy3: #00000066;
-@gray3: #e7e7e7;
+@brand7-normal: @hg-green;
+@gy1: @hg-ink;
+@gy2: @hg-ink-3;
+@gy3: @hg-ink-4;
+@gray3: @hg-line;
 
-@headline-medium: 28px;
-@body-large: 16px;
-@body-small: 12px;
+@headline-medium: @hg-fs-display;
+@body-large: @hg-fs-body;
+@body-small: @hg-fs-sm;

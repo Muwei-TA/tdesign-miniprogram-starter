@@ -1,66 +1,328 @@
-// pages/release/index.js
+import { submitPost } from '~/services/posts';
+import { saveDraft, getDraft, removeDraft } from '~/services/drafts';
+import { getCapabilities, isMember } from '~/services/session';
+import { LIMITS, validateImages } from '~/services/uploads';
+import { navigateTo } from '~/utils/navigate';
+
+const app = getApp();
+
+const MAX_FRAGMENT = 2000;
+const MAX_ARTICLE = 20000;
+const MAX_TITLE = 60;
 
 Page({
-  /**
-   * 页面的初始数据
-   */
   data: {
-    originFiles: [
-      {
-        url: '/static/image1.png',
-        name: 'uploaded1.png',
-        type: 'image',
+    mode: 'fragment', // fragment | article
+    title: '',
+    body: '',
+    images: [],
+    video: null,
+
+    visibility: 'club', // 新建内容默认社内
+    identityMode: 'named',
+    commentsEnabled: true,
+    topic: null,
+    collectionId: '',
+    consentGranted: false,
+
+    scopeVisible: false,
+    previewVisible: false,
+    submitting: false,
+
+    capabilities: { publicScope: false, video: false },
+    draftId: '',
+    idempotencyKey: '',
+    bodyLimit: MAX_FRAGMENT,
+    titleLimit: MAX_TITLE,
+    previewText: '',
+    imageLimit: LIMITS.imageCount,
+  },
+
+  onLoad(options) {
+    if (!isMember()) {
+      wx.showModal({
+        title: '需要成员资格',
+        content: '写一笔需要先加入文学社。',
+        confirmText: '去了解',
+        success: (res) => {
+          wx.navigateBack();
+          if (res.confirm) navigateTo('/pages/community/join/index?from=release');
+        },
+      });
+      return;
+    }
+
+    const patch = { capabilities: getCapabilities() };
+    if (options.mode === 'article') patch.mode = 'article';
+    if (options.topicId) patch.topic = { id: options.topicId, title: options.topicTitle || '已选择的话题' };
+    if (options.collectionId) patch.collectionId = options.collectionId;
+
+    if (options.draftId) {
+      const draft = getDraft(options.draftId);
+      if (draft) {
+        Object.assign(patch, {
+          draftId: draft.id,
+          idempotencyKey: draft.idempotencyKey,
+          mode: draft.kind === 'article' ? 'article' : 'fragment',
+          title: draft.title || '',
+          body: draft.body || '',
+          images: draft.images || [],
+          visibility: draft.visibility || 'club',
+          identityMode: draft.identityMode || 'named',
+          commentsEnabled: draft.commentsEnabled !== false,
+          topic: draft.topic || null,
+        });
+        // 本地视频不跨会话保存，恢复时提示重新选择
+        if (draft.video) {
+          wx.showToast({ title: '草稿里的视频需要重新选择', icon: 'none', duration: 2600 });
+        }
+      }
+    }
+
+    this.setData(patch, () => this.refreshLimits());
+  },
+
+  onHide() {
+    // 切后台时静默存草稿，避免误触丢失内容
+    this.persistDraft({ silent: true });
+  },
+
+  onUnload() {
+    this.persistDraft({ silent: true });
+  },
+
+  refreshLimits() {
+    const isArticle = this.data.mode === 'article';
+    this.setData({ bodyLimit: isArticle ? MAX_ARTICLE : MAX_FRAGMENT }, () => this.refreshPreviewText());
+  },
+
+  refreshPreviewText() {
+    const { identityMode, visibility } = this.data;
+    const identityText = identityMode === 'anonymous' ? '树洞身份' : '你的昵称';
+    const scopeText = {
+      public: '公开可见：任何打开本小程序的人都可能看到',
+      club: '仅社内可见：只有当前有效成员能看到',
+      private: '只有自己可见：不进入社区流、话题、搜索与互动',
+    }[visibility];
+    const tail = visibility === 'private' ? '保存后只留给自己。' : '提交后会先进入审核。';
+    this.setData({ previewText: `你将以「${identityText}」发布，${scopeText}。${tail}` });
+  },
+
+  onModeTap(e) {
+    const { value } = e.currentTarget.dataset;
+    if (value === this.data.mode) return;
+    // 长文改碎片时超限先提示，不截断内容
+    if (value === 'fragment' && this.data.body.length > MAX_FRAGMENT) {
+      wx.showModal({
+        title: '内容较长',
+        content: `碎片最多 ${MAX_FRAGMENT} 字。当前内容会保留，但需要精简后才能以碎片提交。`,
+        showCancel: false,
+      });
+    }
+    this.setData({ mode: value }, () => this.refreshLimits());
+  },
+
+  onTitleInput(e) {
+    this.setData({ title: e.detail.value });
+  },
+
+  onBodyInput(e) {
+    this.setData({ body: e.detail.value });
+    this.scheduleAutoSave();
+  },
+
+  /** 输入停止 1.5s 自动存草稿 */
+  scheduleAutoSave() {
+    if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
+    this.autoSaveTimer = setTimeout(() => this.persistDraft({ silent: true }), 1500);
+  },
+
+  onChooseImage() {
+    if (this.data.video) {
+      wx.showToast({ title: '图片与视频只能选一种', icon: 'none' });
+      return;
+    }
+    wx.chooseMedia({
+      count: LIMITS.imageCount - this.data.images.length,
+      mediaType: ['image'],
+      success: (res) => {
+        const check = validateImages(res.tempFiles, this.data.images.length);
+        if (!check.ok) {
+          wx.showToast({ title: check.message, icon: 'none' });
+          return;
+        }
+        const images = this.data.images.concat(res.tempFiles.map((file) => file.tempFilePath));
+        this.setData({ images }, () => this.persistDraft({ silent: true }));
       },
-      {
-        url: '/static/image2.png',
-        name: 'uploaded2.png',
-        type: 'image',
-      },
-    ],
-    gridConfig: {
-      column: 4,
-      width: 160,
-      height: 160,
-    },
-    config: {
-      count: 1,
-    },
-    tags: ['AI绘画', '版权素材', '原创', '风格灵动'],
-  },
-  handleSuccess(e) {
-    const { files } = e.detail;
-    this.setData({
-      originFiles: files,
     });
   },
-  handleRemove(e) {
-    const { index } = e.detail;
-    const { originFiles } = this.data;
-    originFiles.splice(index, 1);
-    this.setData({
-      originFiles,
+
+  onChooseVideo() {
+    if (!this.data.capabilities.video) {
+      wx.showModal({
+        title: '视频暂未开放',
+        content: '视频的上传、转码与内容审核链路尚未验收完成，暂时不能发布视频。',
+        showCancel: false,
+      });
+      return;
+    }
+    wx.showToast({ title: '视频上传链路待接入（T-15）', icon: 'none' });
+  },
+
+  onRemoveImage(e) {
+    const { index } = e.currentTarget.dataset;
+    const images = this.data.images.slice();
+    images.splice(index, 1);
+    this.setData({ images });
+  },
+
+  onPreviewImage(e) {
+    const { index } = e.currentTarget.dataset;
+    wx.previewImage({ current: this.data.images[index], urls: this.data.images });
+  },
+
+  onScopeOpen() {
+    this.setData({ scopeVisible: true });
+  },
+
+  onScopeClose() {
+    this.setData({ scopeVisible: false });
+  },
+
+  onScopeChange(e) {
+    const { value } = e.detail;
+    const patch = { visibility: value, scopeVisible: false };
+    // 仅自己会取消公共话题关联与社区互动
+    if (value === 'private') {
+      patch.topic = null;
+      patch.commentsEnabled = false;
+    }
+    this.setData(patch, () => this.refreshPreviewText());
+  },
+
+  onIdentityChange(e) {
+    this.setData({ identityMode: e.detail.value ? 'anonymous' : 'named' }, () => this.refreshPreviewText());
+  },
+
+  onCommentsChange(e) {
+    this.setData({ commentsEnabled: e.detail.value });
+  },
+
+  onIdentityExplain() {
+    wx.showModal({
+      title: '以树洞身份发布',
+      content: '其他人看不到你的昵称与头像。这不是绝对匿名——具体经历、地名、班级、画面与文风仍可能让人猜到你。发布前可以再检查一遍。',
+      showCancel: false,
+      confirmText: '我知道了',
     });
   },
-  gotoMap() {
-    wx.showToast({
-      title: '获取当前位置...',
-      icon: 'none',
-      image: '',
-      duration: 1500,
-      mask: false,
-      success: () => {},
-      fail: () => {},
-      complete: () => {},
-    });
+
+  onClearTopic() {
+    this.setData({ topic: null });
   },
-  saveDraft() {
-    wx.reLaunch({
-      url: `/pages/home/index?oper=save`,
-    });
+
+  onConsentChange(e) {
+    this.setData({ consentGranted: e.detail.value });
   },
-  release() {
-    wx.reLaunch({
-      url: `/pages/home/index?oper=release`,
+
+  /** 校验，返回错误文案或空字符串 */
+  validate() {
+    const { mode, title, body, images, collectionId, consentGranted } = this.data;
+    if (!body.trim() && images.length === 0 && !this.data.video) return '写一点内容，或者选一张图片';
+    if (mode === 'article' && !title.trim()) return '文章需要一个标题';
+    if (mode === 'article' && title.length > MAX_TITLE) return `标题请控制在 ${MAX_TITLE} 字内`;
+    if (mode === 'article' && body.length > MAX_ARTICLE) return `文章正文最多 ${MAX_ARTICLE} 字`;
+    if (mode === 'fragment' && body.length > MAX_FRAGMENT) return `碎片最多 ${MAX_FRAGMENT} 字，可以切换到文章`;
+    if (collectionId && !consentGranted) return '向文集投稿需要先勾选授权';
+    return '';
+  },
+
+  onPreviewOpen() {
+    const error = this.validate();
+    if (error) {
+      wx.showToast({ title: error, icon: 'none' });
+      return;
+    }
+    this.setData({ previewVisible: true });
+  },
+
+  onPreviewClose() {
+    this.setData({ previewVisible: false });
+  },
+
+  persistDraft({ silent = false } = {}) {
+    const { draftId, mode, title, body, images, visibility, identityMode, commentsEnabled, topic, idempotencyKey } =
+      this.data;
+    if (!body.trim() && !title.trim() && images.length === 0) return null;
+
+    const draft = saveDraft({
+      id: draftId,
+      idempotencyKey,
+      kind: mode,
+      title,
+      body,
+      images,
+      visibility,
+      identityMode,
+      commentsEnabled,
+      topic,
     });
+    this.setData({ draftId: draft.id, idempotencyKey: draft.idempotencyKey });
+    app.eventBus.emit('draft-changed', { draftId: draft.id });
+    if (!silent) wx.showToast({ title: '已存草稿', icon: 'none' });
+    return draft;
+  },
+
+  onSaveDraft() {
+    const draft = this.persistDraft();
+    if (!draft) {
+      wx.showToast({ title: '还没有可保存的内容', icon: 'none' });
+      return;
+    }
+    setTimeout(() => wx.navigateBack(), 600);
+  },
+
+  async onSubmit() {
+    const error = this.validate();
+    if (error) {
+      wx.showToast({ title: error, icon: 'none' });
+      return;
+    }
+    if (this.data.submitting) return;
+
+    // 幂等键随草稿持久化：超时重试时复用同一键，服务端保证只产生一条内容
+    const draft = this.persistDraft({ silent: true });
+    const idempotencyKey = (draft && draft.idempotencyKey) || this.data.idempotencyKey;
+
+    this.setData({ submitting: true, previewVisible: false });
+    try {
+      const payload = {
+        kind: this.data.mode,
+        title: this.data.title.trim(),
+        body: this.data.body,
+        assetIds: [],
+        visibility: this.data.visibility,
+        identityMode: this.data.identityMode,
+        topicId: this.data.topic ? this.data.topic.id : '',
+        commentsEnabled: this.data.commentsEnabled,
+        collectionId: this.data.collectionId,
+        consentGranted: this.data.consentGranted,
+      };
+      const result = await submitPost(payload, idempotencyKey);
+
+      if (this.data.draftId) removeDraft(this.data.draftId);
+      app.eventBus.emit('post-created', { id: result.id, state: result.state });
+
+      const query = `state=${result.state}&scope=${this.data.visibility}&identity=${this.data.identityMode}&id=${result.id}`;
+      // redirectTo：返回栈不残留编辑器
+      wx.redirectTo({ url: `/pages/community/result/index?${query}` });
+    } catch (err) {
+      this.setData({ submitting: false });
+      wx.showModal({
+        title: '提交未完成',
+        content: `${err.message || '请稍后重试'}。内容已保存为草稿，可以稍后重试提交。`,
+        showCancel: false,
+      });
+    }
   },
 });

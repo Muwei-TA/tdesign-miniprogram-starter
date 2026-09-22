@@ -1,0 +1,26 @@
+<view class="hg-page hg-result">
+  <hg-nav title="" show-back="{{ false }}" />
+
+  <view class="hg-result__mark">
+    <t-icon name="{{ state === 'pending' ? 'time' : 'check' }}" size="62rpx" />
+  </view>
+
+  <view class="hg-result__title">{{ title }}</view>
+  <view class="hg-result__desc">{{ desc }}</view>
+
+  <view class="hg-result__summary">
+    <visibility-badge scope="{{ scope }}" size="md" />
+    <text class="hg-result__summary-text">{{ summary }}</text>
+  </view>
+
+  <view class="hg-result__btns">
+    <view class="hg-result__primary" bindtap="onPrimary" aria-role="button">{{ primary }}</view>
+    <view class="hg-result__secondary" bindtap="onBackHome" aria-role="button">回树洞</view>
+  </view>
+
+  <view class="hg-result__again" bindtap="onWriteAgain" aria-role="button">继续写一笔</view>
+
+  <view class="hg-footnote">
+    继续写一笔会新建一条默认「仅社内可见」的内容，不会沿用上一条的身份与范围。
+  </view>
+</view>

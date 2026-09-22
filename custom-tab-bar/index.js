@@ -1,57 +1,63 @@
-const app = getApp();
+// 四主入口：树洞 / 话题 / 文集 / 我的
+// 消息不占 Tab，从树洞首页顶部进入（见 docs/03-routing-and-navigation.md）
+const TAB_LIST = [
+  { value: 'home', label: '树洞', icon: 'home', iconActive: 'home-filled', path: '/pages/home/index' },
+  {
+    value: 'topics',
+    label: '话题',
+    icon: 'chat-bubble-1',
+    iconActive: 'chat-bubble-1-filled',
+    path: '/pages/topics/index',
+  },
+  {
+    value: 'anthology',
+    label: '文集',
+    icon: 'book-open',
+    iconActive: 'book-open-filled',
+    path: '/pages/anthology/index',
+  },
+  { value: 'my', label: '我的', icon: 'user', iconActive: 'user-filled', path: '/pages/my/index' },
+];
 
 Component({
-  data: {
-    value: '', // 初始值设置为空，避免第一次加载时闪烁
-    unreadNum: 0, // 未读消息数量
-    list: [
-      {
-        icon: 'home',
-        value: 'index',
-        label: '首页',
-      },
-      {
-        icon: 'chat',
-        value: 'notice',
-        label: '消息',
-      },
-      {
-        icon: 'user',
-        value: 'my',
-        label: '我的',
-      },
-    ],
+  options: {
+    styleIsolation: 'shared',
   },
+
+  data: {
+    value: '',
+    list: TAB_LIST,
+  },
+
   lifetimes: {
     ready() {
-      const pages = getCurrentPages();
-      const curPage = pages[pages.length - 1];
-      if (curPage) {
-        const nameRe = /pages\/(\w+)\/index/.exec(curPage.route);
-        if (nameRe === null) return;
-        if (nameRe[1] && nameRe) {
-          this.setData({
-            value: nameRe[1],
-          });
-        }
-      }
-
-      // 同步全局未读消息数量
-      this.setUnreadNum(app.globalData.unreadNum);
-      app.eventBus.on('unread-num-change', (unreadNum) => {
-        this.setUnreadNum(unreadNum);
-      });
+      this.syncActive();
     },
   },
+
+  pageLifetimes: {
+    show() {
+      this.syncActive();
+    },
+  },
+
   methods: {
-    handleChange(e) {
-      const { value } = e.detail;
-      wx.switchTab({ url: `/pages/${value}/index` });
+    /** 依据当前页面路径同步选中态，避免首次加载闪烁 */
+    syncActive() {
+      const pages = getCurrentPages();
+      const current = pages[pages.length - 1];
+      if (!current) return;
+      const matched = TAB_LIST.find((item) => item.path === `/${current.route}`);
+      if (matched && matched.value !== this.data.value) {
+        this.setData({ value: matched.value });
+      }
     },
 
-    /** 设置未读消息数量 */
-    setUnreadNum(unreadNum) {
-      this.setData({ unreadNum });
+    handleChange(e) {
+      const { value } = e.currentTarget.dataset;
+      const target = TAB_LIST.find((item) => item.value === value);
+      if (!target || value === this.data.value) return;
+      wx.switchTab({ url: target.path });
     },
   },
 });

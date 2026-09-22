@@ -1,37 +1,27 @@
 {
-  "pages": ["pages/home/index", "pages/message/index", "pages/my/index"],
+  "pages": ["pages/home/index", "pages/topics/index", "pages/anthology/index", "pages/my/index"],
   "usingComponents": {
     "t-toast": "tdesign-miniprogram/toast/toast"
   },
   "subpackages": [
+    {
+      "root": "pages/community",
+      "name": "community",
+      "pages": ["post/index", "result/index"]
+    },
+    {
+      "root": "pages/message",
+      "name": "message",
+      "pages": ["index"]
+    },
     {
       "root": "pages/search",
       "name": "search",
       "pages": ["index"]
     },
     {
-      "root": "pages/my/info-edit",
-      "name": "edit",
-      "pages": ["index"]
-    },
-    {
-      "root": "pages/chat",
-      "name": "chat",
-      "pages": ["index"]
-    },
-    {
-      "root": "pages/login",
-      "name": "login",
-      "pages": ["login"]
-    },
-    {
-      "root": "pages/loginCode",
-      "name": "loginCode",
-      "pages": ["loginCode"]
-    },
-    {
-      "root": "pages/dataCenter",
-      "name": "dataCenter",
+      "root": "pages/release",
+      "name": "release",
       "pages": ["index"]
     },
     {
@@ -40,27 +30,35 @@
       "pages": ["index"]
     },
     {
-      "root": "pages/release",
-      "name": "release",
+      "root": "pages/my/info-edit",
+      "name": "edit",
       "pages": ["index"]
     }
   ],
   "window": {
-    "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#fff",
-    "navigationBarTitleText": "Weixin",
+    "backgroundTextStyle": "dark",
+    "backgroundColor": "#F8F6F0",
+    "navigationBarBackgroundColor": "#F8F6F0",
+    "navigationBarTitleText": "黑光文学社 · 树洞",
     "navigationBarTextStyle": "black"
   },
   "tabBar": {
     "custom": true,
+    "color": "#969D92",
+    "selectedColor": "#315948",
+    "backgroundColor": "#FFFEFA",
     "list": [
       {
         "pagePath": "pages/home/index",
-        "text": "首页"
+        "text": "树洞"
       },
       {
-        "pagePath": "pages/message/index",
-        "text": "消息"
+        "pagePath": "pages/topics/index",
+        "text": "话题"
+      },
+      {
+        "pagePath": "pages/anthology/index",
+        "text": "文集"
       },
       {
         "pagePath": "pages/my/index",

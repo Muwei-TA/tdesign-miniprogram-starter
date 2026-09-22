@@ -1,26 +1,166 @@
-<t-navbar title="发布动态" left-arrow />
-<view class="page">
-  <view class="release-container">
-    <view class="upload box">
-      <t-upload t-class="upload-class" media-type="{{['image']}}" files="{{originFiles}}" gridConfig="{{gridConfig}}" bind:success="handleSuccess" bind:remove="handleRemove" max="4" />
+<view class="hg-page hg-compose">
+  <hg-nav title="写一笔">
+    <view slot="right" class="hg-compose__preview-btn" bindtap="onPreviewOpen" aria-role="button">预览</view>
+  </hg-nav>
+
+  <!-- 碎片 / 文章 -->
+  <view class="hg-compose__segmented">
+    <view
+      class="hg-compose__seg {{ mode === 'fragment' ? 'hg-compose__seg--on' : '' }}"
+      data-value="fragment"
+      bindtap="onModeTap"
+      aria-role="button"
+    >
+      碎片
     </view>
-    <view class="desc box">
-      <view class="desc-label">添加描述</view>
-      <t-textarea t-class="desc-class" t-class-textarea="placeholder-class" placeholder="分享你此刻的想法" maxlength="500" disableDefaultPadding="{{true}}" indicator />
-    </view>
-    <view class="taggroup box">
-      <t-cell t-class-title="cell-title-class" t-class-note="cell-note-class" title="添加标签">
-        <block wx:for="{{tags}}" wx:key="index">
-          <t-check-tag t-class="tag-class" size="medium" default-checked="{{index===0}}" variant="dark" content="#{{item}}" slot="note" />
-        </block>
-      </t-cell>
-    </view>
-    <view class="location box">
-      <t-cell title="所在位置" hover arrow leftIcon="location" bindtap="gotoMap" />
-    </view>
-    <view class="btngroup box">
-      <t-button t-class="btn-class" theme="light" icon="file-copy" content="存草稿" size="large" bindtap="saveDraft"></t-button>
-      <t-button t-class="btn-class" theme="primary" icon="upload" content="发布" size="large" bindtap="release"></t-button>
+    <view
+      class="hg-compose__seg {{ mode === 'article' ? 'hg-compose__seg--on' : '' }}"
+      data-value="article"
+      bindtap="onModeTap"
+      aria-role="button"
+    >
+      文章
     </view>
   </view>
+
+  <view class="hg-compose__editor">
+    <input
+      wx:if="{{ mode === 'article' }}"
+      class="hg-compose__title"
+      value="{{ title }}"
+      maxlength="{{ titleLimit }}"
+      placeholder="给这篇文章一个标题"
+      bindinput="onTitleInput"
+    />
+
+    <textarea
+      class="hg-compose__body {{ mode === 'article' ? 'hg-compose__body--article' : '' }}"
+      value="{{ body }}"
+      maxlength="{{ bodyLimit }}"
+      placeholder="{{ mode === 'article' ? '从任意一句开始写。空行会被保留。' : '一句话也可以。今天你想留下什么？' }}"
+      bindinput="onBodyInput"
+      adjust-position
+      show-confirm-bar="{{ false }}"
+    />
+
+    <view class="hg-compose__counter">{{ body.length }} / {{ bodyLimit }}</view>
+
+    <!-- 附件 -->
+    <view class="hg-compose__attach">
+      <view class="hg-compose__attach-btn" bindtap="onChooseImage" aria-role="button">
+        <t-icon name="image" size="34rpx" />
+        <text>图片</text>
+      </view>
+      <view class="hg-compose__attach-btn {{ capabilities.video ? '' : 'hg-compose__attach-btn--off' }}" bindtap="onChooseVideo" aria-role="button">
+        <t-icon name="video" size="34rpx" />
+        <text>{{ capabilities.video ? '视频' : '视频（暂未开放）' }}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{ images.length > 0 }}" class="hg-compose__thumbs">
+      <view wx:for="{{ images }}" wx:key="*this" class="hg-compose__thumb">
+        <image class="hg-compose__thumb-img" src="{{ item }}" mode="aspectFill" data-index="{{ index }}" bindtap="onPreviewImage" />
+        <view class="hg-compose__thumb-remove" data-index="{{ index }}" catchtap="onRemoveImage" aria-role="button" aria-label="移除图片">
+          <t-icon name="close" size="24rpx" />
+        </view>
+      </view>
+      <view class="hg-compose__thumb-note">最多 {{ imageLimit }} 张，单张不超过 10MB</view>
+    </view>
+  </view>
+
+  <!-- 范围与身份 -->
+  <view class="hg-compose__form">
+    <view class="hg-compose__row" bindtap="onScopeOpen" aria-role="button">
+      <t-icon name="usergroup" size="36rpx" />
+      <view class="hg-compose__row-main">
+        <view class="hg-compose__row-title">谁可以看见</view>
+        <view class="hg-compose__row-sub">新内容默认只在社内可见</view>
+      </view>
+      <visibility-badge scope="{{ visibility }}" />
+      <t-icon class="hg-compose__row-arrow" name="chevron-right" size="32rpx" />
+    </view>
+
+    <view class="hg-compose__row">
+      <t-icon name="user-circle" size="36rpx" />
+      <view class="hg-compose__row-main">
+        <view class="hg-compose__row-title">以树洞身份发布</view>
+        <view class="hg-compose__row-sub" bindtap="onIdentityExplain">
+          隐藏昵称与头像，但不是绝对匿名 · 查看说明
+        </view>
+      </view>
+      <t-switch value="{{ identityMode === 'anonymous' }}" bind:change="onIdentityChange" />
+    </view>
+
+    <view wx:if="{{ visibility !== 'private' }}" class="hg-compose__row">
+      <t-icon name="chat-bubble-1" size="36rpx" />
+      <view class="hg-compose__row-main">
+        <view class="hg-compose__row-title">允许回应</view>
+        <view class="hg-compose__row-sub">关闭后这条内容不接受新的评论</view>
+      </view>
+      <t-switch value="{{ commentsEnabled }}" bind:change="onCommentsChange" />
+    </view>
+
+    <view wx:if="{{ topic }}" class="hg-compose__row">
+      <t-icon name="bulletpoint" size="36rpx" />
+      <view class="hg-compose__row-main">
+        <view class="hg-compose__row-title">关联话题</view>
+        <view class="hg-compose__row-sub">{{ topic.title }}</view>
+      </view>
+      <view class="hg-compose__row-clear" catchtap="onClearTopic" aria-role="button">移除</view>
+    </view>
+  </view>
+
+  <!-- 文集投稿授权 -->
+  <view wx:if="{{ collectionId }}" class="hg-compose__consent">
+    <t-checkbox value="{{ consentGranted }}" bind:change="onConsentChange">
+      我授权本文集在其范围内展示这篇文章，并且知道可以随时撤回。
+    </t-checkbox>
+    <view class="hg-compose__consent-note">
+      收录由编辑决定。安全审核通过不等于被文集选中；公开文集不接收社内原帖。
+    </view>
+  </view>
+
+  <!-- 预览摘要 -->
+  <view class="hg-compose__summary">{{ previewText }}</view>
+
+  <view class="hg-compose__footer">
+    <view class="hg-compose__btn-secondary" bindtap="onSaveDraft" aria-role="button">存草稿</view>
+    <view class="hg-compose__btn-primary {{ submitting ? 'hg-compose__btn-primary--disabled' : '' }}" bindtap="onPreviewOpen" aria-role="button">
+      {{ submitting ? '提交中…' : (visibility === 'private' ? '保存' : '提交') }}
+    </view>
+  </view>
+
+  <scope-picker
+    visible="{{ scopeVisible }}"
+    value="{{ visibility }}"
+    allow-public="{{ capabilities.publicScope }}"
+    mode="create"
+    bind:change="onScopeChange"
+    bind:close="onScopeClose"
+  />
+
+  <!-- 发布前确认：再次展示身份与受众 -->
+  <t-popup visible="{{ previewVisible }}" placement="bottom" bind:visible-change="onPreviewClose">
+    <view class="hg-sheet">
+      <view class="hg-sheet__head">
+        <view class="hg-sheet__title">发布前确认</view>
+        <view class="hg-sheet__close" bindtap="onPreviewClose" aria-role="button" aria-label="关闭">
+          <t-icon name="close" size="40rpx" />
+        </view>
+      </view>
+
+      <view wx:if="{{ title }}" class="hg-compose__pv-title">{{ title }}</view>
+      <view class="hg-sheet__text">{{ body }}</view>
+      <view wx:if="{{ images.length > 0 }}" class="hg-compose__pv-media">附带 {{ images.length }} 张图片</view>
+
+      <view class="hg-sheet__notice">{{ previewText }}</view>
+      <view wx:if="{{ identityMode === 'anonymous' }}" class="hg-sheet__notice">
+        以树洞身份发布前，建议再检查一遍正文与画面里的地名、班级、联系方式等信息。
+      </view>
+
+      <view class="hg-sheet__submit" bindtap="onSubmit" aria-role="button">
+        {{ visibility === 'private' ? '保存给自己' : '确认提交' }}
+      </view>
+    </view>
+  </t-popup>
 </view>

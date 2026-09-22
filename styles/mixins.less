@@ -1,0 +1,94 @@
+@import './tokens.less';
+
+// 单行省略
+.hg-ellipsis() {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+// 多行省略
+.hg-ellipsis-multi(@lines: 2) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: @lines;
+  overflow: hidden;
+}
+
+// 纸感卡片
+.hg-card() {
+  background: @hg-surface;
+  border: 1rpx solid @hg-line;
+  border-radius: @hg-radius-lg;
+  box-shadow: @hg-shadow-card;
+}
+
+// 主按钮
+.hg-btn-primary() {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: @hg-touch-min;
+  padding: 0 @hg-sp-4;
+  background: @hg-green;
+  color: @hg-surface;
+  border-radius: 18rpx;
+  font-size: @hg-fs-sm;
+}
+
+// 次按钮
+.hg-btn-secondary() {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 84rpx;
+  padding: 0 @hg-sp-4;
+  background: #f8f9f1;
+  border: 1rpx solid @hg-green-line;
+  border-radius: 18rpx;
+  color: @hg-ink-2;
+  font-size: @hg-fs-sm;
+}
+
+// 保留换行的正文（长文 / 诗歌空行）
+.hg-prewrap() {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+// 横向滚动条隐藏
+.hg-scroll-x() {
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// 衬线标题
+.hg-serif(@size: @hg-fs-h2, @weight: 500) {
+  font-family: @hg-font-serif;
+  font-size: @size;
+  font-weight: @weight;
+}
+
+// 底部安全区
+.hg-safe-bottom(@extra: 0rpx) {
+  padding-bottom: calc(@extra + env(safe-area-inset-bottom));
+}
+
+// 赭色提示条（边界说明 / 隐私提示）
+.hg-notice() {
+  display: flex;
+  align-items: flex-start;
+  gap: @hg-sp-1;
+  padding: @hg-sp-2 @hg-sp-3;
+  margin-top: @hg-sp-3;
+  background: @hg-clay-soft;
+  color: @hg-clay-ink;
+  border-radius: @hg-radius-md;
+  font-size: @hg-fs-2xs;
+  line-height: @hg-lh-base;
+}

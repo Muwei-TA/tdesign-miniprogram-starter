@@ -1,0 +1,4 @@
+<view class="hg-scope hg-scope--{{ scope }} hg-scope--{{ size }}" aria-label="{{ text }}">
+  <t-icon name="{{ icon }}" size="{{ size === 'md' ? '26rpx' : '22rpx' }}" />
+  <text wx:if="{{ withText }}" class="hg-scope__text">{{ text }}</text>
+</view>

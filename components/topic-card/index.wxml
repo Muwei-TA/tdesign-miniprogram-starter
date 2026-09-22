@@ -1,0 +1,24 @@
+<view wx:if="{{ topic }}" class="hg-topic hg-topic--{{ mode }}" bindtap="onTap" aria-role="button" aria-label="{{ topic.title }}">
+  <view class="hg-topic__symbol {{ topic.category === 'event' || topic.category === 'play' ? 'hg-topic__symbol--warm' : '' }}">
+    <t-icon name="{{ topic.icon || 'chat-bubble-1' }}" size="{{ mode === 'banner' ? '48rpx' : '44rpx' }}" />
+  </view>
+
+  <view class="hg-topic__main">
+    <view class="hg-topic__title">{{ topic.title }}</view>
+    <view class="hg-topic__desc">{{ topic.description }}</view>
+    <view class="hg-topic__foot">
+      <text wx:if="{{ topic.statsText }}" class="hg-topic__stats">{{ topic.statsText }}</text>
+      <text wx:if="{{ statusText }}" class="hg-topic__status">{{ statusText }}</text>
+    </view>
+  </view>
+
+  <view
+    wx:if="{{ mode === 'list' && canFollow }}"
+    class="hg-topic__follow {{ topic.followed ? 'hg-topic__follow--on' : '' }}"
+    catchtap="onFollow"
+    aria-role="button"
+    aria-label="{{ topic.followed ? '取消关注' : '关注话题' }}"
+  >
+    {{ topic.followed ? '已关注' : '关注' }}
+  </view>
+</view>

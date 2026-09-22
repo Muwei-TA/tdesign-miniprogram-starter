@@ -1,0 +1,28 @@
+@import '/styles/tokens.less';
+
+.hg-scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 6rpx 14rpx;
+  border-radius: @hg-radius-sm;
+  font-size: @hg-fs-2xs;
+  white-space: nowrap;
+  background: @hg-scope-club-bg;
+  color: @hg-scope-club-fg;
+
+  &--public {
+    background: @hg-scope-public-bg;
+    color: @hg-scope-public-fg;
+  }
+
+  &--private {
+    background: @hg-scope-private-bg;
+    color: @hg-scope-private-fg;
+  }
+
+  &--md {
+    padding: 8rpx 18rpx;
+    font-size: @hg-fs-xs;
+  }
+}

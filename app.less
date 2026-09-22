@@ -1,9 +1,77 @@
-/**app.wxss**/
+@import './styles/tokens.less';
+@import './styles/mixins.less';
+
+// TDesign 主题变量统一覆盖，避免逐页重写
 page {
-  background-color: #f3f3f3;
+  --td-brand-color: @hg-green;
+  --td-brand-color-active: @hg-green-dark;
+  --td-brand-color-light: @hg-green-soft;
+  --td-brand-color-focus: @hg-green-soft;
+  --td-text-color-primary: @hg-ink;
+  --td-text-color-secondary: @hg-ink-3;
+  --td-text-color-placeholder: @hg-ink-4;
+  --td-text-color-disabled: @hg-ink-4;
+  --td-bg-color-page: @hg-paper;
+  --td-bg-color-container: @hg-surface;
+  --td-bg-color-secondarycontainer: @hg-surface-sunk;
+  --td-border-level-1-color: @hg-line;
+  --td-component-stroke: @hg-line;
+  --td-radius-default: @hg-radius-md;
+  --td-warning-color: @hg-clay;
+  --td-error-color: @hg-danger;
+  --td-success-color: @hg-green;
+  --td-font-size-m: @hg-fs-body;
+
+  background-color: @hg-paper;
+  color: @hg-ink;
+  font-family: @hg-font-sans;
+  font-size: @hg-fs-body;
+  line-height: @hg-lh-base;
 }
 
-.page {
-  height: 100vh;
-  background-color: #fff;
+.hg-page {
+  min-height: 100vh;
+  background: @hg-paper;
+  box-sizing: border-box;
+}
+
+// Tab 页内容区需要为自定义 TabBar 留出空间
+.hg-page--tab {
+  padding-bottom: calc(@hg-tab-bar-height + env(safe-area-inset-bottom));
+}
+
+.hg-serif-text {
+  font-family: @hg-font-serif;
+}
+
+.hg-muted {
+  color: @hg-ink-3;
+}
+
+.hg-tiny {
+  font-size: @hg-fs-2xs;
+  color: @hg-ink-4;
+}
+
+// 通用提示条（赭色，用于边界说明 / 隐私提示）
+// 组件与页面内请用 styles/mixins.less 的 .hg-notice() mixin，避免样式隔离问题
+.hg-notice-block {
+  .hg-notice();
+}
+
+// 区块标题
+.hg-section-title {
+  .hg-serif(36rpx);
+
+  margin: @hg-sp-5 0 @hg-sp-3;
+  color: @hg-ink;
+}
+
+// 交付边界脚注
+.hg-footnote {
+  padding: @hg-sp-5 @hg-page-x @hg-sp-4;
+  color: @hg-ink-4;
+  font-size: @hg-fs-2xs;
+  line-height: @hg-lh-base;
+  text-align: center;
 }

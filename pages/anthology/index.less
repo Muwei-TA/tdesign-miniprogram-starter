@@ -1,0 +1,44 @@
+@import '/styles/tokens.less';
+@import '/styles/mixins.less';
+
+.hg-anthology {
+  &__intro {
+    padding: @hg-sp-2 @hg-page-x 0;
+  }
+
+  &__title {
+    .hg-serif(42rpx);
+
+    line-height: 1.55;
+  }
+
+  &__desc {
+    margin-top: @hg-sp-2;
+    font-size: @hg-fs-sm;
+    line-height: @hg-lh-base;
+    color: @hg-ink-3;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 34rpx;
+    padding: @hg-sp-5 @hg-page-x 0;
+  }
+
+  &__cta-wrap {
+    padding: @hg-sp-6 @hg-page-x 0;
+  }
+
+  &__cta {
+    .hg-btn-secondary();
+  }
+
+  &__cta-note {
+    margin-top: @hg-sp-2;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+    color: @hg-ink-4;
+    text-align: center;
+  }
+}

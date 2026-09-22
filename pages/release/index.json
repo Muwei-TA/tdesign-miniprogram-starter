@@ -1,11 +1,13 @@
 {
   "navigationStyle": "custom",
+  "backgroundTextStyle": "dark",
   "usingComponents": {
-    "t-navbar": "tdesign-miniprogram/navbar/navbar",
-    "t-upload": "tdesign-miniprogram/upload/upload",
-    "t-textarea": "tdesign-miniprogram/textarea/textarea",
-    "t-cell": "tdesign-miniprogram/cell/cell",
-    "t-check-tag": "tdesign-miniprogram/check-tag/check-tag",
-    "t-button": "tdesign-miniprogram/button/button"
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-switch": "tdesign-miniprogram/switch/switch",
+    "t-checkbox": "tdesign-miniprogram/checkbox/checkbox",
+    "t-popup": "tdesign-miniprogram/popup/popup",
+    "hg-nav": "/components/hg-nav/index",
+    "scope-picker": "/components/scope-picker/index",
+    "visibility-badge": "/components/visibility-badge/index"
   }
 }

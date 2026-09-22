@@ -1,75 +1,129 @@
-<t-toast id="t-toast" />
+<view class="hg-page hg-page--tab hg-my">
+  <hg-nav
+    title="我的"
+    show-back="{{ false }}"
+    tools="{{ [{ key: 'notice', icon: 'notification', label: '消息' }] }}"
+    bind:tooltap="onMessageTap"
+  />
 
-<view class="my">
-  <image class="nav-bg" src="/static/bg_navbar.png" />
-  <nav title-text="我的" />
-  <view class="my-info">
-    <t-cell-group>
-      <t-cell wx:if="{{isLoad}}" bordered="{{false}}">
-        <t-avatar image="{{personalInfo.image}}" slot="left-icon" size="large" />
-        <view class="my-info__person" slot="description">
-          <view class="name">{{personalInfo.name}}</view>
-          <view class="tags">
-            <t-tag class="tag" variant="light" icon="discount">{{personalInfo.star}}</t-tag>
-            <t-tag class="tag" variant="light" icon="location">{{personalInfo.city}}</t-tag>
-          </view>
+  <!-- 成员态 -->
+  <block wx:if="{{ isMember }}">
+    <view class="hg-my__hero">
+      <view class="hg-my__top">
+        <view class="hg-my__avatar">{{ session.user.displayName ? session.user.displayName[0] : '樨' }}</view>
+        <view class="hg-my__ident">
+          <view class="hg-my__name">{{ session.user.displayName }}</view>
+          <view class="hg-my__since">{{ profile ? profile.memberSince : '社内成员' }}</view>
         </view>
-        <t-icon slot="right-icon" name="edit" size="40rpx" color="#000000e6" bindtap="onNavigateTo" />
-      </t-cell>
-      <t-cell
-        wx:if="{{!isLoad}}"
-        title="请先登录/注册"
-        bordered="{{false}}"
-        t-class-title="cell-class-title"
-        t-class-center="cell-class-center"
-        bindtap="onLogin"
-      >
-        <t-avatar slot="left-icon" icon="user" size="128rpx" />
-      </t-cell>
-    </t-cell-group>
-    <t-divider t-class="divider-class" />
-    <t-grid t-class="grid-class">
-      <t-grid-item
-        wx:for="{{gridList}}"
-        wx:for-item="gridItem"
-        wx:key="type"
-        text="{{gridItem.name}}"
-        icon="{{gridItem.icon}}"
-        class="grid-item {{gridItem.type === 'all' ? 'split-line' : ''}}"
-        data-data="{{gridItem}}"
-        bindclick="onEleClick"
-      />
-    </t-grid>
-  </view>
+        <view class="hg-my__edit" bindtap="onEditTap" aria-role="button" aria-label="编辑昵称">
+          <t-icon name="edit-1" size="38rpx" />
+        </view>
+      </view>
 
-  <view class="my-service">
-    <view class="my-service--tips">推荐服务</view>
-    <t-grid column="{{4}}" class="my-service__list">
-      <t-grid-item
-        class="my-service__list-item"
-        wx:for="{{service}}"
-        wx:key="item"
-        text="{{item.name}}"
-        image="{{item.image}}"
-        url="{{item.url}}"
-        data-data="{{item}}"
-        bindclick="onEleClick"
-      />
-    </t-grid>
-  </view>
+      <view class="hg-my__stats">
+        <view class="hg-my__stat">
+          <text class="hg-my__num">{{ stats.posts }}</text>
+          <text class="hg-my__label">我的记录</text>
+        </view>
+        <view class="hg-my__stat">
+          <text class="hg-my__num">{{ stats.bookmarks }}</text>
+          <text class="hg-my__label">收藏</text>
+        </view>
+        <view class="hg-my__stat">
+          <text class="hg-my__num">{{ stats.topics }}</text>
+          <text class="hg-my__label">关注话题</text>
+        </view>
+      </view>
+      <view class="hg-my__stats-note">这些数字只给你自己看，不会出现在别人的页面上。</view>
+    </view>
 
-  <t-cell-group theme="card">
-    <t-cell
-      wx:for="{{settingList}}"
-      wx:for-item="item"
-      wx:key="type"
-      title="{{item.name}}"
-      url="{{item.url}}"
-      leftIcon="{{item.icon}}"
-      hover
-      arrow
-      data-data="{{item}}"
-      bindclick="onEleClick"
+    <view class="hg-my__group">
+      <view class="hg-my__group-title">我的内容</view>
+      <view class="hg-my__menu">
+        <view
+          wx:for="{{ contentEntries }}"
+          wx:key="tab"
+          class="hg-my__row"
+          data-tab="{{ item.tab }}"
+          bindtap="onContentTap"
+          aria-role="button"
+        >
+          <t-icon name="{{ item.icon }}" size="36rpx" />
+          <text class="hg-my__row-name">{{ item.name }}</text>
+          <t-icon class="hg-my__row-arrow" name="chevron-right" size="34rpx" />
+        </view>
+      </view>
+    </view>
+
+    <view class="hg-my__group">
+      <view class="hg-my__group-title">社团</view>
+      <view class="hg-my__menu">
+        <view
+          wx:for="{{ clubEntries }}"
+          wx:key="key"
+          class="hg-my__row"
+          data-url="{{ item.url }}"
+          bindtap="onClubTap"
+          aria-role="button"
+        >
+          <t-icon name="{{ item.icon }}" size="36rpx" />
+          <text class="hg-my__row-name">{{ item.name }}</text>
+          <t-icon class="hg-my__row-arrow" name="chevron-right" size="34rpx" />
+        </view>
+
+        <!-- 管理入口仅在服务端返回管理角色时出现 -->
+        <view wx:if="{{ showAdmin }}" class="hg-my__row" bindtap="onAdminTap" aria-role="button">
+          <t-icon name="system-sum" size="36rpx" />
+          <text class="hg-my__row-name">社团管理</text>
+          <t-icon class="hg-my__row-arrow" name="chevron-right" size="34rpx" />
+        </view>
+      </view>
+    </view>
+
+    <view class="hg-my__group">
+      <view class="hg-my__menu">
+        <view class="hg-my__row" bindtap="onSettingTap" aria-role="button">
+          <t-icon name="setting" size="36rpx" />
+          <text class="hg-my__row-name">设置与隐私</text>
+          <t-icon class="hg-my__row-arrow" name="chevron-right" size="34rpx" />
+        </view>
+        <view class="hg-my__row" bindtap="onLogout" aria-role="button">
+          <t-icon name="poweroff" size="36rpx" />
+          <text class="hg-my__row-name">退出账号</text>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 访客态：不显示上一账号的历史内容 -->
+  <block wx:else>
+    <empty-state
+      icon="usergroup-add"
+      title="你还不是社内成员"
+      desc="社内内容需要成员资格。\n可以先看看这个社团在做什么。"
+      action="了解并申请加入"
+      bind:action="onJoinTap"
     />
-  </t-cell-group>
+    <view class="hg-my__group">
+      <view class="hg-my__menu">
+        <view
+          wx:for="{{ clubEntries }}"
+          wx:key="key"
+          class="hg-my__row"
+          data-url="{{ item.url }}"
+          bindtap="onClubTap"
+          aria-role="button"
+        >
+          <t-icon name="{{ item.icon }}" size="36rpx" />
+          <text class="hg-my__row-name">{{ item.name }}</text>
+          <t-icon class="hg-my__row-arrow" name="chevron-right" size="34rpx" />
+        </view>
+        <view class="hg-my__row" bindtap="onSettingTap" aria-role="button">
+          <t-icon name="setting" size="36rpx" />
+          <text class="hg-my__row-name">设置与隐私</text>
+          <t-icon class="hg-my__row-arrow" name="chevron-right" size="34rpx" />
+        </view>
+      </view>
+    </view>
+  </block>
 </view>

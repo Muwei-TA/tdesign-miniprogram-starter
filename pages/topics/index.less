@@ -1,0 +1,61 @@
+@import '/styles/sheet.less';
+
+.hg-topics {
+  &__intro {
+    padding: @hg-sp-2 @hg-page-x 0;
+  }
+
+  &__title {
+    .hg-serif(42rpx);
+
+    line-height: 1.55;
+  }
+
+  &__desc {
+    margin-top: @hg-sp-2;
+    font-size: @hg-fs-sm;
+    line-height: @hg-lh-base;
+    color: @hg-ink-3;
+  }
+
+  &__cats {
+    white-space: nowrap;
+    padding: @hg-sp-4 @hg-page-x @hg-sp-1;
+  }
+
+  &__cat {
+    display: inline-flex;
+    align-items: center;
+    height: 64rpx;
+    margin-right: @hg-sp-1;
+    padding: 0 26rpx;
+    border-radius: 34rpx;
+    color: @hg-ink-3;
+    font-size: @hg-fs-xs;
+
+    &--on {
+      background: @hg-green;
+      color: #f5f4e9;
+    }
+  }
+
+  &__list {
+    padding: 0 @hg-page-x;
+  }
+
+  &__create-wrap {
+    padding: @hg-sp-5 @hg-page-x 40rpx;
+  }
+
+  &__create {
+    .hg-btn-secondary();
+  }
+
+  &__create-note {
+    margin-top: @hg-sp-2;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+    color: @hg-ink-4;
+    text-align: center;
+  }
+}

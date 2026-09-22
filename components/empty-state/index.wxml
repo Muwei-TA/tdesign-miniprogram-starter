@@ -1,0 +1,8 @@
+<view class="hg-empty hg-empty--{{ variant }}">
+  <view class="hg-empty__icon">
+    <t-icon name="{{ icon }}" size="56rpx" />
+  </view>
+  <view wx:if="{{ title }}" class="hg-empty__title">{{ title }}</view>
+  <view wx:if="{{ desc }}" class="hg-empty__desc">{{ desc }}</view>
+  <view wx:if="{{ action }}" class="hg-empty__btn" bindtap="onAction" aria-role="button">{{ action }}</view>
+</view>

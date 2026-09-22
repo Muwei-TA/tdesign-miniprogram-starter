@@ -1,10 +1,34 @@
-@import '/variable.less';
+@import '/styles/tokens.less';
 
-.custom-tab-bar {
-  --td-tab-bar-height: @tab-bar-height;
+.hg-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  display: flex;
+  height: @hg-tab-bar-height;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: @hg-surface;
+  border-top: 1rpx solid @hg-line;
 
-  &-item {
-    margin: 0;
-    padding: 16rpx 24rpx;
+  &__item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4rpx;
+    min-height: @hg-touch-min;
+    color: #969d92;
+
+    &--on {
+      color: @hg-green;
+    }
+  }
+
+  &__label {
+    font-size: @hg-fs-2xs;
+    line-height: 1.4;
   }
 }

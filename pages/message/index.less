@@ -1,32 +1,97 @@
-/* pages/message/message.wxss */
-page {
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  height: 100vh;
-  padding-bottom: calc(env(safe-area-inset-bottom) + 112rpx);
-}
+@import '/styles/tokens.less';
+@import '/styles/mixins.less';
 
-.nav-bar {
-  border-bottom: 1rpx solid #e7e7e7;
-}
+.hg-message {
+  &__readall {
+    padding: 0 @hg-sp-2;
+    min-height: 76rpx;
+    display: flex;
+    align-items: center;
+    font-size: @hg-fs-xs;
+    color: @hg-green;
+  }
 
-.message-list {
-  height: 0;
-  flex-grow: 1;
-}
+  &__segmented {
+    display: flex;
+    gap: @hg-sp-1;
+    margin: @hg-sp-2 @hg-page-x @hg-sp-3;
+    padding: 8rpx;
+    background: @hg-surface-sunk;
+    border-radius: 18rpx;
+  }
 
-.avatar {
-  border-radius: 50% !important;
-}
+  &__seg {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 68rpx;
+    border-radius: 12rpx;
+    color: #87967b;
+    font-size: @hg-fs-sm;
 
-.content > view {
-  width: 560rpx;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+    &--on {
+      background: @hg-surface;
+      color: @hg-green;
+      box-shadow: @hg-shadow-card;
+    }
+  }
 
-.content.unread > view {
-  width: 510rpx;
+  &__list {
+    padding: 0 @hg-page-x;
+  }
+
+  &__row {
+    display: flex;
+    align-items: flex-start;
+    gap: @hg-sp-3;
+    padding: 34rpx 0;
+    border-bottom: 1rpx solid @hg-line;
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    width: 76rpx;
+    height: 76rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: @hg-green-soft;
+    color: #7b956b;
+    border-radius: 50%;
+  }
+
+  &__main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: @hg-fs-sm;
+    line-height: 1.7;
+    color: @hg-ink;
+  }
+
+  &__summary {
+    margin-top: 6rpx;
+    font-size: @hg-fs-xs;
+    line-height: @hg-lh-base;
+    color: #879b79;
+    .hg-ellipsis-multi(2);
+  }
+
+  &__time {
+    margin-top: 10rpx;
+    font-size: @hg-fs-2xs;
+    color: @hg-ink-4;
+  }
+
+  &__dot {
+    flex-shrink: 0;
+    width: 12rpx;
+    height: 12rpx;
+    margin-top: 12rpx;
+    background: @hg-clay;
+    border-radius: 50%;
+  }
 }

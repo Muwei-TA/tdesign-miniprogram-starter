@@ -1,0 +1,88 @@
+<view wx:if="{{ post }}" class="hg-post hg-post--{{ mode }}">
+  <!-- 作者行 -->
+  <view class="hg-post__head">
+    <view class="hg-post__author" bindtap="onTapAuthor" aria-role="button" aria-label="{{ authorText }}">
+      <view class="hg-post__avatar {{ post.author.isAnonymous ? 'hg-post__avatar--anon' : '' }}">{{ avatarText }}</view>
+      <view class="hg-post__meta">
+        <view class="hg-post__name">
+          <text>{{ authorText }}</text>
+          <text wx:if="{{ post.author.isAnonymous }}" class="hg-post__identity">树洞身份</text>
+        </view>
+        <view class="hg-post__time">{{ post.createdAtText }}</view>
+      </view>
+    </view>
+    <visibility-badge scope="{{ post.visibility }}" />
+    <view wx:if="{{ showInteractions }}" class="hg-post__more" catchtap="onMore" aria-role="button" aria-label="更多">
+      <t-icon name="ellipsis" size="34rpx" />
+    </view>
+  </view>
+
+  <!-- 正文 -->
+  <view class="hg-post__body" bindtap="onTapBody">
+    <view wx:if="{{ post.title }}" class="hg-post__title">{{ post.title }}</view>
+    <view wx:if="{{ post.excerpt }}" class="hg-post__text">{{ post.excerpt }}</view>
+  </view>
+
+  <!-- 媒体 -->
+  <block wx:if="{{ post.media.type === 'image' }}">
+    <view class="hg-post__images {{ isGrid ? 'hg-post__images--grid' : '' }}">
+      <image
+        wx:for="{{ post.media.images }}"
+        wx:key="*this"
+        class="hg-post__image"
+        src="{{ item }}"
+        mode="aspectFill"
+        data-index="{{ index }}"
+        catchtap="onTapMedia"
+        lazy-load
+        aria-label="内容配图"
+      />
+    </view>
+  </block>
+
+  <block wx:elif="{{ post.media.type === 'video' }}">
+    <view class="hg-post__video" catchtap="onTapMedia">
+      <image class="hg-post__image" src="{{ post.media.video.cover }}" mode="aspectFill" aria-label="视频封面" />
+      <!-- ready=false 时不给播放按钮，改为处理中说明（docs/07 7.3） -->
+      <view wx:if="{{ post.media.video.ready }}" class="hg-post__play">
+        <t-icon name="play-circle-filled" size="56rpx" />
+      </view>
+      <view wx:else class="hg-post__processing">正在处理，完成后才会展示</view>
+      <view wx:if="{{ durationText }}" class="hg-post__duration">{{ durationText }}</view>
+    </view>
+  </block>
+
+  <!-- 活动信息 -->
+  <view wx:if="{{ post.event }}" class="hg-post__event">
+    <view class="hg-post__event-label">ACTIVITY</view>
+    <view class="hg-post__event-row">时间 · {{ post.event.dateText }}</view>
+    <view class="hg-post__event-row">地点 · {{ post.event.place }}</view>
+    <view class="hg-post__event-note">这只是意向，不需要报名，也可以随时取消。</view>
+  </view>
+
+  <!-- 话题 -->
+  <view wx:if="{{ post.topic }}" class="hg-post__topic" catchtap="onTapTopic" aria-role="button">
+    <t-icon name="chat-bubble-1" size="22rpx" />
+    <text class="hg-post__topic-text">{{ post.topic.title }}</text>
+  </view>
+
+  <!-- 状态标签（仅本人可见的待审 / 退回） -->
+  <view wx:if="{{ post.statusText }}" class="hg-post__status">{{ post.statusText }}</view>
+
+  <!-- 互动区 -->
+  <view wx:if="{{ showInteractions }}" class="hg-post__actions">
+    <view class="hg-post__action {{ post.viewer.reacted ? 'hg-post__action--on' : '' }}" catchtap="onReact" aria-role="button" aria-label="共鸣">
+      <t-icon name="{{ post.viewer.reacted ? 'heart-filled' : 'heart' }}" size="32rpx" />
+      <text>{{ post.counters.reactions ? post.counters.reactions : '共鸣' }}</text>
+    </view>
+    <view class="hg-post__action" catchtap="onComment" aria-role="button" aria-label="回应">
+      <t-icon name="chat-bubble-1" size="32rpx" />
+      <text>{{ post.counters.comments ? post.counters.comments : '回应' }}</text>
+    </view>
+    <view class="hg-post__action {{ post.viewer.bookmarked ? 'hg-post__action--on' : '' }}" catchtap="onBookmark" aria-role="button" aria-label="收藏">
+      <t-icon name="{{ post.viewer.bookmarked ? 'bookmark-filled' : 'bookmark' }}" size="32rpx" />
+      <text>收藏</text>
+    </view>
+    <view wx:if="{{ post.categoryText }}" class="hg-post__category">{{ post.categoryText }}</view>
+  </view>
+</view>

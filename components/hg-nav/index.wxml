@@ -1,0 +1,38 @@
+<view class="hg-nav hg-nav--{{ theme }}">
+  <view class="hg-nav__status" style="height: {{ statusHeight }}px"></view>
+  <view class="hg-nav__bar">
+    <view
+      wx:if="{{ showBack }}"
+      class="hg-nav__back"
+      bindtap="onBack"
+      aria-role="button"
+      aria-label="返回"
+    >
+      <t-icon name="chevron-left" size="48rpx" />
+    </view>
+
+    <slot name="left" />
+
+    <view wx:if="{{ variant === 'search' }}" class="hg-nav__search" bindtap="onSearchTap" aria-role="button" aria-label="搜索">
+      <t-icon name="search" size="34rpx" />
+      <text class="hg-nav__search-text">找回一句话、一张照片</text>
+    </view>
+    <view wx:else class="hg-nav__title">{{ title }}</view>
+
+    <view class="hg-nav__tools">
+      <view
+        wx:for="{{ tools }}"
+        wx:key="key"
+        class="hg-nav__tool"
+        data-key="{{ item.key }}"
+        bindtap="onToolTap"
+        aria-role="button"
+        aria-label="{{ item.label }}"
+      >
+        <t-icon name="{{ item.icon }}" size="42rpx" />
+        <view wx:if="{{ item.badge }}" class="hg-nav__dot"></view>
+      </view>
+      <slot name="right" />
+    </view>
+  </view>
+</view>

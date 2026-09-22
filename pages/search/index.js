@@ -1,181 +1,102 @@
-import request from '~/api/request';
+import { search, fetchSuggestions } from '~/services/search';
+import { navigateTo } from '~/utils/navigate';
+
+/**
+ * P11 站内搜索（基线版本，完整验收项见 docs/08 P11 与任务 T-10）。
+ * 前端职责：防抖、丢弃过期响应、失败重试不清空输入。
+ * 权限过滤由服务端完成：私密内容与匿名帖的真实作者名都不参与检索。
+ */
+const SCOPES = [
+  { value: 'post', label: '内容' },
+  { value: 'topic', label: '话题' },
+];
 
 Page({
   data: {
-    historyWords: [],
-    popularWords: [],
-    searchValue: '',
-    dialog: {
-      title: '确认删除当前历史记录',
-      showCancelButton: true,
-      message: '',
-    },
-    dialogShow: false,
+    scopes: SCOPES,
+    scope: 'post',
+    keyword: '',
+    suggestions: [],
+    results: [],
+    searched: false,
+    loading: false,
+    errorText: '',
   },
 
-  deleteType: 0,
-  deleteIndex: '',
-
-  onShow() {
-    this.queryHistory();
-    this.queryPopular();
-  },
-
-  /**
-   * 查询历史记录
-   * @returns {Promise<void>}
-   */
-  async queryHistory() {
-    request('/api/searchHistory').then((res) => {
-      const { code, data } = res;
-
-      if (code === 200) {
-        const { historyWords = [] } = data;
-        this.setData({
-          historyWords,
-        });
-      }
-    });
-  },
-
-  /**
-   * 查询热门搜索
-   * @returns {Promise<void>}
-   */
-  async queryPopular() {
-    request('/api/searchPopular').then((res) => {
-      const { code, data } = res;
-
-      if (code === 200) {
-        const { popularWords = [] } = data;
-        this.setData({
-          popularWords,
-        });
-      }
-    });
-  },
-
-  setHistoryWords(searchValue) {
-    if (!searchValue) return;
-
-    const { historyWords } = this.data;
-    const index = historyWords.indexOf(searchValue);
-
-    if (index !== -1) {
-      historyWords.splice(index, 1);
-    }
-    historyWords.unshift(searchValue);
-
-    this.setData({
-      searchValue,
-      historyWords,
-    });
-    // if (searchValue) {
-    //     wx.navigateTo({
-    //         url: `/pages/goods/result/index?searchValue=${searchValue}`,
-    //     });
-    // }
-  },
-
-  /**
-   * 清空历史记录的再次确认框
-   * 后期可能需要增加一个向后端请求的接口
-   * @returns {Promise<void>}
-   */
-  confirm() {
-    const { historyWords } = this.data;
-    const { deleteType, deleteIndex } = this;
-
-    if (deleteType === 0) {
-      historyWords.splice(deleteIndex, 1);
-      this.setData({
-        historyWords,
-        dialogShow: false,
-      });
-    } else {
-      this.setData({ historyWords: [], dialogShow: false });
+  onLoad(options) {
+    this.loadSuggestions();
+    if (options.keyword) {
+      this.setData({ keyword: options.keyword }, () => this.runSearch());
     }
   },
 
-  /**
-   * 取消清空历史记录
-   * @returns {Promise<void>}
-   */
-  close() {
-    this.setData({ dialogShow: false });
+  onUnload() {
+    if (this.debounceTimer) clearTimeout(this.debounceTimer);
   },
 
-  /**
-   * 点击清空历史记录
-   * @returns {Promise<void>}
-   */
-  handleClearHistory() {
-    const { dialog } = this.data;
-    this.deleteType = 1;
-    this.setData({
-      dialog: {
-        ...dialog,
-        message: '确认删除所有历史记录',
-      },
-      dialogShow: true,
+  async loadSuggestions() {
+    try {
+      const data = await fetchSuggestions();
+      this.setData({ suggestions: data.items || [] });
+    } catch (err) {
+      // 推荐词失败不影响搜索
+    }
+  },
+
+  onInput(e) {
+    const keyword = e.detail.value;
+    this.setData({ keyword });
+    if (this.debounceTimer) clearTimeout(this.debounceTimer);
+    if (!keyword.trim()) {
+      // 清空恢复推荐词
+      this.setData({ results: [], searched: false, errorText: '' });
+      return;
+    }
+    this.debounceTimer = setTimeout(() => this.runSearch(), 300);
+  },
+
+  onSubmit() {
+    this.runSearch();
+  },
+
+  onScopeTap(e) {
+    const { value } = e.currentTarget.dataset;
+    if (value === this.data.scope) return;
+    this.setData({ scope: value, results: [] }, () => {
+      if (this.data.keyword.trim()) this.runSearch();
     });
   },
 
-  deleteCurr(e) {
-    const { index } = e.currentTarget.dataset;
-    const { dialog } = this.data;
-    this.deleteIndex = index;
-    this.deleteType = 0;
-    this.setData({
-      dialog: {
-        ...dialog,
-        message: '确认删除当前历史记录',
-      },
-      dialogShow: true,
-    });
+  onSuggestionTap(e) {
+    const { word } = e.currentTarget.dataset;
+    this.setData({ keyword: word }, () => this.runSearch());
   },
 
-  /**
-   * 点击关键词跳转搜索
-   * 后期需要增加跳转和后端请求接口
-   * @returns {Promise<void>}
-   */
-  handleHistoryTap(e) {
-    const { historyWords } = this.data;
-    const { index } = e.currentTarget.dataset;
-    const searchValue = historyWords[index || 0] || '';
-
-    this.setHistoryWords(searchValue);
+  async runSearch() {
+    const keyword = this.data.keyword.trim();
+    if (!keyword) return;
+    this.setData({ loading: true, errorText: '' });
+    try {
+      const data = await search({ q: keyword, scope: this.data.scope });
+      // 慢响应不覆盖新查询
+      if (data.stale) return;
+      this.setData({ results: data.items || [], searched: true, loading: false });
+    } catch (err) {
+      // 失败重试不清空输入
+      this.setData({ loading: false, searched: true, errorText: err.message || '查询失败' });
+    }
   },
 
-  handlePopularTap(e) {
-    const { popularWords } = this.data;
-    const { index } = e.currentTarget.dataset;
-    const searchValue = popularWords[index || 0] || '';
-
-    this.setHistoryWords(searchValue);
+  onResultTap(e) {
+    const { id } = e.detail;
+    if (this.data.scope === 'topic') {
+      navigateTo(`/pages/community/topic/index?id=${id}`);
+      return;
+    }
+    navigateTo(`/pages/community/post/index?id=${id}&from=search`);
   },
 
-  /**
-   * 提交搜索框内容
-   * 后期需要增加跳转和后端请求接口
-   * @returns {Promise<void>}
-   */
-  handleSubmit(e) {
-    const { value } = e.detail;
-    if (value.length === 0) return;
-
-    this.setHistoryWords(value);
-  },
-
-  /**
-   * 点击取消回到主页
-   * @returns {Promise<void>}
-   */
-  actionHandle() {
-    this.setData({
-      searchValue: '',
-    });
-    wx.switchTab({ url: '/pages/home/index' });
+  onRetry() {
+    this.runSearch();
   },
 });

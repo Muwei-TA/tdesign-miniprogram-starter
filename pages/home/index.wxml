@@ -1,48 +1,106 @@
-<nav nav-type="search" />
-<view class="home-container">
-  <view class="home-content">
-    <t-tabs defaultValue="recommend">
-      <t-tab-panel label="推荐" value="recommend">
-        <t-pull-down-refresh
-          value="{{enable}}"
-          bind:refresh="onRefresh"
-          loadingTexts="{{['下拉刷新', '松手刷新', '正在刷新', '刷新完成']}}"
-        >
-          <view class="home-card-list">
-            <t-swiper
-              list="{{swiperList}}"
-              navigation="{{ { type: 'dots-bar' } }}"
-              height="488rpx"
-              style="width: 340rpx"
-            />
-            <card
-              wx:for="{{cardInfo}}"
-              wx:key="index"
-              desc="{{item.desc}}"
-              url="{{item.url}}"
-              tags="{{item.tags}}"
-            />
-          </view>
-        </t-pull-down-refresh>
-      </t-tab-panel>
-      <t-tab-panel label="我的关注" value="follow">
-        <view class="home-card-list">
-          <card
-            wx:for="{{focusCardInfo}}"
-            wx:key="index"
-            desc="{{item.desc}}"
-            url="{{item.url}}"
-            tags="{{item.tags}}"
-          />
-        </view>
-      </t-tab-panel>
-    </t-tabs>
+<view class="hg-page hg-page--tab hg-home">
+  <hg-nav
+    theme="transparent"
+    show-back="{{ false }}"
+    tools="{{ navTools }}"
+    bind:tooltap="onNavTool"
+  >
+    <view slot="left" class="hg-home__brand" bindtap="onClubTap" aria-role="button" aria-label="社团名片">
+      <view class="hg-home__emblem">黑</view>
+      <text class="hg-home__brand-text">黑光文学社</text>
+    </view>
+  </hg-nav>
+
+  <!-- 欢迎区 -->
+  <view class="hg-home__welcome">
+    <view class="hg-home__slogan">
+      <view>留一盏灯，</view>
+      <view>给每一种表达。</view>
+    </view>
+    <view class="hg-home__sub">先决定谁能看见，再决定用什么身份写。新内容默认只在社内可见。</view>
+  </view>
+
+  <!-- 搜索入口（不在本页输入） -->
+  <view class="hg-home__search" bindtap="onSearchTap" aria-role="button" aria-label="搜索">
+    <t-icon name="search" size="34rpx" />
+    <text>找回一句话、一张照片</text>
+  </view>
+
+  <!-- 本周共写 -->
+  <view wx:if="{{ weekPrompt }}" class="hg-home__week" bindtap="onWeekTap" aria-role="button">
+    <view class="hg-home__week-eyebrow">{{ weekPrompt.eyebrow }}</view>
+    <view class="hg-home__week-title">{{ weekPrompt.title }}</view>
+    <view class="hg-home__week-desc">{{ weekPrompt.desc }}</view>
+    <t-icon class="hg-home__week-arrow" name="arrow-right" size="34rpx" />
+  </view>
+
+  <!-- 筛选 -->
+  <scroll-view class="hg-home__filters" scroll-x enhanced show-scrollbar="{{ false }}">
+    <view
+      wx:for="{{ filters }}"
+      wx:key="value"
+      class="hg-home__filter {{ filter === item.value ? 'hg-home__filter--on' : '' }}"
+      data-value="{{ item.value }}"
+      bindtap="onFilterTap"
+      aria-role="button"
+    >
+      {{ item.label }}
+    </view>
+  </scroll-view>
+
+  <!-- 未更新提示（保留已加载数据） -->
+  <view wx:if="{{ stale }}" class="hg-home__stale">
+    <text>内容未更新：{{ errorText }}</text>
+    <text class="hg-home__retry" bindtap="onRetry">重试</text>
+  </view>
+
+  <!-- 内容流 -->
+  <view class="hg-home__feed">
+    <block wx:if="{{ loading && list.length === 0 }}">
+      <view class="hg-home__skeleton" wx:for="{{ [1, 2, 3] }}" wx:key="*this">
+        <view class="hg-home__skeleton-line"></view>
+        <view class="hg-home__skeleton-line hg-home__skeleton-line--short"></view>
+      </view>
+    </block>
+
+    <block wx:elif="{{ list.length > 0 }}">
+      <post-card
+        wx:for="{{ list }}"
+        wx:key="id"
+        post="{{ item }}"
+        bind:tapbody="onTapBody"
+        bind:tapmedia="onTapMedia"
+        bind:taptopic="onTapTopic"
+        bind:tapauthor="onTapAuthor"
+        bind:react="onReact"
+        bind:bookmark="onBookmark"
+      />
+    </block>
+
+    <empty-state
+      wx:elif="{{ errorText }}"
+      icon="error-circle"
+      title="没能读到内容"
+      desc="{{ errorText }}"
+      action="再试一次"
+      bind:action="onRetry"
+    />
+
+    <empty-state
+      wx:else
+      icon="pen"
+      title="这里还很安静"
+      desc="写下第一笔吧。\n一句话、一张照片都可以。"
+      action="{{ isMember ? '写一笔' : '' }}"
+      bind:action="onCompose"
+    />
+  </view>
+
+  <view class="hg-footnote">当前为 Mock 数据的界面基线，昵称、正文与计数均为虚构示例。</view>
+
+  <!-- 写一笔 -->
+  <view class="hg-home__fab" bindtap="onCompose" aria-role="button" aria-label="写一笔">
+    <t-icon name="pen" size="34rpx" />
+    <text>写一笔</text>
   </view>
 </view>
-
-<view class="home-release">
-  <t-button theme="primary" size="large" icon="add" shape="round" bindtap="goRelease">
-    发布
-  </t-button>
-</view>
-<t-message id="t-message" />

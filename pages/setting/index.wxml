@@ -1,21 +1,94 @@
-<t-navbar title="设置" left-arrow />
-<view class="setting">
-  <t-cell-group wx:for="{{menuData}}" wx:for-item="item" wx:key="index" t-class="cell-group-class" theme="card">
-    <t-cell
-      wx:for="{{item}}"
-      wx:for-item="carditem"
-      wx:key="cardkey"
-      title="{{carditem.title}}"
-      hover
-      arrow
-      left-icon="app"
-      url="{{carditem.url}}"
-      bordered="true"
-      leftIcon="{{carditem.icon}}"
-      data-data="{{carditem}}"
-      bindclick="onEleClick"
-    />
-  </t-cell-group>
-</view>
+<view class="hg-page hg-setting">
+  <hg-nav title="设置与隐私" />
 
-<t-toast id="t-toast" />
+  <view class="hg-setting__group">
+    <view class="hg-setting__group-title">内容与隐私</view>
+    <view class="hg-setting__menu">
+      <view class="hg-setting__row" bindtap="onScopeExplain" aria-role="button">
+        <view class="hg-setting__row-main">
+          <view class="hg-setting__row-title">默认可见范围</view>
+          <view class="hg-setting__row-sub">新内容默认「仅社内可见」</view>
+        </view>
+        <t-icon name="chevron-right" size="32rpx" />
+      </view>
+      <view class="hg-setting__row" bindtap="onIdentityExplain" aria-role="button">
+        <view class="hg-setting__row-main">
+          <view class="hg-setting__row-title">树洞身份的边界</view>
+          <view class="hg-setting__row-sub">隐藏昵称与头像，但不是绝对匿名</view>
+        </view>
+        <t-icon name="chevron-right" size="32rpx" />
+      </view>
+      <view class="hg-setting__row" bindtap="onRulesTap" aria-role="button">
+        <view class="hg-setting__row-main">
+          <view class="hg-setting__row-title">社区约定</view>
+          <view class="hg-setting__row-sub">当前版本 {{ rulesVersion }}</view>
+        </view>
+        <t-icon name="chevron-right" size="32rpx" />
+      </view>
+    </view>
+  </view>
+
+  <view class="hg-setting__group">
+    <view class="hg-setting__group-title">阅读</view>
+    <view class="hg-setting__menu">
+      <view class="hg-setting__row" bindtap="onFontTap" aria-role="button">
+        <view class="hg-setting__row-main">
+          <view class="hg-setting__row-title">长文字号</view>
+          <view class="hg-setting__row-sub">{{ ['小', '标准', '大'][readingFontIndex] }}</view>
+        </view>
+        <t-icon name="chevron-right" size="32rpx" />
+      </view>
+      <view class="hg-setting__row">
+        <view class="hg-setting__row-main">
+          <view class="hg-setting__row-title">默认夜间阅读</view>
+          <view class="hg-setting__row-sub">只影响长文阅读页的配色</view>
+        </view>
+        <t-switch value="{{ nightMode }}" bind:change="onNightToggle" />
+      </view>
+    </view>
+  </view>
+
+  <view class="hg-setting__group">
+    <view class="hg-setting__group-title">数据</view>
+    <view class="hg-setting__menu">
+      <view class="hg-setting__row" bindtap="onClearCache" aria-role="button">
+        <view class="hg-setting__row-main">
+          <view class="hg-setting__row-title">清除本机缓存</view>
+          <view class="hg-setting__row-sub">不会删除云端账号与内容</view>
+        </view>
+        <t-icon name="chevron-right" size="32rpx" />
+      </view>
+      <view class="hg-setting__row" bindtap="onExport" aria-role="button">
+        <view class="hg-setting__row-main">
+          <view class="hg-setting__row-title">导出我的内容</view>
+          <view class="hg-setting__row-sub">{{ capabilities.export ? '生成异步任务，完成后通知你' : '暂未开放' }}</view>
+        </view>
+        <t-icon name="chevron-right" size="32rpx" />
+      </view>
+    </view>
+  </view>
+
+  <view class="hg-setting__group">
+    <view class="hg-setting__group-title">账号</view>
+    <view class="hg-setting__menu">
+      <view class="hg-setting__row" bindtap="onContact" aria-role="button">
+        <view class="hg-setting__row-main">
+          <view class="hg-setting__row-title">联系运营者</view>
+          <view class="hg-setting__row-sub">上线前需补充主体与联系方式</view>
+        </view>
+        <t-icon name="chevron-right" size="32rpx" />
+      </view>
+      <view class="hg-setting__row" bindtap="onDeleteAccount" aria-role="button">
+        <view class="hg-setting__row-main">
+          <view class="hg-setting__row-title hg-setting__danger">注销账号</view>
+          <view class="hg-setting__row-sub">撤回文集授权不需要注销账号</view>
+        </view>
+        <t-icon name="chevron-right" size="32rpx" />
+      </view>
+    </view>
+  </view>
+
+  <view class="hg-footnote">
+    当前为界面基线：导出与注销尚未接入真实服务端流程。隐私告知的具体文本需由运营主体填写并审核。
+  </view>
+</view>

@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "visibility-badge": "/components/visibility-badge/index"
+  }
+}

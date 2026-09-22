@@ -1,108 +1,87 @@
-// pages/message/message.js
-import { fetchMessageList, markMessagesRead } from '~/mock/chat';
+import { fetchNotifications, markAllRead } from '~/services/notifications';
+import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();
-const { socket } = app.globalData; // 获取已连接的 socketTask
-let currentUser = null; // 当前打开的聊天用户 { userId, eventChannel }
+
+const TABS = [
+  { value: 'reply', label: '回应' },
+  { value: 'system', label: '系统' },
+];
 
 Page({
-  /** 页面的初始数据 */
   data: {
-    messageList: [], // 完整消息列表 { userId, name, avatar, messages }
-    loading: true, // 是否正在加载（用于下拉刷新）
+    tabs: TABS,
+    tab: 'reply',
+    list: [],
+    loading: true,
+    errorText: '',
   },
 
-  /** 生命周期函数--监听页面加载 */
-  onLoad(options) {
-    this.getMessageList();
-    // 处理接收到的数据
-    socket.onMessage((data) => {
-      data = JSON.parse(data);
-      if (data.type === 'message') {
-        const { userId, message } = data.data;
-        const { user, index } = this.getUserById(userId);
-        this.data.messageList.splice(index, 1);
-        this.data.messageList.unshift(user);
-        user.messages.push(message);
-        if (currentUser && userId === currentUser.userId) {
-          this.setMessagesRead(userId);
-          currentUser.eventChannel.emit('update', user);
-        }
-        this.setData({ messageList: this.data.messageList });
-        app.setUnreadNum(this.computeUnreadNum());
-      }
-    });
+  onLoad() {
+    this.loadList();
   },
 
-  /** 生命周期函数--监听页面初次渲染完成 */
-  onReady() {},
-
-  /** 生命周期函数--监听页面显示 */
-  onShow() {
-    currentUser = null;
+  onPullDownRefresh() {
+    this.loadList().then(() => wx.stopPullDownRefresh());
   },
 
-  /** 生命周期函数--监听页面隐藏 */
-  onHide() {},
-
-  /** 生命周期函数--监听页面卸载 */
-  onUnload() {},
-
-  /** 页面相关事件处理函数--监听用户下拉动作 */
-  onPullDownRefresh() {},
-
-  /** 页面上拉触底事件的处理函数 */
-  onReachBottom() {},
-
-  /** 用户点击右上角分享 */
-  onShareAppMessage() {},
-
-  /** 获取完整消息列表 */
-  getMessageList() {
-    fetchMessageList().then(({ data }) => {
-      this.setData({ messageList: data, loading: false });
-    });
-  },
-
-  /** 通过 userId 获取 user 对象和下标 */
-  getUserById(userId) {
-    let index = 0;
-    while (index < this.data.messageList.length) {
-      const user = this.data.messageList[index];
-      if (user.userId === userId) return { user, index };
-      index += 1;
+  async loadList() {
+    this.setData({ loading: true, errorText: '' });
+    try {
+      const data = await fetchNotifications({ tab: this.data.tab });
+      this.setData({ list: data.items || [], loading: false });
+    } catch (err) {
+      this.setData({ loading: false, errorText: err.message || '加载失败' });
     }
-    // TODO：处理 userId 在列表中不存在的情况（）
   },
 
-  /** 计算未读消息数量 */
-  computeUnreadNum() {
-    let unreadNum = 0;
-    this.data.messageList.forEach(({ messages }) => {
-      unreadNum += messages.filter((item) => !item.read).length;
-    });
-    return unreadNum;
+  onTabTap(e) {
+    const { value } = e.currentTarget.dataset;
+    if (value === this.data.tab) return;
+    this.setData({ tab: value, list: [] }, () => this.loadList());
   },
 
-  /** 打开对话页 */
-  toChat(event) {
-    const { userId } = event.currentTarget.dataset;
-    wx.navigateTo({ url: `/pages/chat/index?userId${userId}` }).then(({ eventChannel }) => {
-      currentUser = { userId, eventChannel };
-      const { user } = this.getUserById(userId);
-      eventChannel.emit('update', user);
-    });
-    this.setMessagesRead(userId);
+  onItemTap(e) {
+    const { id } = e.currentTarget.dataset;
+    const item = this.data.list.find((row) => row.id === id);
+    if (!item) return;
+
+    // 目标失效时给中性提示，不泄露原内容
+    if (!item.target.accessible) {
+      wx.showModal({
+        title: '内容不可访问',
+        content: '相关内容当前不可访问，可能已被作者调整范围或删除。',
+        showCancel: false,
+        confirmText: '我知道了',
+      });
+      return;
+    }
+
+    if (item.target.type === 'post') {
+      navigateTo(`/pages/community/post/index?id=${item.target.id}&from=notice`);
+      return;
+    }
+    if (item.target.type === 'rules') {
+      navigateTo('/pages/community/rules/index');
+    }
   },
 
-  /** 将用户的所有消息标记为已读 */
-  setMessagesRead(userId) {
-    const { user } = this.getUserById(userId);
-    user.messages.forEach((message) => {
-      message.read = true;
-    });
-    this.setData({ messageList: this.data.messageList });
-    app.setUnreadNum(this.computeUnreadNum());
-    markMessagesRead(userId);
+  async onReadAll() {
+    try {
+      await markAllRead();
+      const patch = {};
+      this.data.list.forEach((item, index) => {
+        patch[`list[${index}].read`] = true;
+      });
+      this.setData(patch);
+      app.setUnreadCount(0);
+    } catch (err) {
+      // 失败时不假装已同步
+      wx.showToast({ title: err.message || '暂时没能同步', icon: 'none' });
+    }
+  },
+
+  onRetry() {
+    this.loadList();
   },
 });

@@ -1,0 +1,15 @@
+<view wx:if="{{ collection }}" class="hg-book hg-book--{{ size }}" bindtap="onTap" aria-role="button" aria-label="{{ collection.title }}">
+  <view class="hg-book__cover hg-book__cover--{{ collection.tone }}">
+    <view class="hg-book__no">{{ collection.no }}</view>
+    <view class="hg-book__name">{{ collection.title }}</view>
+    <view class="hg-book__sub">{{ collection.subtitle }}</view>
+  </view>
+  <view class="hg-book__info">
+    <view class="hg-book__title">{{ collection.title }}</view>
+    <view class="hg-book__line">
+      <visibility-badge scope="{{ collection.visibility }}" />
+      <text class="hg-book__count">{{ countText }}</text>
+    </view>
+    <view wx:if="{{ size === 'hero' }}" class="hg-book__intro">{{ collection.intro }}</view>
+  </view>
+</view>

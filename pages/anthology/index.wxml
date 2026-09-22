@@ -1,0 +1,47 @@
+<view class="hg-page hg-page--tab hg-anthology">
+  <hg-nav title="文集" show-back="{{ false }}" />
+
+  <view class="hg-anthology__intro">
+    <view class="hg-anthology__title">
+      <view>愿意被整理的文章，</view>
+      <view>在这里慢一点被读。</view>
+    </view>
+    <view class="hg-anthology__desc">
+      收录由人工编辑决定，且需要作者单独授权。作者随时可以撤回，目录会同步移除。
+    </view>
+  </view>
+
+  <view class="hg-anthology__grid" wx:if="{{ list.length > 0 }}">
+    <collection-cover
+      wx:for="{{ list }}"
+      wx:key="id"
+      collection="{{ item }}"
+      bind:tap="onCollectionTap"
+    />
+  </view>
+
+  <empty-state
+    wx:elif="{{ errorText }}"
+    icon="error-circle"
+    title="没能读到文集"
+    desc="{{ errorText }}"
+    action="再试一次"
+    bind:action="onRetry"
+  />
+
+  <empty-state
+    wx:elif="{{ !loading }}"
+    icon="book-open"
+    title="还没有文集"
+    desc="等有了愿意被整理的文章，\n这里会出现第一辑。"
+  />
+
+  <view wx:if="{{ isMember && anthologyEnabled }}" class="hg-anthology__cta-wrap">
+    <view class="hg-anthology__cta" bindtap="onWriteArticle" aria-role="button">写一篇文章</view>
+    <view class="hg-anthology__cta-note">
+      安全审核通过不等于被文集选中；未入选也不代表作品有问题。
+    </view>
+  </view>
+
+  <view class="hg-footnote">封面与辑名为演示内容，收录规则不使用点赞排名。</view>
+</view>

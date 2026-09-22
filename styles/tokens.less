@@ -1,0 +1,102 @@
+// 黑光文学社树洞 · 设计令牌
+// 唯一色值 / 字号 / 间距来源。页面与组件禁止写裸色值。
+// 设计基线宽度 375px，1px = 2rpx。
+
+// ---------- 色彩 ----------
+@hg-paper: #f8f6f0; // 页面底色（暖纸白）
+@hg-paper-deep: #eaece5; // 页面外框（评审用）
+@hg-surface: #fffefa; // 卡片 / 内容面
+@hg-surface-sunk: #efeee6; // 搜索框 / 分段控件底
+@hg-surface-soft: #f1f2e8; // 操作条底
+
+@hg-ink: #223b32; // 正文主色（深墨）
+@hg-ink-2: #4c5b4a; // 卡片正文
+@hg-ink-3: #7d8177; // 次要文字
+@hg-ink-4: #9ca393; // 时间 / 计数 / 占位
+
+@hg-green: #315948; // 主色
+@hg-green-dark: #294e3d; // 主色按下态
+@hg-green-soft: #e9eee4; // 话题块
+@hg-green-mist: #e6ecdf; // 区块背景（hero / 周话题）
+@hg-green-line: #d9dfcf; // 次按钮描边
+
+@hg-clay: #ad724c; // 强调：本周话题、未读点、激活共鸣
+@hg-clay-soft: #f3e7d7; // 提示条背景
+@hg-clay-ink: #987750; // 提示条文字
+
+@hg-danger: #a85648; // 危险操作与错误
+
+@hg-line: #e7e7dd; // 分割线 / 卡片描边
+@hg-line-strong: #d7ddcf; // 区块分隔
+
+@hg-reading-bg: #26362d; // 夜间阅读底
+@hg-reading-fg: #d1d8c9; // 夜间阅读文字
+@hg-reading-line: #43513f;
+@hg-reading-muted: #9aab90;
+
+// 范围标识
+@hg-scope-club-bg: #f0f2e9;
+@hg-scope-club-fg: #7a866d;
+@hg-scope-public-bg: #f1eadf;
+@hg-scope-public-fg: #9e7950;
+@hg-scope-private-bg: #ecebf0;
+@hg-scope-private-fg: #837b92;
+@hg-status-pending-bg: #f4e8d2;
+@hg-status-pending-fg: #9a7d4e;
+
+// 头像
+@hg-avatar-bg: #e0e7d4;
+@hg-avatar-fg: #62734d;
+@hg-avatar-anon-bg: #eee9dd;
+@hg-avatar-anon-fg: #9e947c;
+
+// ---------- 字体 ----------
+@hg-font-serif: 'Songti SC', 'Noto Serif CJK SC', 'SimSun', serif;
+@hg-font-sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+@hg-fs-display: 54rpx; // 页面大标题
+@hg-fs-title: 48rpx; // 弹层 / 结果页标题
+@hg-fs-h2: 38rpx; // 卡片文章标题
+@hg-fs-h3: 32rpx; // 目录条目
+@hg-fs-body-lg: 32rpx; // 碎片详情正文
+@hg-fs-body: 28rpx; // 卡片正文 / 表单
+@hg-fs-reading: 34rpx; // 长文默认
+@hg-fs-sm: 24rpx; // 说明 / 次要操作
+@hg-fs-xs: 22rpx; // 筛选 / 标签
+@hg-fs-2xs: 20rpx; // 时间 / 计数 / 脚注
+
+@hg-lh-tight: 1.5;
+@hg-lh-base: 1.8;
+@hg-lh-loose: 1.95;
+@hg-lh-reading: 2.15;
+
+// ---------- 间距 ----------
+@hg-sp-1: 8rpx;
+@hg-sp-2: 16rpx;
+@hg-sp-3: 24rpx;
+@hg-sp-4: 32rpx;
+@hg-sp-5: 40rpx;
+@hg-sp-6: 48rpx;
+@hg-page-x: 28rpx; // 页面水平内边距
+@hg-block-x: 38rpx; // 区块 hero 内边距
+
+// ---------- 圆角 ----------
+@hg-radius-sm: 10rpx;
+@hg-radius-md: 16rpx;
+@hg-radius-lg: 26rpx;
+@hg-radius-xl: 46rpx;
+@hg-radius-pill: 999rpx;
+
+// ---------- 阴影 ----------
+@hg-shadow-card: 0 2rpx 12rpx rgba(34, 59, 50, 0.05);
+@hg-shadow-fab: 0 12rpx 28rpx rgba(23, 59, 66, 0.19);
+@hg-shadow-book: 6rpx 12rpx 24rpx rgba(35, 56, 39, 0.1);
+@hg-shadow-sheet: 0 -8rpx 32rpx rgba(24, 43, 37, 0.12);
+
+// ---------- 结构尺寸 ----------
+@hg-nav-height: 100rpx; // 自定义导航内容区高度（不含状态栏）
+@hg-tab-bar-height: 112rpx;
+@hg-touch-min: 88rpx; // 最小触控目标 44px
+@hg-fab-height: 86rpx;
+@hg-avatar-md: 66rpx;
+@hg-avatar-lg: 114rpx;

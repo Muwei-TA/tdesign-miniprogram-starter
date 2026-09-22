@@ -2,65 +2,64 @@
 import config from './config';
 import Mock from './mock/index';
 import createBus from './utils/eventBus';
-import { connectSocket, fetchUnreadNum } from './mock/chat';
+import { fetchUnreadCount } from './services/notifications';
+import { bootstrapSession } from './services/session';
 
 if (config.isMock) {
   Mock();
 }
 
 App({
+  globalData: {
+    /** 会话与成员状态，唯一来源是 services/session.js */
+    session: null,
+    /** 站内未读通知数（消息入口在树洞首页顶部） */
+    unreadCount: 0,
+  },
+
+  /** 全局事件总线，事件契约见 docs/03-routing-and-navigation.md 3.5 */
+  eventBus: createBus(),
+
   onLaunch() {
+    this.checkUpdate();
+    this.initSession();
+  },
+
+  checkUpdate() {
+    if (!wx.getUpdateManager) return;
     const updateManager = wx.getUpdateManager();
-
-    updateManager.onCheckForUpdate((res) => {
-      // console.log(res.hasUpdate)
-    });
-
     updateManager.onUpdateReady(() => {
       wx.showModal({
         title: '更新提示',
         content: '新版本已经准备好，是否重启应用？',
         success(res) {
-          if (res.confirm) {
-            updateManager.applyUpdate();
-          }
+          if (res.confirm) updateManager.applyUpdate();
         },
       });
     });
-
-    this.getUnreadNum();
-    this.connect();
-  },
-  globalData: {
-    userInfo: null,
-    unreadNum: 0, // 未读消息数量
-    socket: null, // SocketTask 对象
   },
 
-  /** 全局事件总线 */
-  eventBus: createBus(),
-
-  /** 初始化WebSocket */
-  connect() {
-    const socket = connectSocket();
-    socket.onMessage((data) => {
-      data = JSON.parse(data);
-      if (data.type === 'message' && !data.data.message.read) this.setUnreadNum(this.globalData.unreadNum + 1);
-    });
-    this.globalData.socket = socket;
+  /** 冷启动恢复会话，失败时按访客处理（fail-closed） */
+  async initSession() {
+    const session = await bootstrapSession();
+    this.globalData.session = session;
+    this.eventBus.emit('session-changed', session);
+    if (session.role !== 'guest') {
+      this.refreshUnreadCount();
+    }
   },
 
-  /** 获取未读消息数量 */
-  getUnreadNum() {
-    fetchUnreadNum().then(({ data }) => {
-      this.globalData.unreadNum = data;
-      this.eventBus.emit('unread-num-change', data);
-    });
+  async refreshUnreadCount() {
+    try {
+      const count = await fetchUnreadCount();
+      this.setUnreadCount(count);
+    } catch (err) {
+      // 未读数拉取失败不阻塞主流程，保持上一次数值
+    }
   },
 
-  /** 设置未读消息数量 */
-  setUnreadNum(unreadNum) {
-    this.globalData.unreadNum = unreadNum;
-    this.eventBus.emit('unread-num-change', unreadNum);
+  setUnreadCount(unreadCount) {
+    this.globalData.unreadCount = unreadCount;
+    this.eventBus.emit('notice-unread-change', unreadCount);
   },
 });

@@ -1,65 +1,87 @@
-<t-navbar title="搜索" left-arrow />
-<view class="page search-page">
-  <view class="search-input">
-    <t-search
-      t-class-input-container="t-class__input-container"
-      t-class-input="t-search__input"
-      value="{{searchValue}}"
-      leftIcon="search"
-      action="取消"
-      shape="round"
-      placeholder="请搜索你想要的内容"
-      bind:submit="handleSubmit"
-      bind:action-click="actionHandle"
+<view class="hg-page hg-search">
+  <hg-nav title="搜索" />
+
+  <view class="hg-search__bar">
+    <t-icon name="search" size="34rpx" />
+    <input
+      class="hg-search__input"
+      value="{{ keyword }}"
+      placeholder="找回一句话、一张照片"
+      confirm-type="search"
       focus
-    ></t-search>
+      bindinput="onInput"
+      bindconfirm="onSubmit"
+    />
   </view>
-  <view class="search-wrap">
-    <view class="history-wrap">
-      <view class="search-header">
-        <text class="search-title">历史记录</text>
-        <t-icon name="delete" size="large" class="search-clear" bind:click="handleClearHistory" />
-      </view>
-      <view class="search-content">
-        <view
-          class="search-item"
-          hover-class="hover-history-item"
-          wx:for="{{historyWords}}"
-          bind:tap="handleHistoryTap"
-          bindlongpress="deleteCurr"
-          data-index="{{index}}"
-          wx:key="*this"
-        >
-          <t-tag class="history-item margin-12" max-width="{{343}}" variant="light">{{item}}</t-tag>
-        </view>
-      </view>
-    </view>
-    <view class="popular-wrap">
-      <view class="search-header">
-        <text class="search-title">搜索发现</text>
-      </view>
-      <view class="search-content">
-        <view
-          class="search-item"
-          hover-class="hover-history-item"
-          wx:for="{{popularWords}}"
-          bind:tap="handlePopularTap"
-          data-index="{{index}}"
-          wx:key="*this"
-        >
-          <t-tag class="popular-item margin-12" max-width="{{343}}" variant="light" icon="search"> {{item}} </t-tag>
-        </view>
-      </view>
+
+  <view class="hg-search__segmented">
+    <view
+      wx:for="{{ scopes }}"
+      wx:key="value"
+      class="hg-search__seg {{ scope === item.value ? 'hg-search__seg--on' : '' }}"
+      data-value="{{ item.value }}"
+      bindtap="onScopeTap"
+      aria-role="button"
+    >
+      {{ item.label }}
     </view>
   </view>
-  <t-dialog
-    visible="{{dialogShow}}"
-    content="{{dialog.message}}"
-    bindconfirm="confirm"
-    bind:close="close"
-    confirm-btn="确定"
-    cancel-btn="{{dialog.showCancelButton ? '取消' : null}}"
-    t-class-confirm="dialog__button-confirm"
-    t-class-cancel="dialog__button-cancel"
-  />
+
+  <!-- 未输入：推荐词 -->
+  <block wx:if="{{ !searched }}">
+    <view class="hg-search__section">
+      <view class="hg-search__section-title">可以先看看这些</view>
+      <view class="hg-search__chips">
+        <view
+          wx:for="{{ suggestions }}"
+          wx:key="*this"
+          class="hg-search__chip"
+          data-word="{{ item }}"
+          bindtap="onSuggestionTap"
+          aria-role="button"
+        >
+          {{ item }}
+        </view>
+      </view>
+      <view class="hg-search__note">
+        推荐词由运营者维护，不会从私密内容里自动抽取。搜索只在你有权限的范围内进行。
+      </view>
+    </view>
+  </block>
+
+  <!-- 结果 -->
+  <block wx:else>
+    <view class="hg-search__results">
+      <block wx:if="{{ results.length > 0 && scope === 'post' }}">
+        <post-card
+          wx:for="{{ results }}"
+          wx:key="id"
+          post="{{ item }}"
+          mode="compact"
+          show-actions="{{ false }}"
+          bind:tapbody="onResultTap"
+        />
+      </block>
+
+      <block wx:elif="{{ results.length > 0 }}">
+        <topic-card wx:for="{{ results }}" wx:key="id" topic="{{ item }}" bind:tap="onResultTap" />
+      </block>
+
+      <empty-state
+        wx:elif="{{ errorText }}"
+        icon="error-circle"
+        title="查询没有完成"
+        desc="{{ errorText }}"
+        action="再试一次"
+        bind:action="onRetry"
+      />
+
+      <empty-state
+        wx:elif="{{ !loading }}"
+        icon="search"
+        title="暂时没找到"
+        desc="换一个词试试。\n只有你有权限看到的内容才会出现在结果里。"
+      />
+    </view>
+  </block>
 </view>

@@ -1,0 +1,118 @@
+<view class="hg-page hg-page--tab hg-topics">
+  <hg-nav title="话题" show-back="{{ false }}" />
+
+  <view class="hg-topics__intro">
+    <view class="hg-topics__title">
+      <view>不知道写什么的时候，</view>
+      <view>从一个具体的问题开始。</view>
+    </view>
+    <view class="hg-topics__desc">每条内容最多关联一个主话题。新话题一律先在社内使用。</view>
+  </view>
+
+  <scroll-view class="hg-topics__cats" scroll-x enhanced show-scrollbar="{{ false }}">
+    <view
+      wx:for="{{ categories }}"
+      wx:key="value"
+      class="hg-topics__cat {{ category === item.value ? 'hg-topics__cat--on' : '' }}"
+      data-value="{{ item.value }}"
+      bindtap="onCategoryTap"
+      aria-role="button"
+    >
+      {{ item.label }}
+    </view>
+  </scroll-view>
+
+  <view class="hg-topics__list">
+    <block wx:if="{{ list.length > 0 }}">
+      <topic-card
+        wx:for="{{ list }}"
+        wx:key="id"
+        topic="{{ item }}"
+        bind:tap="onTopicTap"
+        bind:follow="onFollow"
+      />
+    </block>
+
+    <empty-state
+      wx:elif="{{ errorText }}"
+      icon="error-circle"
+      title="没能读到话题"
+      desc="{{ errorText }}"
+      action="再试一次"
+      bind:action="onRetry"
+    />
+
+    <empty-state
+      wx:elif="{{ !loading }}"
+      icon="chat-bubble-1"
+      title="还没有话题"
+      desc="{{ isMember ? '发起一个具体的问题，\n比讨论宏大议题更容易开始。' : '先了解一下这个社团，\n或者申请加入。' }}"
+      action="{{ isMember ? '发起一个话题' : '了解社团' }}"
+      bind:action="onEmptyAction"
+    />
+  </view>
+
+  <view wx:if="{{ list.length > 0 }}" class="hg-topics__create-wrap">
+    <view class="hg-topics__create" bindtap="onCreateOpen" aria-role="button">发起一个话题</view>
+    <view class="hg-topics__create-note">提交后需要管理员确认，确认前只有你能看到它。</view>
+  </view>
+
+  <!-- 发起话题弹层 -->
+  <t-popup visible="{{ createVisible }}" placement="bottom" bind:visible-change="onCreateClose">
+    <view class="hg-sheet">
+      <view class="hg-sheet__head">
+        <view class="hg-sheet__title">发起一个话题</view>
+        <view class="hg-sheet__close" bindtap="onCreateClose" aria-role="button" aria-label="关闭">
+          <t-icon name="close" size="40rpx" />
+        </view>
+      </view>
+
+      <view class="hg-field">
+        <text class="hg-field__label">话题名称（40 字以内）</text>
+        <input
+          class="hg-field__input"
+          value="{{ form.title }}"
+          maxlength="40"
+          placeholder="例如：最近读到的一句话"
+          data-field="title"
+          bindinput="onFormInput"
+        />
+      </view>
+
+      <view class="hg-field">
+        <text class="hg-field__label">一句引导语（200 字以内）</text>
+        <textarea
+          class="hg-field__textarea"
+          value="{{ form.description }}"
+          maxlength="200"
+          placeholder="说明希望大家写什么，越具体越好"
+          data-field="description"
+          bindinput="onFormInput"
+        />
+      </view>
+
+      <view class="hg-field">
+        <text class="hg-field__label">分类</text>
+        <view class="hg-field__chips">
+          <view
+            wx:for="{{ categories }}"
+            wx:key="value"
+            wx:if="{{ item.value !== 'all' }}"
+            class="hg-field__chip {{ form.category === item.value ? 'hg-field__chip--on' : '' }}"
+            data-value="{{ item.value }}"
+            bindtap="onFormCategory"
+            aria-role="button"
+          >
+            {{ item.label }}
+          </view>
+        </view>
+      </view>
+
+      <view class="hg-sheet__notice">新话题都是社内话题。即使标题被转发，参与内容也不会因此公开。</view>
+
+      <view class="hg-sheet__submit {{ submitting ? 'hg-sheet__submit--disabled' : '' }}" bindtap="onCreateSubmit" aria-role="button">
+        {{ submitting ? '提交中…' : '提交等待确认' }}
+      </view>
+    </view>
+  </t-popup>
+</view>

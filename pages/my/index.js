@@ -1,87 +1,115 @@
 import request from '~/api/request';
-import useToastBehavior from '~/behaviors/useToast';
+import { getSession, isAdmin, clearAccountScope } from '~/services/session';
+import { navigateTo } from '~/utils/navigate';
+
+const app = getApp();
 
 Page({
-  behaviors: [useToastBehavior],
-
   data: {
-    isLoad: false,
-    service: [],
-    personalInfo: {},
-    gridList: [
-      {
-        name: '全部发布',
-        icon: 'root-list',
-        type: 'all',
-        url: '',
-      },
-      {
-        name: '审核中',
-        icon: 'search',
-        type: 'progress',
-        url: '',
-      },
-      {
-        name: '已发布',
-        icon: 'upload',
-        type: 'published',
-        url: '',
-      },
-      {
-        name: '草稿箱',
-        icon: 'file-copy',
-        type: 'draft',
-        url: '',
-      },
+    session: null,
+    isMember: false,
+    showAdmin: false,
+    profile: null,
+    stats: { posts: 0, bookmarks: 0, topics: 0 },
+
+    contentEntries: [
+      { tab: 'published', name: '已发布', icon: 'root-list' },
+      { tab: 'pending', name: '待审核 / 需要修改', icon: 'time' },
+      { tab: 'draft', name: '草稿', icon: 'file-copy' },
+      { tab: 'private', name: '私密手记', icon: 'lock-on' },
+      { tab: 'bookmark', name: '收藏', icon: 'bookmark' },
+      { tab: 'topics', name: '关注的话题', icon: 'chat-bubble-1' },
     ],
 
-    settingList: [
-      { name: '联系客服', icon: 'service', type: 'service' },
-      { name: '设置', icon: 'setting', type: 'setting', url: '/pages/setting/index' },
+    clubEntries: [
+      { key: 'club', name: '社团名片', icon: 'usergroup', url: '/pages/community/club/index' },
+      { key: 'rules', name: '社区约定', icon: 'secured', url: '/pages/community/rules/index' },
     ],
   },
 
   onLoad() {
-    this.getServiceList();
+    this.syncSession(getSession());
+    this.onSessionChanged = (session) => {
+      this.syncSession(session);
+      this.loadProfile();
+    };
+    app.eventBus.on('session-changed', this.onSessionChanged);
+    this.loadProfile();
   },
 
-  async onShow() {
-    const Token = wx.getStorageSync('access_token');
-    const personalInfo = await this.getPersonalInfo();
+  onUnload() {
+    app.eventBus.off('session-changed', this.onSessionChanged);
+  },
 
-    if (Token) {
-      this.setData({
-        isLoad: true,
-        personalInfo,
-      });
+  onShow() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ value: 'my' });
     }
   },
 
-  getServiceList() {
-    request('/api/getServiceList').then((res) => {
-      const { service } = res.data.data;
-      this.setData({ service });
+  syncSession(session) {
+    if (!session) return;
+    this.setData({
+      session,
+      isMember: session.memberStatus === 'active',
+      // 管理入口只在服务端返回管理角色时出现；接口仍需鉴权
+      showAdmin: isAdmin(),
     });
   },
 
-  async getPersonalInfo() {
-    const info = await request('/api/genPersonalInfo').then((res) => res.data.data);
-    return info;
+  async loadProfile() {
+    if (!this.data.isMember) return;
+    try {
+      const data = await request('/me/profile');
+      this.setData({ profile: data, stats: data.stats || this.data.stats });
+    } catch (err) {
+      // 个人信息读取失败不阻塞页面，其余入口仍可用
+    }
   },
 
-  onLogin(e) {
-    wx.navigateTo({
-      url: '/pages/login/login',
+  onContentTap(e) {
+    const { tab } = e.currentTarget.dataset;
+    navigateTo(`/pages/community/my-content/index?tab=${tab}`);
+  },
+
+  onClubTap(e) {
+    navigateTo(e.currentTarget.dataset.url);
+  },
+
+  onAdminTap() {
+    navigateTo('/pages/admin/index?queue=content');
+  },
+
+  onSettingTap() {
+    navigateTo('/pages/setting/index');
+  },
+
+  onMessageTap() {
+    navigateTo('/pages/message/index');
+  },
+
+  onEditTap() {
+    navigateTo('/pages/my/info-edit/index');
+  },
+
+  onJoinTap() {
+    navigateTo('/pages/community/join/index?from=my');
+  },
+
+  onLogout() {
+    wx.showModal({
+      title: '退出账号',
+      content: '将清除本机缓存并切换为访客。云端内容不会被删除。',
+      confirmText: '退出',
+      success: (res) => {
+        if (!res.confirm) return;
+        const session = clearAccountScope();
+        app.globalData.session = session;
+        app.eventBus.emit('session-changed', session);
+        this.syncSession(session);
+        this.setData({ profile: null, stats: { posts: 0, bookmarks: 0, topics: 0 } });
+        wx.showToast({ title: '已切换为访客', icon: 'none' });
+      },
     });
-  },
-
-  onNavigateTo() {
-    wx.navigateTo({ url: `/pages/my/info-edit/index` });
-  },
-
-  onEleClick(e) {
-    const { name, url } = e.currentTarget.dataset.data;
-    if (url) return;
-    this.onShowToast('#t-toast', name);
   },
 });
