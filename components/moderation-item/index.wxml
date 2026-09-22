@@ -1,0 +1,32 @@
+<view class="hg-moderation-item">
+  <view class="hg-moderation-item__head">
+    <view class="hg-moderation-item__queue">{{ item.queueLabel }}</view>
+    <view class="hg-moderation-item__status">{{ item.statusText }}</view>
+  </view>
+
+  <view class="hg-moderation-item__title">{{ item.title }}</view>
+  <view wx:if="{{ item.summary }}" class="hg-moderation-item__summary">{{ item.summary }}</view>
+
+  <view class="hg-moderation-item__meta">
+    <view wx:if="{{ item.isAnonymous }}" class="hg-moderation-item__tag">树洞身份</view>
+    <view wx:if="{{ item.visibility }}" class="hg-moderation-item__tag">范围：{{ item.visibility }}</view>
+    <view wx:if="{{ item.assetIds.length }}" class="hg-moderation-item__tag">附件 {{ item.assetIds.length }} 个</view>
+    <view class="hg-moderation-item__time">{{ item.submittedAtText }}</view>
+  </view>
+
+  <view class="hg-moderation-item__foot">
+    <view class="hg-moderation-item__detail" bindtap="onDetail" aria-role="button">查看摘要</view>
+    <view class="hg-moderation-item__actions">
+      <view
+        wx:for="{{ actions }}"
+        wx:key="key"
+        class="hg-moderation-item__action hg-moderation-item__action--{{ item.theme }}"
+        data-key="{{ item.key }}"
+        bindtap="onAction"
+        aria-role="button"
+      >
+        {{ item.label }}
+      </view>
+    </view>
+  </view>
+</view>

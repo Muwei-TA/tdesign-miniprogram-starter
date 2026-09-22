@@ -1,0 +1,117 @@
+<view class="hg-page hg-admin">
+  <hg-nav title="社团管理" />
+
+  <view wx:if="{{ accessState === 'checking' }}" class="hg-admin__checking">
+    <view class="hg-admin__spinner">正在确认管理权限…</view>
+  </view>
+
+  <empty-state
+    wx:elif="{{ accessState === 'denied' }}"
+    icon="secured"
+    title="暂时不能进入管理台"
+    desc="管理台只对获授权的管理员开放。普通成员仍可正常使用树洞与社内内容。"
+  />
+
+  <block wx:else>
+    <view class="hg-admin__notice">
+      <t-icon name="info-circle" size="30rpx" />
+      <text>{{ queueHint }}</text>
+    </view>
+
+    <scroll-view class="hg-admin__queues" scroll-x="true" enable-flex="true">
+      <view
+        wx:for="{{ queues }}"
+        wx:key="value"
+        class="hg-admin__queue {{ activeQueue === item.value ? 'hg-admin__queue--on' : '' }}"
+        data-queue="{{ item.value }}"
+        bindtap="onQueueTap"
+        aria-role="button"
+      >
+        {{ item.label }}
+      </view>
+    </scroll-view>
+
+    <view wx:if="{{ errorText }}" class="hg-admin__error" bindtap="onRetry" aria-role="button">
+      <t-icon name="error-circle" size="28rpx" />
+      <text>{{ errorText }} · 点此重试</text>
+    </view>
+
+    <view wx:if="{{ items.length }}" class="hg-admin__list">
+      <moderation-item
+        wx:for="{{ items }}"
+        wx:key="id"
+        item="{{ item }}"
+        actions="{{ item.actions }}"
+        bind:action="onItemAction"
+        bind:detail="onItemDetail"
+      />
+    </view>
+
+    <view wx:if="{{ loading }}" class="hg-admin__loading">正在读取队列…</view>
+    <view wx:elif="{{ loadingMore }}" class="hg-admin__loading">正在加载更多…</view>
+    <empty-state
+      wx:elif="{{ !items.length && !errorText }}"
+      icon="task-complete"
+      title="这个队列暂时是空的"
+      desc="新的待处理事项会出现在这里。"
+    />
+
+    <view wx:if="{{ reasonSheetVisible }}" class="hg-admin__sheet-wrap">
+      <view class="hg-admin__mask" catchtap="onReasonCancel"></view>
+      <view class="hg-admin__sheet" catchtap="onStopPropagation">
+        <view class="hg-admin__sheet-head">
+          <view class="hg-admin__sheet-title">{{ pendingAction.label }}</view>
+          <view class="hg-admin__sheet-close" bindtap="onReasonCancel" aria-role="button">取消</view>
+        </view>
+        <view class="hg-admin__sheet-hint">处理理由会写入审计记录。请说明判断依据，最多 200 字。</view>
+        <textarea
+          class="hg-admin__reason"
+          maxlength="200"
+          placeholder="填写处理理由"
+          value="{{ reason }}"
+          bindinput="onReasonInput"
+        />
+        <view class="hg-admin__submit" bindtap="onReasonSubmit" aria-role="button">继续提交</view>
+      </view>
+    </view>
+
+    <view wx:if="{{ mediaSheetVisible }}" class="hg-admin__sheet-wrap">
+      <view class="hg-admin__mask" catchtap="onMediaClose"></view>
+      <view class="hg-admin__sheet hg-admin__media-sheet" catchtap="onStopPropagation">
+        <view class="hg-admin__sheet-head">
+          <view class="hg-admin__sheet-title">{{ mediaTitle }}</view>
+          <view class="hg-admin__sheet-close" bindtap="onMediaClose" aria-role="button">关闭</view>
+        </view>
+        <view wx:if="{{ mediaLoading }}" class="hg-admin__media-loading">正在读取附件状态…</view>
+        <view wx:else class="hg-admin__media-list">
+          <view wx:for="{{ mediaItems }}" wx:key="assetId" class="hg-admin__media-item">
+            <image
+              wx:if="{{ item.mediaType === 'image' && item.url }}"
+              class="hg-admin__media-image"
+              src="{{ item.url }}"
+              mode="aspectFill"
+              data-url="{{ item.url }}"
+              bindtap="onPreviewImage"
+            />
+            <video
+              wx:elif="{{ item.mediaType === 'video' && item.url }}"
+              class="hg-admin__media-video"
+              src="{{ item.url }}"
+              controls="true"
+              object-fit="contain"
+            />
+            <image
+              wx:elif="{{ item.cover }}"
+              class="hg-admin__media-image"
+              src="{{ item.cover }}"
+              mode="aspectFill"
+            />
+            <view wx:else class="hg-admin__media-placeholder">暂无可预览媒体</view>
+            <view class="hg-admin__media-status">状态：{{ item.status }}</view>
+            <view wx:if="{{ item.failureReason }}" class="hg-admin__media-failure">处理结果：{{ item.failureReason }}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

@@ -1,0 +1,12 @@
+{
+  "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 120,
+  "backgroundTextStyle": "dark",
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "hg-nav": "/components/hg-nav/index",
+    "empty-state": "/components/empty-state/index",
+    "moderation-item": "/components/moderation-item/index"
+  }
+}
