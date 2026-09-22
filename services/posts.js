@@ -16,6 +16,8 @@ export const FEED_FILTERS = [
   { value: 'awaiting_reply', label: '待回应' },
 ];
 
+export const COMMENT_LIMIT = 1000;
+
 /** 树洞信息流。filter=awaiting_reply 时由服务端计算"尚未收到有效文字回应" */
 export function fetchFeed({ cursor = '', filter = 'all', topicId = '' } = {}) {
   const query = { cursor, topicId };
@@ -71,7 +73,7 @@ export function fetchComments(id, cursor = '') {
 export function submitComment(id, { body, replyToId = '', identityMode = 'named' }, idempotencyKey) {
   return request(withPath(endpoints.postComments, { id }), {
     method: 'POST',
-    data: { body, replyToId, identityMode },
+    data: { body: String(body || '').trim(), replyToId, identityMode },
     idempotencyKey: idempotencyKey || createIdempotencyKey('comment'),
   });
 }
@@ -91,6 +93,7 @@ export function submitReport({ targetType, targetId, reason, evidence = '' }) {
 
 export default {
   FEED_FILTERS,
+  COMMENT_LIMIT,
   fetchFeed,
   fetchPostDetail,
   submitPost,

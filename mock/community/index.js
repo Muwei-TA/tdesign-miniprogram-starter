@@ -11,6 +11,9 @@ const MOCK_ROLE = 'member';
 let MOCK_APPLICATION = null;
 
 const CAPABILITIES = {
+  // 文本发布链路已接入；媒体上传仍保持关闭，直到附件审核验收完成。
+  publishing: true,
+  uploads: false,
   // 公开发布在 G0 核验完成前保持关闭（docs/01 1.6 / 1.7）
   publicScope: false,
   // 视频链路未验收，保持关闭

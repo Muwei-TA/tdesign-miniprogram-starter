@@ -7,6 +7,7 @@
     "hg-nav": "/components/hg-nav/index",
     "visibility-badge": "/components/visibility-badge/index",
     "empty-state": "/components/empty-state/index",
-    "scope-picker": "/components/scope-picker/index"
+    "scope-picker": "/components/scope-picker/index",
+    "comment-list": "/components/comment-list/index"
   }
 }

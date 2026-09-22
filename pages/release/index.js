@@ -1,6 +1,6 @@
 import { submitPost } from '~/services/posts';
 import { saveDraft, getDraft, removeDraft } from '~/services/drafts';
-import { getCapabilities, isMember } from '~/services/session';
+import { bootstrapSession } from '~/services/session';
 import { LIMITS, validateImages } from '~/services/uploads';
 import { navigateTo } from '~/utils/navigate';
 
@@ -29,7 +29,10 @@ Page({
     previewVisible: false,
     submitting: false,
 
-    capabilities: { publicScope: false, video: false },
+    session: null,
+    sessionReady: false,
+    canPublish: false,
+    capabilities: { publicScope: false, video: false, publishing: false, uploads: false },
     draftId: '',
     idempotencyKey: '',
     bodyLimit: MAX_FRAGMENT,
@@ -39,20 +42,70 @@ Page({
   },
 
   onLoad(options) {
-    if (!isMember()) {
-      wx.showModal({
-        title: '需要成员资格',
-        content: '写一笔需要先加入文学社。',
-        confirmText: '去了解',
-        success: (res) => {
-          wx.navigateBack();
-          if (res.confirm) navigateTo('/pages/community/join/index?from=release');
-        },
-      });
-      return;
-    }
+    this.pageOptions = options || {};
+    this.onSessionChanged = (session) => this.applySession(session);
+    app.eventBus.on('session-changed', this.onSessionChanged);
+    if (app.globalData.session) this.applySession(app.globalData.session);
+    else this.restoreSession();
+  },
 
-    const patch = { capabilities: getCapabilities() };
+  onUnload() {
+    app.eventBus.off('session-changed', this.onSessionChanged);
+    if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
+    this.persistDraft({ silent: true });
+  },
+
+  async restoreSession() {
+    const session = await bootstrapSession();
+    app.globalData.session = session;
+    app.eventBus.emit('session-changed', session);
+  },
+
+  applySession(session) {
+    if (!session) return;
+    const capabilities = {
+      publicScope: false,
+      video: false,
+      publishing: false,
+      uploads: false,
+      ...(session.capabilities || {}),
+    };
+    const canPublish = session.memberStatus === 'active' && capabilities.publishing === true;
+    this.setData({ session, sessionReady: true, capabilities, canPublish }, () => {
+      if (session.memberStatus !== 'active') {
+        this.promptMembership();
+        return;
+      }
+      if (!this.editorInitialized) this.initializeEditor(this.pageOptions);
+    });
+  },
+
+  promptMembership() {
+    if (this.joinPrompted) return;
+    this.joinPrompted = true;
+    wx.showModal({
+      title: '需要成员资格',
+      content: '写一笔需要先加入文学社。',
+      confirmText: '去了解',
+      cancelText: '返回',
+      success: (res) => {
+        if (res.confirm) navigateTo('/pages/community/join/index?from=release');
+        else wx.navigateBack();
+      },
+    });
+  },
+
+  onJoin() {
+    navigateTo('/pages/community/join/index?from=release');
+  },
+
+  onBackHome() {
+    wx.switchTab({ url: '/pages/home/index' });
+  },
+
+  initializeEditor(options = {}) {
+    this.editorInitialized = true;
+    const patch = { capabilities: this.data.capabilities };
     if (options.mode === 'article') patch.mode = 'article';
     if (options.topicId) patch.topic = { id: options.topicId, title: options.topicTitle || '已选择的话题' };
     if (options.collectionId) patch.collectionId = options.collectionId;
@@ -71,6 +124,9 @@ Page({
           identityMode: draft.identityMode || 'named',
           commentsEnabled: draft.commentsEnabled !== false,
           topic: draft.topic || null,
+          collectionId: draft.collectionId || options.collectionId || '',
+          consentGranted: !!draft.consentGranted,
+          video: draft.video || null,
         });
         // 本地视频不跨会话保存，恢复时提示重新选择
         if (draft.video) {
@@ -84,10 +140,6 @@ Page({
 
   onHide() {
     // 切后台时静默存草稿，避免误触丢失内容
-    this.persistDraft({ silent: true });
-  },
-
-  onUnload() {
     this.persistDraft({ silent: true });
   },
 
@@ -138,6 +190,14 @@ Page({
   },
 
   onChooseImage() {
+    if (this.data.capabilities.uploads !== true) {
+      wx.showModal({
+        title: '图片暂未开放',
+        content: '图片上传和内容审核链路尚未验收完成。当前可以先保存纯文字草稿。',
+        showCancel: false,
+      });
+      return;
+    }
     if (this.data.video) {
       wx.showToast({ title: '图片与视频只能选一种', icon: 'none' });
       return;
@@ -211,7 +271,8 @@ Page({
   onIdentityExplain() {
     wx.showModal({
       title: '以树洞身份发布',
-      content: '其他人看不到你的昵称与头像。这不是绝对匿名——具体经历、地名、班级、画面与文风仍可能让人猜到你。发布前可以再检查一遍。',
+      content:
+        '其他人看不到你的昵称与头像。这不是绝对匿名——具体经历、地名、班级、画面与文风仍可能让人猜到你。发布前可以再检查一遍。',
       showCancel: false,
       confirmText: '我知道了',
     });
@@ -227,7 +288,9 @@ Page({
 
   /** 校验，返回错误文案或空字符串 */
   validate() {
-    const { mode, title, body, images, collectionId, consentGranted } = this.data;
+    const { mode, title, body, images, collectionId, consentGranted, capabilities } = this.data;
+    if (capabilities.publishing !== true) return '发布功能暂未开放';
+    if (images.length > 0 && capabilities.uploads !== true) return '图片上传暂未开放，请先移除图片或保存草稿';
     if (!body.trim() && images.length === 0 && !this.data.video) return '写一点内容，或者选一张图片';
     if (mode === 'article' && !title.trim()) return '文章需要一个标题';
     if (mode === 'article' && title.length > MAX_TITLE) return `标题请控制在 ${MAX_TITLE} 字内`;
@@ -238,6 +301,7 @@ Page({
   },
 
   onPreviewOpen() {
+    if (this.data.submitting) return;
     const error = this.validate();
     if (error) {
       wx.showToast({ title: error, icon: 'none' });
@@ -251,9 +315,22 @@ Page({
   },
 
   persistDraft({ silent = false } = {}) {
-    const { draftId, mode, title, body, images, visibility, identityMode, commentsEnabled, topic, idempotencyKey } =
-      this.data;
-    if (!body.trim() && !title.trim() && images.length === 0) return null;
+    const {
+      draftId,
+      mode,
+      title,
+      body,
+      images,
+      visibility,
+      identityMode,
+      commentsEnabled,
+      topic,
+      collectionId,
+      consentGranted,
+      video,
+      idempotencyKey,
+    } = this.data;
+    if (!body.trim() && !title.trim() && images.length === 0 && !video) return null;
 
     const draft = saveDraft({
       id: draftId,
@@ -266,6 +343,9 @@ Page({
       identityMode,
       commentsEnabled,
       topic,
+      collectionId,
+      consentGranted,
+      video,
     });
     this.setData({ draftId: draft.id, idempotencyKey: draft.idempotencyKey });
     app.eventBus.emit('draft-changed', { draftId: draft.id });
@@ -289,6 +369,10 @@ Page({
       return;
     }
     if (this.data.submitting) return;
+    if (!this.data.canPublish) {
+      wx.showToast({ title: '发布功能暂未开放', icon: 'none' });
+      return;
+    }
 
     // 幂等键随草稿持久化：超时重试时复用同一键，服务端保证只产生一条内容
     const draft = this.persistDraft({ silent: true });

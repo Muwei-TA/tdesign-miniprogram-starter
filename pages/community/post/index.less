@@ -337,6 +337,32 @@
     color: @hg-ink-3;
   }
 
+  &__comments-stale,
+  &__comments-error {
+    display: flex;
+    align-items: center;
+    gap: @hg-sp-2;
+    margin: @hg-sp-2 0;
+    padding: @hg-sp-2 @hg-sp-3;
+    background: @hg-clay-soft;
+    border-radius: @hg-radius-md;
+    color: @hg-clay-ink;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+  }
+
+  &__comments-loading {
+    padding: @hg-sp-4 0;
+    color: @hg-ink-4;
+    font-size: @hg-fs-2xs;
+  }
+
+  &__comments-retry {
+    margin-left: auto;
+    min-height: 44rpx;
+    color: @hg-green;
+  }
+
   &__comment-input {
     display: flex;
     align-items: center;

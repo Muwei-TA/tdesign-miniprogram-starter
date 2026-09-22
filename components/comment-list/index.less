@@ -1,0 +1,149 @@
+@import '/styles/tokens.less';
+@import '/styles/mixins.less';
+
+.hg-comment-list {
+  &__item {
+    display: flex;
+    gap: @hg-sp-2;
+    margin: @hg-sp-4 0;
+  }
+
+  &__avatar {
+    flex: 0 0 54rpx;
+    width: 54rpx;
+    height: 54rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: @hg-avatar-bg;
+    border-radius: 50%;
+    color: @hg-avatar-fg;
+    font-family: @hg-font-serif;
+    font-size: @hg-fs-xs;
+    white-space: nowrap;
+
+    &--anon {
+      background: @hg-avatar-anon-bg;
+      color: @hg-avatar-anon-fg;
+    }
+  }
+
+  &__main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: @hg-sp-1;
+    min-height: 32rpx;
+    color: @hg-ink-3;
+    font-size: @hg-fs-2xs;
+  }
+
+  &__name {
+    max-width: 42%;
+    .hg-ellipsis();
+  }
+
+  &__author,
+  &__pending {
+    padding: 2rpx 10rpx;
+    border-radius: 6rpx;
+    font-size: @hg-fs-2xs;
+  }
+
+  &__author {
+    background: @hg-green-soft;
+    color: @hg-green;
+  }
+
+  &__pending {
+    background: @hg-status-pending-bg;
+    color: @hg-status-pending-fg;
+  }
+
+  &__time {
+    margin-left: auto;
+    color: @hg-ink-4;
+  }
+
+  &__body {
+    margin-top: @hg-sp-1;
+    color: @hg-ink-2;
+    font-size: @hg-fs-sm;
+    line-height: @hg-lh-loose;
+    .hg-prewrap();
+  }
+
+  &__reply-action {
+    display: inline-flex;
+    min-height: 52rpx;
+    align-items: center;
+    color: @hg-green;
+    font-size: @hg-fs-2xs;
+  }
+
+  &__reply {
+    margin-top: @hg-sp-2;
+    padding: @hg-sp-2 @hg-sp-3;
+    background: @hg-surface-sunk;
+    border-radius: @hg-radius-md;
+  }
+
+  &__empty,
+  &__disabled {
+    padding: @hg-sp-4 0;
+    color: @hg-ink-3;
+    font-size: @hg-fs-sm;
+    line-height: @hg-lh-base;
+  }
+
+  &__disabled {
+    color: @hg-ink-4;
+  }
+
+  &__replying {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: @hg-sp-3;
+    padding: @hg-sp-2 @hg-sp-3;
+    background: @hg-green-soft;
+    color: @hg-ink-2;
+    font-size: @hg-fs-2xs;
+  }
+
+  &__replying-cancel {
+    min-height: 44rpx;
+    padding-left: @hg-sp-3;
+    color: @hg-green;
+  }
+
+  &__input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 84rpx;
+    margin-top: @hg-sp-2;
+    padding: @hg-sp-2 @hg-sp-3;
+    background: @hg-surface;
+    border: 1rpx solid @hg-line;
+    border-radius: @hg-radius-md;
+    color: @hg-ink;
+    font-size: @hg-fs-sm;
+    line-height: @hg-lh-base;
+  }
+
+  &__submit {
+    .hg-btn-secondary();
+
+    margin-top: @hg-sp-2;
+    min-height: 76rpx;
+  }
+
+  &__submit--disabled {
+    opacity: 0.55;
+  }
+}

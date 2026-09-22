@@ -3,6 +3,30 @@
 .hg-compose {
   padding-bottom: 200rpx;
 
+  &__session-loading {
+    padding: @hg-sp-5 @hg-page-x;
+  }
+
+  &__session-skeleton {
+    margin-bottom: @hg-sp-3;
+    background: @hg-surface-sunk;
+    border-radius: @hg-radius-md;
+
+    &--title {
+      width: 42%;
+      height: 56rpx;
+    }
+
+    &--line {
+      width: 92%;
+      height: 30rpx;
+    }
+
+    &--short {
+      width: 66%;
+    }
+  }
+
   &__preview-btn {
     display: flex;
     align-items: center;

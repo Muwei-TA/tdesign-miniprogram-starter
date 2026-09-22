@@ -1,0 +1,68 @@
+<view class="hg-comment-list">
+  <block wx:if="{{ comments.length > 0 }}">
+    <view wx:for="{{ comments }}" wx:key="id" class="hg-comment-list__item">
+      <view class="hg-comment-list__avatar {{ item.author.isAnonymous ? 'hg-comment-list__avatar--anon' : '' }}">
+        {{ item.author.isAnonymous ? (item.author.alias || '树') : (item.author.displayName || '社内成员') }}
+      </view>
+      <view class="hg-comment-list__main">
+        <view class="hg-comment-list__head">
+          <text class="hg-comment-list__name"
+            >{{ item.author.isAnonymous ? item.author.alias : item.author.displayName }}</text
+          >
+          <text wx:if="{{ item.author.isAuthor }}" class="hg-comment-list__author">作者</text>
+          <text wx:if="{{ item.status === 'pending' }}" class="hg-comment-list__pending">等待审核</text>
+          <text class="hg-comment-list__time">{{ item.createdAtText }}</text>
+        </view>
+        <view class="hg-comment-list__body">{{ item.body }}</view>
+        <view
+          wx:if="{{ item.status !== 'pending' }}"
+          class="hg-comment-list__reply-action"
+          data-id="{{ item.id }}"
+          data-label="{{ item.author.isAnonymous ? item.author.alias : item.author.displayName }}"
+          bindtap="onReply"
+          aria-role="button"
+        >
+          回复
+        </view>
+
+        <view wx:for="{{ item.replies }}" wx:for-item="reply" wx:key="id" class="hg-comment-list__reply">
+          <view class="hg-comment-list__head">
+            <text class="hg-comment-list__name"
+              >{{ reply.author.isAnonymous ? reply.author.alias : reply.author.displayName }}</text
+            >
+            <text wx:if="{{ reply.author.isAuthor }}" class="hg-comment-list__author">作者</text>
+            <text wx:if="{{ reply.status === 'pending' }}" class="hg-comment-list__pending">等待审核</text>
+            <text class="hg-comment-list__time">{{ reply.createdAtText }}</text>
+          </view>
+          <view class="hg-comment-list__body">{{ reply.body }}</view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <view wx:else class="hg-comment-list__empty">还没有人回应。第一句可以很短。</view>
+
+  <view wx:if="{{ !canComment }}" class="hg-comment-list__disabled">{{ disabledReason }}</view>
+  <block wx:else>
+    <view wx:if="{{ replyToId }}" class="hg-comment-list__replying">
+      <text>回复 {{ replyLabel }}</text>
+      <text class="hg-comment-list__replying-cancel" bindtap="onCancelReply" aria-role="button">取消</text>
+    </view>
+    <textarea
+      class="hg-comment-list__input"
+      value="{{ inputValue }}"
+      maxlength="1000"
+      placeholder="{{ placeholder }}"
+      adjust-position
+      show-confirm-bar="{{ false }}"
+      bindinput="onInput"
+    />
+    <view
+      class="hg-comment-list__submit {{ localSubmitting || submitting ? 'hg-comment-list__submit--disabled' : '' }}"
+      bindtap="onSubmit"
+      aria-role="button"
+    >
+      {{ localSubmitting || submitting ? '提交中…' : '回应' }}
+    </view>
+  </block>
+</view>

@@ -44,9 +44,13 @@
         </view>
 
         <view class="hg-detail__tools">
-          <view class="hg-detail__tool" data-step="-1" bindtap="onFontChange" aria-role="button" aria-label="缩小字号">A-</view>
+          <view class="hg-detail__tool" data-step="-1" bindtap="onFontChange" aria-role="button" aria-label="缩小字号"
+            >A-</view
+          >
           <view class="hg-detail__tool-label">字号</view>
-          <view class="hg-detail__tool" data-step="1" bindtap="onFontChange" aria-role="button" aria-label="放大字号">A+</view>
+          <view class="hg-detail__tool" data-step="1" bindtap="onFontChange" aria-role="button" aria-label="放大字号"
+            >A+</view
+          >
           <view class="hg-detail__tool hg-detail__tool--right" bindtap="onNightToggle" aria-role="button">
             <t-icon name="{{ nightMode ? 'sunny' : 'moon' }}" size="30rpx" />
             <text>{{ nightMode ? '日间' : '夜间' }}</text>
@@ -87,7 +91,13 @@
             <view class="hg-detail__author-note">{{ post.createdAtText }}</view>
           </view>
           <visibility-badge scope="{{ post.visibility }}" />
-          <view wx:if="{{ post.visibility !== 'private' }}" class="hg-detail__more" catchtap="onMoreOpen" aria-role="button" aria-label="更多">
+          <view
+            wx:if="{{ post.visibility !== 'private' }}"
+            class="hg-detail__more"
+            catchtap="onMoreOpen"
+            aria-role="button"
+            aria-label="更多"
+          >
             <t-icon name="ellipsis" size="34rpx" />
           </view>
         </view>
@@ -119,9 +129,7 @@
             show-center-play-btn
             object-fit="cover"
           />
-          <view wx:else class="hg-detail__video-pending">
-            这段视频正在处理，完成审核后才会展示。
-          </view>
+          <view wx:else class="hg-detail__video-pending"> 这段视频正在处理，完成审核后才会展示。 </view>
         </view>
 
         <view wx:if="{{ post.event }}" class="hg-detail__event">
@@ -141,60 +149,55 @@
 
     <!-- 互动条：private 不展示 -->
     <view wx:if="{{ post.visibility !== 'private' && post.status === 'published' }}" class="hg-detail__actions">
-      <view class="hg-detail__action {{ post.viewer.reacted ? 'hg-detail__action--on' : '' }}" bindtap="onReact" aria-role="button">
+      <view
+        class="hg-detail__action {{ post.viewer.reacted ? 'hg-detail__action--on' : '' }}"
+        bindtap="onReact"
+        aria-role="button"
+      >
         <t-icon name="{{ post.viewer.reacted ? 'heart-filled' : 'heart' }}" size="32rpx" />
         <text>共鸣 {{ post.counters.reactions }}</text>
       </view>
-      <view class="hg-detail__action" bindtap="onCommentPlaceholder" aria-role="button">
+      <view class="hg-detail__action" bindtap="onCommentTap" aria-role="button">
         <t-icon name="chat-bubble-1" size="32rpx" />
         <text>回应 {{ post.counters.comments }}</text>
       </view>
-      <view class="hg-detail__action {{ post.viewer.bookmarked ? 'hg-detail__action--on' : '' }}" bindtap="onBookmark" aria-role="button">
+      <view
+        class="hg-detail__action {{ post.viewer.bookmarked ? 'hg-detail__action--on' : '' }}"
+        bindtap="onBookmark"
+        aria-role="button"
+      >
         <t-icon name="{{ post.viewer.bookmarked ? 'bookmark-filled' : 'bookmark' }}" size="32rpx" />
         <text>收藏</text>
       </view>
     </view>
 
-    <!-- 评论区（完整交互见任务 T-06） -->
+    <!-- 评论区：一级评论 + 定向回复，评论组件不请求数据 -->
     <view wx:if="{{ post.visibility !== 'private' }}" class="hg-detail__comments">
       <view class="hg-detail__comments-title">回应</view>
-
-      <block wx:if="{{ comments.length > 0 }}">
-        <view wx:for="{{ comments }}" wx:key="id" class="hg-detail__comment">
-          <view class="hg-detail__c-avatar {{ item.author.isAnonymous ? 'hg-detail__c-avatar--anon' : '' }}">
-            {{ item.author.isAnonymous ? item.author.alias[0] : item.author.displayName[0] }}
-          </view>
-          <view class="hg-detail__c-main">
-            <view class="hg-detail__c-name">
-              {{ item.author.isAnonymous ? item.author.alias : item.author.displayName }}
-              <text wx:if="{{ item.author.isAuthor }}" class="hg-detail__c-tag">作者</text>
-              <text class="hg-detail__c-time">{{ item.createdAtText }}</text>
-            </view>
-            <view class="hg-detail__c-body">{{ item.body }}</view>
-
-            <view wx:for="{{ item.replies }}" wx:for-item="reply" wx:key="id" class="hg-detail__reply">
-              <view class="hg-detail__c-name">
-                {{ reply.author.isAnonymous ? reply.author.alias : reply.author.displayName }}
-                <text wx:if="{{ reply.author.isAuthor }}" class="hg-detail__c-tag">作者</text>
-                <text class="hg-detail__c-time">{{ reply.createdAtText }}</text>
-              </view>
-              <view class="hg-detail__c-body">{{ reply.body }}</view>
-            </view>
-          </view>
-        </view>
-      </block>
-
-      <view wx:elif="{{ post.commentsEnabled }}" class="hg-detail__comments-empty">还没有人回应。第一句可以很短。</view>
-      <view wx:else class="hg-detail__comments-empty">作者关闭了这条内容的回应。</view>
-
-      <view wx:if="{{ post.commentsEnabled }}" class="hg-detail__comment-input" bindtap="onCommentPlaceholder" aria-role="button">
-        写下你的回应…
+      <view wx:if="{{ commentsStale }}" class="hg-detail__comments-stale">
+        <text>回应未更新</text>
+        <text wx:if="{{ commentsError }}">：{{ commentsError }}</text>
+        <text class="hg-detail__comments-retry" bindtap="onRetryComments" aria-role="button">重试</text>
+      </view>
+      <view wx:if="{{ commentsLoading && comments.length === 0 }}" class="hg-detail__comments-loading"
+        >正在读取回应…</view
+      >
+      <comment-list
+        wx:elif="{{ !commentsLoading || comments.length > 0 }}"
+        comments="{{ comments }}"
+        can-comment="{{ post.viewer.canComment && post.commentsEnabled }}"
+        disabled-reason="{{ post.commentsEnabled ? '目前不能回应这条内容。' : '作者关闭了这条内容的回应。' }}"
+        submitting="{{ commentSubmitting }}"
+        reset-key="{{ commentResetKey }}"
+        bind:submit="onCommentSubmit"
+      />
+      <view wx:if="{{ commentsError && !commentsStale }}" class="hg-detail__comments-error">
+        <text>{{ commentsError }}</text>
+        <text class="hg-detail__comments-retry" bindtap="onRetryComments" aria-role="button">重试</text>
       </view>
     </view>
 
-    <view class="hg-footnote">
-      回应会先进入审核，通过后才会展示。评论中的树洞身份不会显示真实昵称。
-    </view>
+    <view class="hg-footnote"> 回应会先进入审核，通过后才会展示。评论中的树洞身份不会显示真实昵称。 </view>
   </block>
 
   <!-- 更多操作 -->
@@ -207,7 +210,12 @@
         </view>
       </view>
 
-      <view wx:if="{{ post.viewer.canShrinkVisibility }}" class="hg-sheet__option" bindtap="onShrinkOpen" aria-role="button">
+      <view
+        wx:if="{{ post.viewer.canShrinkVisibility }}"
+        class="hg-sheet__option"
+        bindtap="onShrinkOpen"
+        aria-role="button"
+      >
         <t-icon name="lock-on" size="36rpx" />
         <view class="hg-sheet__option-main">
           <view class="hg-sheet__option-title">缩小可见范围</view>

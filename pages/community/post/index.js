@@ -1,12 +1,15 @@
 import {
   fetchPostDetail,
   fetchComments,
+  submitComment,
+  COMMENT_LIMIT,
   toggleReaction,
   toggleBookmark,
   shrinkVisibility,
   deletePost,
 } from '~/services/posts';
-import { getCapabilities, scopedKey } from '~/services/session';
+import { createIdempotencyKey } from '~/utils/idempotency';
+import { getCapabilities, getSession, scopedKey } from '~/services/session';
 import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();
@@ -19,6 +22,14 @@ Page({
     from: 'feed',
     post: null,
     comments: [],
+    commentsLoading: false,
+    commentsError: '',
+    commentsStale: false,
+    commentSubmitting: false,
+    commentResetKey: 0,
+    commentFingerprint: '',
+    commentIdempotencyKey: '',
+    commentIdentityMode: 'named',
     loading: true,
     // 统一不可访问态：不显示标题，避免泄露内容存在性
     notAccessible: false,
@@ -52,7 +63,8 @@ Page({
     this.setData({ loading: true, errorText: '', notAccessible: false });
     try {
       const post = await fetchPostDetail(this.data.id);
-      this.setData({ post, loading: false });
+      const commentIdentityMode = post.viewer.isOwner && post.identityMode === 'anonymous' ? 'anonymous' : 'named';
+      this.setData({ post, loading: false, commentIdentityMode });
       if (post.commentsEnabled || post.counters.comments > 0) this.loadComments();
     } catch (err) {
       if (err.kind === 'not_accessible' || err.kind === 'membership_invalid') {
@@ -64,12 +76,22 @@ Page({
   },
 
   async loadComments() {
+    this.setData({ commentsLoading: true, commentsError: '' });
     try {
       const data = await fetchComments(this.data.id);
-      this.setData({ comments: data.items || [] });
+      this.setData({ comments: data.items || [], commentsLoading: false, commentsStale: false });
     } catch (err) {
-      // 评论加载失败不影响正文阅读
+      // 评论加载失败不影响正文阅读，也不丢弃已经展示的回应。
+      this.setData({
+        commentsLoading: false,
+        commentsStale: this.data.comments.length > 0,
+        commentsError: err.message || '回应暂时没有更新',
+      });
     }
+  },
+
+  onRetryComments() {
+    this.loadComments();
   },
 
   onRetry() {
@@ -107,6 +129,9 @@ Page({
 
   // ---------- 互动 ----------
   async onReact() {
+    this.interactionBusy = this.interactionBusy || {};
+    if (this.interactionBusy.react) return;
+    this.interactionBusy.react = true;
     const { post } = this.data;
     const next = !post.viewer.reacted;
     const prevCount = post.counters.reactions;
@@ -120,10 +145,15 @@ Page({
     } catch (err) {
       this.setData({ 'post.viewer.reacted': !next, 'post.counters.reactions': prevCount });
       wx.showToast({ title: err.message || '操作未完成', icon: 'none' });
+    } finally {
+      this.interactionBusy.react = false;
     }
   },
 
   async onBookmark() {
+    this.interactionBusy = this.interactionBusy || {};
+    if (this.interactionBusy.bookmark) return;
+    this.interactionBusy.bookmark = true;
     const { post } = this.data;
     const next = !post.viewer.bookmarked;
     this.setData({ 'post.viewer.bookmarked': next });
@@ -133,7 +163,85 @@ Page({
     } catch (err) {
       this.setData({ 'post.viewer.bookmarked': !next });
       wx.showToast({ title: err.message || '操作未完成', icon: 'none' });
+    } finally {
+      this.interactionBusy.bookmark = false;
     }
+  },
+
+  onCommentTap() {
+    wx.pageScrollTo({ scrollTop: 99999, duration: 220 });
+  },
+
+  onCommentSubmit(e) {
+    if (this.data.commentSubmitting) return;
+    const body = String(e.detail.body || '').trim();
+    const replyToId = e.detail.replyToId || '';
+    if (!body) return;
+    if (body.length > COMMENT_LIMIT) {
+      wx.showToast({ title: `回应最多 ${COMMENT_LIMIT} 字`, icon: 'none' });
+      return;
+    }
+
+    const fingerprint = JSON.stringify({ body, replyToId, identityMode: this.data.commentIdentityMode });
+    const retrying = this.data.commentFingerprint === fingerprint && !!this.data.commentIdempotencyKey;
+    const idempotencyKey = retrying ? this.data.commentIdempotencyKey : createIdempotencyKey('comment');
+    this.setData({
+      commentSubmitting: true,
+      commentFingerprint: fingerprint,
+      commentIdempotencyKey: idempotencyKey,
+      commentsError: '',
+    });
+
+    if (!retrying) this.insertPendingComment({ body, replyToId });
+
+    submitComment(this.data.id, { body, replyToId, identityMode: this.data.commentIdentityMode }, idempotencyKey)
+      .then((result) => {
+        if (!result || result.state !== 'pending') throw new Error('回应状态暂时无法确认');
+        this.setData({
+          commentSubmitting: false,
+          commentResetKey: this.data.commentResetKey + 1,
+          commentFingerprint: '',
+          commentIdempotencyKey: '',
+        });
+        wx.showToast({ title: '已收到，等待审核', icon: 'none' });
+        app.eventBus.emit('post-changed', { id: this.data.id, action: 'comment' });
+      })
+      .catch((err) => {
+        this.setData({ commentSubmitting: false, commentsError: err.message || '回应未完成，可重试' });
+        wx.showToast({ title: err.message || '回应未完成，可重试', icon: 'none' });
+      });
+  },
+
+  insertPendingComment({ body, replyToId }) {
+    const post = this.data.post || {};
+    const session = getSession();
+    const anonymous = this.data.commentIdentityMode === 'anonymous';
+    const authorIsPostAuthor = !!(post.viewer && post.viewer.isOwner);
+    const comment = {
+      id: `local-comment-${Date.now()}`,
+      author: anonymous
+        ? { userId: null, displayName: null, alias: '树洞身份', isAnonymous: true, isAuthor: authorIsPostAuthor }
+        : {
+            userId: null,
+            displayName: (session.user && session.user.displayName) || '我',
+            alias: null,
+            isAnonymous: false,
+            isAuthor: authorIsPostAuthor,
+          },
+      body,
+      createdAtText: '刚刚',
+      status: 'pending',
+      replies: [],
+    };
+    if (!replyToId) {
+      this.setData({ comments: this.data.comments.concat(comment) });
+      return;
+    }
+    const comments = this.data.comments.map((item) => {
+      if (item.id !== replyToId) return item;
+      return { ...item, replies: (item.replies || []).concat(comment) };
+    });
+    this.setData({ comments });
   },
 
   onTapAuthor() {
@@ -141,7 +249,8 @@ Page({
     if (author.isAnonymous || !author.userId) {
       wx.showModal({
         title: '树洞身份',
-        content: '这条内容以树洞身份发布，其他人看不到作者的昵称与头像。这不是绝对匿名——具体经历、地名与文风仍可能让人猜到。',
+        content:
+          '这条内容以树洞身份发布，其他人看不到作者的昵称与头像。这不是绝对匿名——具体经历、地名与文风仍可能让人猜到。',
         showCancel: false,
         confirmText: '我知道了',
       });
@@ -225,10 +334,5 @@ Page({
         }
       },
     });
-  },
-
-  onCommentPlaceholder() {
-    // 评论输入与提交由任务 T-06 接入 comment-list 组件
-    wx.showToast({ title: '评论输入待接入（T-06）', icon: 'none' });
   },
 });

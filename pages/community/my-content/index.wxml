@@ -1,0 +1,135 @@
+<view class="hg-page hg-my-content">
+  <hg-nav title="我的内容" />
+
+  <scroll-view class="hg-my-content__tabs" scroll-x enhanced show-scrollbar="{{ false }}">
+    <view
+      wx:for="{{ tabs }}"
+      wx:key="value"
+      class="hg-my-content__tab {{ tab === item.value ? 'hg-my-content__tab--on' : '' }}"
+      data-value="{{ item.value }}"
+      bindtap="onTabTap"
+      aria-role="button"
+    >
+      {{ item.label }}
+    </view>
+  </scroll-view>
+
+  <view wx:if="{{ isGuest && sessionReady }}" class="hg-my-content__guest">
+    <empty-state
+      icon="usergroup-add"
+      title="先完成授权"
+      desc="登录后才能读取自己的内容、草稿和收藏。"
+      action="去了解并加入"
+      bind:action="onJoin"
+    />
+  </view>
+
+  <block wx:elif="{{ !sessionReady || loading }}">
+    <view class="hg-my-content__loading">
+      <view wx:for="{{ [1, 2, 3] }}" wx:key="*this" class="hg-my-content__skeleton">
+        <view class="hg-my-content__skeleton-line"></view>
+        <view class="hg-my-content__skeleton-line hg-my-content__skeleton-line--short"></view>
+      </view>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view wx:if="{{ stale }}" class="hg-my-content__stale">
+      <text>列表未更新：{{ errorText }}</text>
+      <text class="hg-my-content__retry" bindtap="onRetry" aria-role="button">重试</text>
+    </view>
+
+    <empty-state
+      wx:if="{{ errorText && list.length === 0 && drafts.length === 0 && topics.length === 0 && unavailable.length === 0 }}"
+      icon="error-circle"
+      title="没能读到这组内容"
+      desc="{{ errorText }}"
+      action="再试一次"
+      bind:action="onRetry"
+    />
+
+    <block wx:elif="{{ tab === 'draft' }}">
+      <view wx:if="{{ drafts.length > 0 }}" class="hg-my-content__drafts">
+        <view
+          wx:for="{{ drafts }}"
+          wx:key="id"
+          class="hg-my-content__draft"
+          bindtap="onDraftTap"
+          data-id="{{ item.id }}"
+          aria-role="button"
+        >
+          <view class="hg-my-content__draft-main">
+            <view class="hg-my-content__draft-kind">{{ item.kindText }} · 草稿</view>
+            <view class="hg-my-content__draft-title">{{ item.title || '未命名草稿' }}</view>
+            <view class="hg-my-content__draft-excerpt">{{ item.excerpt || '还没有写下正文。' }}</view>
+            <view class="hg-my-content__draft-time">{{ item.updatedAtText }}</view>
+          </view>
+          <view class="hg-my-content__draft-delete" catchtap="onDeleteDraft" data-id="{{ item.id }}" aria-role="button"
+            >删除</view
+          >
+        </view>
+      </view>
+      <empty-state
+        wx:else
+        icon="file-copy"
+        title="还没有草稿"
+        desc="没写完的句子可以先留在这里。"
+        action="写一笔"
+        bind:action="onNewDraft"
+      />
+    </block>
+
+    <block wx:elif="{{ tab === 'topics' }}">
+      <view wx:if="{{ topics.length > 0 }}" class="hg-my-content__topics">
+        <topic-card wx:for="{{ topics }}" wx:key="id" topic="{{ item }}" bind:tap="onTopicTap" />
+      </view>
+      <empty-state
+        wx:else
+        icon="chat-bubble-1"
+        title="还没有关注的话题"
+        desc="关注一个具体的问题，下一次写起来会更容易。"
+      />
+    </block>
+
+    <block wx:else>
+      <view wx:if="{{ list.length > 0 }}" class="hg-my-content__posts">
+        <view wx:for="{{ list }}" wx:key="id" class="hg-my-content__post-wrap">
+          <post-card post="{{ item }}" mode="mine" show-actions="{{ false }}" bind:tapbody="onPostTap" />
+          <view
+            wx:if="{{ tab !== 'bookmark' }}"
+            class="hg-my-content__post-delete"
+            data-id="{{ item.id }}"
+            catchtap="onDeleteContent"
+            aria-role="button"
+            >删除</view
+          >
+        </view>
+      </view>
+
+      <view wx:if="{{ unavailable.length > 0 }}" class="hg-my-content__unavailable">
+        <view wx:for="{{ unavailable }}" wx:key="id" class="hg-my-content__unavailable-row">
+          <view class="hg-my-content__unavailable-main">
+            <view class="hg-my-content__unavailable-title">{{ item.placeholder || '这条内容当前不可访问' }}</view>
+            <view class="hg-my-content__unavailable-desc">原文或已调整可见范围，列表不会保留摘要。</view>
+          </view>
+          <view
+            class="hg-my-content__unavailable-remove"
+            data-id="{{ item.id }}"
+            bindtap="onRemoveBookmark"
+            aria-role="button"
+            >移除收藏</view
+          >
+        </view>
+      </view>
+
+      <empty-state
+        wx:if="{{ list.length === 0 && unavailable.length === 0 }}"
+        icon="root-list"
+        title="这里还没有内容"
+        desc="{{ tab === 'pending' ? '待审核或需要修改的内容会出现在这里。' : tab === 'private' ? '只留给自己的文字会放在这里。' : '写下第一笔，之后可以在这里找回。' }}"
+        action="{{ tab === 'published' || tab === 'private' ? '写一笔' : '' }}"
+        bind:action="onNewDraft"
+      />
+    </block>
+  </block>
+</view>

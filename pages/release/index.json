@@ -7,6 +7,7 @@
     "t-checkbox": "tdesign-miniprogram/checkbox/checkbox",
     "t-popup": "tdesign-miniprogram/popup/popup",
     "hg-nav": "/components/hg-nav/index",
+    "empty-state": "/components/empty-state/index",
     "scope-picker": "/components/scope-picker/index",
     "visibility-badge": "/components/visibility-badge/index"
   }
