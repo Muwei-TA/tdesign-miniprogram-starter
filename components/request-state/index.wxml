@@ -1,0 +1,12 @@
+<view class="hg-request-state">
+  <view wx:if="{{ stale }}" class="hg-request-state__stale">
+    <text>内容未更新</text>
+    <text class="hg-request-state__retry" bindtap="onRetry" aria-role="button">重试</text>
+  </view>
+  <view wx:elif="{{ state === 'loading' }}" class="hg-request-state__loading">正在读取…</view>
+  <view wx:elif="{{ state === 'error' }}" class="hg-request-state__error">
+    <text>暂时读不到内容{{ errorKind ? '，请稍后重试' : '' }}</text>
+    <text class="hg-request-state__retry" bindtap="onRetry" aria-role="button">重试</text>
+  </view>
+  <view wx:elif="{{ state === 'empty' }}" class="hg-request-state__empty">这里还没有内容</view>
+</view>

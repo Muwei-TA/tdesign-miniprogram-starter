@@ -1,0 +1,45 @@
+<view class="hg-page hg-profile">
+  <hg-nav title="社员主页" />
+
+  <request-state wx:if="{{ loading && !user }}" state="loading" />
+  <request-state wx:elif="{{ !user && errorText }}" state="error" error-kind="{{ errorKind }}" bind:retry="onRetry" />
+
+  <block wx:if="{{ user }}">
+    <view class="hg-profile__hero">
+      <identity-label
+        identity-mode="named"
+        display-name="{{ user.displayName }}"
+        user-id="{{ user.id }}"
+        avatar="{{ user.avatar }}"
+        bind:tapname="onTapName"
+      />
+      <view wx:if="{{ memberStatusText }}" class="hg-profile__status">{{ memberStatusText }}</view>
+      <view class="hg-profile__count">公开展示 {{ visibleCount }} 篇署名作品</view>
+    </view>
+
+    <request-state wx:if="{{ stale }}" stale="{{ true }}" bind:retry="onRetry" />
+
+    <view class="hg-profile__title">署名作品</view>
+    <view class="hg-profile__list">
+      <block wx:if="{{ list.length > 0 }}">
+        <post-card
+          wx:for="{{ list }}"
+          wx:key="id"
+          mode="compact"
+          show-actions="{{ false }}"
+          post="{{ item }}"
+          bind:tapbody="onTapBody"
+          bind:tapmedia="onTapMedia"
+          bind:taptopic="onTapTopic"
+          bind:tapauthor="onTapAuthor"
+        />
+      </block>
+      <empty-state
+        wx:elif="{{ !loading && !stale }}"
+        icon="root-list"
+        title="还没有可展示的署名作品"
+        desc="匿名、私密或当前无权查看的内容不会出现在这里。"
+      />
+    </view>
+  </block>
+</view>

@@ -7,17 +7,33 @@ Page({
     list: [],
     loading: true,
     errorText: '',
+    stale: false,
+    unavailable: false,
     isMember: false,
     anthologyEnabled: false,
   },
 
   onLoad() {
-    const session = getSession();
+    this.syncSession(getSession());
+    this.onSessionChanged = (session) => {
+      const wasEnabled = this.data.anthologyEnabled;
+      this.syncSession(session);
+      if (wasEnabled !== this.data.anthologyEnabled || this.data.anthologyEnabled) this.loadCollections();
+    };
+    getApp().eventBus.on('session-changed', this.onSessionChanged);
+    this.loadCollections();
+  },
+
+  onUnload() {
+    getApp().eventBus.off('session-changed', this.onSessionChanged);
+  },
+
+  syncSession(session) {
+    if (!session) return;
     this.setData({
       isMember: session.memberStatus === 'active',
-      anthologyEnabled: getCapabilities().anthology,
+      anthologyEnabled: getCapabilities().anthology === true,
     });
-    this.loadCollections();
   },
 
   onShow() {
@@ -31,12 +47,21 @@ Page({
   },
 
   async loadCollections() {
+    if (getCapabilities().anthology !== true) {
+      this.setData({ loading: false, unavailable: true, list: [], errorText: '', stale: false });
+      return;
+    }
     this.setData({ loading: true, errorText: '' });
     try {
       const data = await fetchCollections();
-      this.setData({ list: data.items || [], loading: false });
+      this.setData({ list: data.items || [], loading: false, unavailable: false, stale: false });
     } catch (err) {
-      this.setData({ loading: false, errorText: err.message || '加载失败' });
+      this.setData({
+        loading: false,
+        unavailable: false,
+        stale: this.data.list.length > 0,
+        errorText: err.message || '加载失败',
+      });
     }
   },
 

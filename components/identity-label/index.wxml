@@ -1,0 +1,18 @@
+<view
+  class="hg-identity {{ identityMode === 'anonymous' ? 'hg-identity--anon' : '' }}"
+  bindtap="onTap"
+  aria-role="button"
+  aria-label="{{ identityMode === 'anonymous' ? '树洞身份，点击了解' : displayName }}"
+>
+  <view class="hg-identity__avatar">
+    <image wx:if="{{ identityMode !== 'anonymous' && avatar }}" src="{{ avatar }}" mode="aspectFill" />
+    <text wx:else>{{ identityMode === 'anonymous' ? (alias || '树') : (displayName || '社内成员') }}</text>
+  </view>
+  <view class="hg-identity__main">
+    <view class="hg-identity__name">
+      {{ identityMode === 'anonymous' ? (alias || '树洞旅人') : (displayName || '社内成员') }}
+      <text wx:if="{{ isAuthor }}" class="hg-identity__author">作者</text>
+    </view>
+    <view wx:if="{{ identityMode === 'anonymous' }}" class="hg-identity__note">树洞身份 · 点击了解</view>
+  </view>
+</view>

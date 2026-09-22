@@ -1,0 +1,32 @@
+@import '/styles/tokens.less';
+@import '/styles/mixins.less';
+
+.hg-request-state {
+  min-height: 44rpx;
+  color: @hg-ink-3;
+  font-size: @hg-fs-2xs;
+  line-height: @hg-lh-base;
+
+  &__stale,
+  &__error {
+    display: flex;
+    align-items: center;
+    gap: @hg-sp-2;
+    padding: @hg-sp-2 @hg-sp-3;
+    background: @hg-clay-soft;
+    border-radius: @hg-radius-md;
+    color: @hg-clay-ink;
+  }
+
+  &__retry {
+    margin-left: auto;
+    min-height: 44rpx;
+    color: @hg-green;
+  }
+
+  &__loading,
+  &__empty {
+    padding: @hg-sp-3 0;
+    text-align: center;
+  }
+}

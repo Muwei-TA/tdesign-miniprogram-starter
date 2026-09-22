@@ -1,0 +1,34 @@
+@import '/styles/tokens.less';
+@import '/styles/mixins.less';
+
+.hg-profile {
+  &__hero {
+    margin: @hg-sp-3 @hg-page-x 0;
+    padding: @hg-sp-4;
+    background: @hg-green-mist;
+    border-radius: @hg-radius-lg;
+  }
+
+  &__status {
+    margin-top: @hg-sp-3;
+    color: @hg-green;
+    font-size: @hg-fs-xs;
+  }
+
+  &__count {
+    margin-top: @hg-sp-1;
+    color: @hg-ink-3;
+    font-size: @hg-fs-2xs;
+  }
+
+  &__title {
+    padding: @hg-sp-5 @hg-page-x @hg-sp-1;
+    color: @hg-ink;
+    font-size: @hg-fs-sm;
+    font-weight: 500;
+  }
+
+  &__list {
+    padding: 0 @hg-page-x 56rpx;
+  }
+}

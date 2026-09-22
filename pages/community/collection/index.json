@@ -1,0 +1,12 @@
+{
+  "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "hg-nav": "/components/hg-nav/index",
+    "collection-cover": "/components/collection-cover/index",
+    "empty-state": "/components/empty-state/index",
+    "request-state": "/components/request-state/index"
+  }
+}

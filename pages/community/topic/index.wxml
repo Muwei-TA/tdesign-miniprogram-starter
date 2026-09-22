@@ -1,0 +1,60 @@
+<view class="hg-page hg-topic-detail">
+  <hg-nav title="话题详情" />
+
+  <request-state wx:if="{{ loading && !topic }}" state="loading" />
+  <request-state wx:elif="{{ !topic && errorText }}" state="error" error-kind="{{ errorKind }}" bind:retry="onRetry" />
+
+  <block wx:if="{{ topic }}">
+    <view class="hg-topic-detail__hero">
+      <topic-card topic="{{ topic }}" mode="banner" />
+      <view class="hg-topic-detail__meta">
+        <text wx:if="{{ topic.categoryText }}">{{ topic.categoryText }}</text>
+        <text wx:if="{{ topic.status === 'archived' }}" class="hg-topic-detail__status">已归档</text>
+        <text wx:elif="{{ topic.status === 'pending' }}" class="hg-topic-detail__status">待审核</text>
+      </view>
+      <view
+        wx:if="{{ topic.status === 'active' }}"
+        class="hg-topic-detail__follow {{ followBusy ? 'hg-topic-detail__follow--disabled' : '' }}"
+        bindtap="onFollow"
+        aria-role="button"
+      >
+        {{ topic.followed ? '已关注' : '关注话题' }}
+      </view>
+    </view>
+
+    <request-state wx:if="{{ stale }}" stale="{{ true }}" bind:retry="onRetry" />
+
+    <view class="hg-topic-detail__section-title">参与内容</view>
+    <view class="hg-topic-detail__list">
+      <block wx:if="{{ list.length > 0 }}">
+        <post-card
+          wx:for="{{ list }}"
+          wx:key="id"
+          mode="compact"
+          show-actions="{{ false }}"
+          post="{{ item }}"
+          bind:tapbody="onTapBody"
+          bind:tapmedia="onTapMedia"
+          bind:tapauthor="onTapAuthor"
+        />
+      </block>
+      <empty-state
+        wx:elif="{{ !loading && !stale }}"
+        icon="pen"
+        title="还没有人写下内容"
+        desc="如果你愿意，可以从一个具体的片段开始。"
+      />
+    </view>
+
+    <view class="hg-topic-detail__footer">
+      <view
+        class="hg-topic-detail__write {{ topic.status !== 'active' || !canPost ? 'hg-topic-detail__write--disabled' : '' }}"
+        bindtap="onWrite"
+        aria-role="button"
+      >
+        {{ topic.status === 'archived' ? '话题已归档' : (canPost ? '我也写一笔' : '加入后参与共写') }}
+      </view>
+      <view class="hg-topic-detail__note">每条内容只关联一个主话题，发布时由你决定身份与可见范围。</view>
+    </view>
+  </block>
+</view>

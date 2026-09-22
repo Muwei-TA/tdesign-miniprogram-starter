@@ -1,0 +1,73 @@
+<view class="hg-page hg-collection-detail">
+  <hg-nav title="文集" />
+
+  <empty-state
+    wx:if="{{ unavailable }}"
+    icon="lock-on"
+    title="文集暂未开放"
+    desc="文集收录与投稿功能还在准备中，开放后会在这里显示。"
+  />
+  <request-state wx:elif="{{ loading && !collection }}" state="loading" />
+  <request-state
+    wx:elif="{{ !collection && errorText }}"
+    state="error"
+    error-kind="{{ errorKind }}"
+    bind:retry="onRetry"
+  />
+
+  <block wx:if="{{ collection }}">
+    <view class="hg-collection-detail__hero">
+      <collection-cover collection="{{ collection }}" size="hero" />
+    </view>
+
+    <request-state wx:if="{{ stale }}" stale="{{ true }}" bind:retry="onRetry" />
+
+    <view class="hg-collection-detail__intro">{{ collection.intro || '这本文集还没有编辑说明。' }}</view>
+    <view class="hg-collection-detail__rule">目录实时读取文章当前状态，不保存正文快照；作者可以随时撤回授权。</view>
+
+    <view class="hg-collection-detail__title">目录</view>
+    <view class="hg-collection-detail__entries">
+      <block wx:if="{{ entries.length > 0 }}">
+        <view
+          wx:for="{{ entries }}"
+          wx:key="postId"
+          class="hg-collection-detail__entry"
+          data-post-id="{{ item.postId }}"
+          bindtap="onEntryTap"
+          aria-role="button"
+        >
+          <view class="hg-collection-detail__entry-order">{{ item.order }}</view>
+          <view class="hg-collection-detail__entry-main">
+            <view class="hg-collection-detail__entry-title">{{ item.title }}</view>
+            <view class="hg-collection-detail__entry-meta"
+              >{{ item.authorText }}<text wx:if="{{ item.dateText }}"> · {{ item.dateText }}</text></view
+            >
+          </view>
+          <t-icon name="chevron-right" size="32rpx" />
+        </view>
+      </block>
+      <empty-state
+        wx:elif="{{ !loading && !stale }}"
+        icon="book-open"
+        title="目录还在整理"
+        desc="文章通过收录与授权后才会出现在这里。"
+      />
+    </view>
+
+    <view wx:if="{{ canSubmit }}" class="hg-collection-detail__submit-wrap">
+      <view class="hg-collection-detail__submit" bindtap="onSubmit" aria-role="button">向本文集投稿</view>
+      <view class="hg-collection-detail__submit-note"
+        >投稿需要单独勾选授权，收录由编辑决定，安全审核通过不等于被选中。</view
+      >
+    </view>
+    <view wx:elif="{{ !isMember && anthologyEnabled }}" class="hg-collection-detail__submit-wrap">
+      <view
+        class="hg-collection-detail__submit hg-collection-detail__submit--secondary"
+        bindtap="onJoin"
+        aria-role="button"
+        >加入后投稿</view
+      >
+      <view class="hg-collection-detail__submit-note">社内文集只接受有效成员提交的收录申请。</view>
+    </view>
+  </block>
+</view>

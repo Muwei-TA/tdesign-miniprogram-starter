@@ -4,7 +4,7 @@
   <view class="hg-edit__avatar-wrap" bindtap="onChooseAvatar" aria-role="button" aria-label="更换头像">
     <image wx:if="{{ avatar }}" class="hg-edit__avatar-img" src="{{ avatar }}" mode="aspectFill" />
     <view wx:else class="hg-edit__avatar-text">{{ displayName ? displayName[0] : '樨' }}</view>
-    <view class="hg-edit__avatar-tip">更换头像</view>
+    <view class="hg-edit__avatar-tip">头像上传暂未开放</view>
   </view>
 
   <view class="hg-edit__field">
@@ -18,9 +18,9 @@
     />
   </view>
 
-  <view class="hg-edit__note">
-    这里只需要一个昵称。我们不采集生日、院系、学号、手机号与位置。
-  </view>
+  <view class="hg-edit__note"> 这里只需要一个昵称。我们不采集生日、院系、学号、手机号与位置。 </view>
 
-  <view class="hg-edit__save" bindtap="onSave" aria-role="button">保存</view>
+  <view class="hg-edit__save {{ saving ? 'hg-edit__save--disabled' : '' }}" bindtap="onSave" aria-role="button">
+    {{ saving ? '保存中…' : '保存' }}
+  </view>
 </view>
