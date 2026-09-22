@@ -105,6 +105,15 @@ const ROUTES = [
   { method: 'POST', pattern: '/assets/confirm', action: 'assets/confirm' },
   { method: 'GET', pattern: '/assets/:id', action: 'assets/status', map: ({ params }) => ({ assetId: params.id }) },
 
+  { method: 'GET', pattern: '/admin/members', action: 'admin/members/list' },
+  { method: 'POST', pattern: '/admin/members/:targetUserId/remove', action: 'admin/member/remove' },
+  { method: 'POST', pattern: '/admin/members/:targetUserId/mute', action: 'admin/member/mute' },
+  { method: 'POST', pattern: '/admin/members/:targetUserId/role', action: 'admin/member/role' },
+  { method: 'POST', pattern: '/admin/invites', action: 'admin/invites/create' },
+  { method: 'GET', pattern: '/appeals/mine', action: 'appeals/mine' },
+  { method: 'POST', pattern: '/appeals', action: 'appeals/create' },
+  { method: 'GET', pattern: '/admin/appeals', action: 'admin/appeals/list' },
+  { method: 'POST', pattern: '/admin/appeals/:appealId/decision', action: 'admin/appeal/decide' },
   // 管理台。
   { method: 'GET', pattern: '/admin/queues/:queue', action: 'admin/queue' },
   { method: 'POST', pattern: '/admin/reviews/:id/decision', action: 'admin/content/decide' },

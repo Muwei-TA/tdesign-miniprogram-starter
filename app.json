@@ -18,7 +18,11 @@
         "join/index",
         "club/index",
         "rules/index",
-        "my-content/index"
+        "my-content/index",
+        "topic/index",
+        "collection/index",
+        "profile/index",
+        "appeals/index"
       ]
     },
     {
@@ -59,7 +63,9 @@
     {
       "root": "pages/admin",
       "pages": [
-        "index"
+        "index",
+        "members/index",
+        "appeals/index"
       ]
     }
   ],

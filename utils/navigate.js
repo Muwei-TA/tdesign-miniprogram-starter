@@ -8,9 +8,6 @@
  * 全部实现后本文件可退化为纯 wx.navigateTo 包装。
  */
 const PENDING_PAGES = {
-  '/pages/community/topic/index': 'P03 话题详情（任务 T-07）',
-  '/pages/community/collection/index': 'P07 文集目录（任务 T-08）',
-  '/pages/community/profile/index': 'P18 社员主页（任务 T-14）',
 };
 
 function pathOf(url) {
