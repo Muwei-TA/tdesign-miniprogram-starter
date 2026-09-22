@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
-const ROOT = '/Users/muwei/WeChatProjects/blacklight-development/frontend';
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 function loadTransport() {
   const source = readFileSync(join(ROOT, 'api/transport.js'), 'utf8')

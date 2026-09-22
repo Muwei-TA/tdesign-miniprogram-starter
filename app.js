@@ -3,7 +3,7 @@ import config from './config';
 import Mock from './mock/index';
 import createBus from './utils/eventBus';
 import { fetchUnreadCount } from './services/notifications';
-import { bootstrapSession } from './services/session';
+import { bootstrapSession, clearAccountScope } from './services/session';
 
 if (config.isMock) {
   Mock();
@@ -57,6 +57,13 @@ App({
     if (session.role !== 'guest') {
       this.refreshUnreadCount();
     }
+  },
+
+  invalidateSession() {
+    const session = clearAccountScope();
+    this.globalData.session = session;
+    this.setUnreadCount(0);
+    this.eventBus.emit('session-changed', session);
   },
 
   async refreshUnreadCount() {

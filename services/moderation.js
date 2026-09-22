@@ -110,31 +110,31 @@ export function submitDecision(id, { decision, reason, expectedVersion }) {
   });
 }
 
-export function decideMembership(id, { decision, reason }) {
+export function decideMembership(id, { decision, reason, expectedVersion }) {
   return request(withPath(endpoints.adminMemberDecision, { id }), {
     method: 'POST',
-    data: { decision, reason },
+    data: { decision, reason, expectedVersion },
   });
 }
 
-export function decideTopic(id, { decision, reason = '' }) {
+export function decideTopic(id, { decision, reason = '', expectedVersion }) {
   return request(withPath(DECISION_ENDPOINTS.topic, { id }), {
     method: 'POST',
-    data: { decision, reason },
+    data: { decision, reason, expectedVersion },
   });
 }
 
-export function decideReport(id, { decision, reason }) {
+export function decideReport(id, { decision, reason, expectedVersion }) {
   return request(withPath(DECISION_ENDPOINTS.report, { id }), {
     method: 'POST',
-    data: { decision, reason },
+    data: { decision, reason, expectedVersion },
   });
 }
 
-export function decideCollection(id, { decision, reason = '' }) {
+export function decideCollection(id, { decision, reason = '', expectedVersion }) {
   return request(withPath(DECISION_ENDPOINTS.collection, { id }), {
     method: 'POST',
-    data: { decision, reason },
+    data: { decision, reason, expectedVersion },
   });
 }
 

@@ -238,13 +238,13 @@ Page({
           expectedVersion: item.version,
         });
       } else if (item.queue === 'topic') {
-        result = await decideTopic(item.id, { decision: key, reason });
+        result = await decideTopic(item.id, { decision: key, reason, expectedVersion: item.version });
       } else if (item.queue === 'member') {
-        result = await decideMembership(item.id, { decision: key, reason });
+        result = await decideMembership(item.id, { decision: key, reason, expectedVersion: item.version });
       } else if (item.queue === 'report') {
-        result = await decideReport(item.id, { decision: key, reason });
+        result = await decideReport(item.id, { decision: key, reason, expectedVersion: item.version });
       } else if (item.queue === 'collection') {
-        result = await decideCollection(item.id, { decision: key, reason });
+        result = await decideCollection(item.id, { decision: key, reason, expectedVersion: item.version });
       }
 
       if (result) {

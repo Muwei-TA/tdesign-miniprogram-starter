@@ -190,8 +190,16 @@ function requestCloud(url, { method, data, timeout }) {
 export default function request(url, options = {}) {
   const { method = 'GET', data = {}, header = {}, timeout = 10000, idempotencyKey } = options;
   const payload = withIdempotency(data, idempotencyKey);
-  if (config.isMock) return requestMock(url, { method, data: payload, header, timeout });
-  return requestCloud(url, { method, data: payload, timeout });
+  const pending = config.isMock
+    ? requestMock(url, { method, data: payload, header, timeout })
+    : requestCloud(url, { method, data: payload, timeout });
+  return pending.catch((err) => {
+    if (err.kind === 'unauthenticated' || err.kind === 'membership_invalid') {
+      const app = typeof getApp === 'function' ? getApp() : null;
+      if (app && app.invalidateSession) app.invalidateSession();
+    }
+    throw err;
+  });
 }
 
 /** 把 /posts/:id 这类模板路径替换为实际路径 */
