@@ -1,0 +1,58 @@
+<view class="hg-page hg-admin-appeals">
+  <hg-nav title="申诉工单" />
+
+  <view wx:if="{{ accessState === 'checking' }}" class="hg-admin-appeals__loading">正在确认管理权限…</view>
+  <empty-state
+    wx:elif="{{ accessState === 'denied' }}"
+    icon="secured"
+    title="暂时不能进入申诉队列"
+    desc="申诉决定只对获授权的管理成员开放。"
+  />
+
+  <block wx:else>
+    <view class="hg-admin-appeals__notice">
+      <t-icon name="info-circle" size="30rpx" />
+      <text>批准申诉只会重新进入待审队列，不会跳过新的安全审核。</text>
+    </view>
+    <view wx:if="{{ errorText }}" class="hg-admin-appeals__error" bindtap="onRetry" aria-role="button">
+      <t-icon name="error-circle" size="28rpx" />
+      <text>{{ errorText }} · 点此重试</text>
+    </view>
+
+    <view wx:if="{{ loading }}" class="hg-admin-appeals__loading">正在读取申诉工单…</view>
+    <empty-state
+      wx:elif="{{ !appeals.length && !errorText }}"
+      icon="task-complete"
+      title="暂时没有待处理申诉"
+      desc="新的申诉会在这里显示。"
+    />
+
+    <view wx:else class="hg-admin-appeals__list">
+      <view wx:for="{{ appeals }}" wx:key="appealId" class="hg-admin-appeals__card">
+        <view class="hg-admin-appeals__head">
+          <view class="hg-admin-appeals__status">{{ item.statusText }}</view>
+          <view class="hg-admin-appeals__version">工单 v{{ item.version }}</view>
+        </view>
+        <view class="hg-admin-appeals__ids">内容 {{ item.postId }} · 内容版本 {{ item.contentVersion }}</view>
+        <view class="hg-admin-appeals__reason">{{ item.reason }}</view>
+        <view wx:if="{{ item.status === 'submitted' }}" class="hg-admin-appeals__actions">
+          <view class="hg-admin-appeals__action hg-admin-appeals__action--primary" data-id="{{ item.appealId }}" data-decision="approve" bindtap="onActionTap" aria-role="button">批准并重新待审</view>
+          <view class="hg-admin-appeals__action hg-admin-appeals__action--danger" data-id="{{ item.appealId }}" data-decision="reject" bindtap="onActionTap" aria-role="button">驳回</view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{ reasonSheetVisible }}" class="hg-admin-appeals__sheet-wrap">
+      <view class="hg-admin-appeals__mask" catchtap="onReasonCancel"></view>
+      <view class="hg-admin-appeals__sheet" catchtap="onStopPropagation">
+        <view class="hg-admin-appeals__sheet-head">
+          <view class="hg-admin-appeals__title">填写决定理由</view>
+          <view class="hg-admin-appeals__close" bindtap="onReasonCancel" aria-role="button">取消</view>
+        </view>
+        <view class="hg-admin-appeals__hint">理由会写入审计记录并通知作者，最多 500 字。</view>
+        <textarea class="hg-admin-appeals__reason-input" maxlength="500" placeholder="填写决定理由" value="{{ reason }}" bindinput="onReasonInput" />
+        <view class="hg-admin-appeals__submit" bindtap="onReasonSubmit" aria-role="button">确认处理</view>
+      </view>
+    </view>
+  </block>
+</view>

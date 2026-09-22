@@ -8,6 +8,7 @@ import {
   decideReport,
   decideCollection,
 } from '~/services/moderation';
+import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();
 
@@ -147,6 +148,14 @@ Page({
 
   onRetry() {
     this.loadQueue();
+  },
+
+  onMembersPage() {
+    navigateTo('/pages/admin/members/index');
+  },
+
+  onAppealsPage() {
+    navigateTo('/pages/admin/appeals/index');
   },
 
   onItemAction(e) {

@@ -1,0 +1,236 @@
+@import '/styles/tokens.less';
+@import '/styles/mixins.less';
+
+.hg-members {
+  min-height: 100vh;
+  padding-bottom: 72rpx;
+
+  &__loading {
+    padding: @hg-sp-6 @hg-page-x;
+    color: @hg-ink-4;
+    font-size: @hg-fs-sm;
+    text-align: center;
+  }
+
+  &__error {
+    display: flex;
+    gap: @hg-sp-1;
+    align-items: center;
+    margin: @hg-sp-3 @hg-page-x 0;
+    padding: @hg-sp-2 @hg-sp-3;
+    background: @hg-clay-soft;
+    border-radius: @hg-radius-md;
+    color: @hg-danger;
+    font-size: @hg-fs-xs;
+  }
+
+  &__invite,
+  &__card {
+    .hg-card();
+  }
+
+  &__invite {
+    margin: @hg-sp-3 @hg-page-x 0;
+    padding: @hg-sp-3;
+  }
+
+  &__section-title {
+    color: @hg-ink;
+    .hg-serif(@hg-fs-h2);
+  }
+
+  &__invite-hint,
+  &__sheet-hint {
+    margin-top: @hg-sp-1;
+    color: @hg-ink-4;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+  }
+
+  &__invite-fields {
+    display: flex;
+    gap: @hg-sp-2;
+    margin-top: @hg-sp-3;
+  }
+
+  &__field {
+    flex: 1;
+  }
+
+  &__label {
+    display: block;
+    margin-bottom: @hg-sp-1;
+    color: @hg-ink-3;
+    font-size: @hg-fs-2xs;
+  }
+
+  &__input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 76rpx;
+    padding: 0 @hg-sp-2;
+    background: @hg-surface-sunk;
+    border-radius: @hg-radius-sm;
+    color: @hg-ink;
+    font-size: @hg-fs-sm;
+  }
+
+  &__invite-btn,
+  &__submit {
+    .hg-btn-primary();
+
+    margin-top: @hg-sp-3;
+  }
+
+  &__btn--disabled {
+    opacity: 0.5;
+  }
+
+  &__invite-result {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: @hg-sp-3;
+    padding: @hg-sp-2;
+    background: @hg-green-soft;
+    border-radius: @hg-radius-sm;
+  }
+
+  &__invite-code {
+    color: @hg-green;
+    font-size: 34rpx;
+    letter-spacing: 4rpx;
+    font-weight: 600;
+  }
+
+  &__copy {
+    min-height: @hg-touch-min;
+    color: @hg-green;
+    font-size: @hg-fs-sm;
+    line-height: @hg-touch-min;
+  }
+
+  &__heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: @hg-sp-5 @hg-page-x @hg-sp-2;
+  }
+
+  &__count {
+    color: @hg-ink-4;
+    font-size: @hg-fs-xs;
+  }
+
+  &__list {
+    padding: 0 @hg-page-x;
+  }
+
+  &__card {
+    display: flex;
+    align-items: flex-start;
+    gap: @hg-sp-2;
+    margin-top: @hg-sp-2;
+    padding: @hg-sp-3;
+  }
+
+  &__card-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__name {
+    color: @hg-ink;
+    font-size: @hg-fs-body;
+  }
+
+  &__meta,
+  &__muted,
+  &__self {
+    margin-top: @hg-sp-1;
+    color: @hg-ink-3;
+    font-size: @hg-fs-2xs;
+  }
+
+  &__muted {
+    color: @hg-clay-ink;
+  }
+
+  &__self {
+    color: @hg-ink-4;
+    white-space: nowrap;
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: @hg-sp-1;
+  }
+
+  &__action {
+    min-height: 52rpx;
+    padding: 0 @hg-sp-2;
+    color: @hg-green;
+    font-size: @hg-fs-2xs;
+    line-height: 52rpx;
+    white-space: nowrap;
+
+    &--danger {
+      color: @hg-danger;
+    }
+  }
+
+  &__sheet-wrap {
+    position: fixed;
+    z-index: 20;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
+
+  &__mask {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: rgba(34, 59, 50, 0.4);
+  }
+
+  &__sheet {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: @hg-sp-5 @hg-page-x 60rpx;
+    background: @hg-paper;
+    border-radius: @hg-radius-xl @hg-radius-xl 0 0;
+  }
+
+  &__sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__close {
+    color: @hg-ink-3;
+    font-size: @hg-fs-sm;
+  }
+
+  &__reason {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 220rpx;
+    margin-top: @hg-sp-3;
+    padding: @hg-sp-2;
+    background: @hg-surface;
+    border: 1rpx solid @hg-line-strong;
+    border-radius: @hg-radius-md;
+    color: @hg-ink;
+    font-size: @hg-fs-body;
+    line-height: @hg-lh-base;
+  }
+}

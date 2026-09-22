@@ -1,0 +1,87 @@
+<view class="hg-page hg-members">
+  <hg-nav title="成员与邀请" />
+
+  <view wx:if="{{ accessState === 'checking' }}" class="hg-members__loading">正在确认管理权限…</view>
+
+  <empty-state
+    wx:elif="{{ accessState === 'denied' }}"
+    icon="secured"
+    title="暂时不能查看成员名册"
+    desc="成员管理只对获授权的 moderator 开放。"
+  />
+
+  <block wx:else>
+    <view wx:if="{{ errorText }}" class="hg-members__error" bindtap="onRetry" aria-role="button">
+      <t-icon name="error-circle" size="28rpx" />
+      <text>{{ errorText }} · 点此重试</text>
+    </view>
+
+    <view class="hg-members__invite hg-card">
+      <view class="hg-members__section-title">生成邀请码</view>
+      <view class="hg-members__invite-hint">邀请码只显示给当前 moderator 一次，服务端会限制使用次数和有效期。</view>
+      <view class="hg-members__invite-fields">
+        <view class="hg-members__field">
+          <text class="hg-members__label">使用次数</text>
+          <input class="hg-members__input" type="number" value="{{ inviteMaxUses }}" maxlength="4" bindinput="onInviteMaxUsesInput" />
+        </view>
+        <view class="hg-members__field">
+          <text class="hg-members__label">有效期（天）</text>
+          <input class="hg-members__input" type="number" value="{{ inviteTtlDays }}" maxlength="2" bindinput="onInviteTtlDaysInput" />
+        </view>
+      </view>
+      <view class="hg-members__invite-btn {{ inviteBusy ? 'hg-members__btn--disabled' : '' }}" bindtap="onCreateInvite" aria-role="button">
+        {{ inviteBusy ? '生成中…' : '生成邀请码' }}
+      </view>
+      <view wx:if="{{ inviteCode }}" class="hg-members__invite-result">
+        <text class="hg-members__invite-code">{{ inviteCode }}</text>
+        <view class="hg-members__copy" bindtap="copyInviteCode" aria-role="button">复制</view>
+      </view>
+    </view>
+
+    <view class="hg-members__heading">
+      <view class="hg-members__section-title">成员名册</view>
+      <view class="hg-members__count">{{ members.length }} 人</view>
+    </view>
+
+    <view wx:if="{{ loading }}" class="hg-members__loading">正在读取成员名册…</view>
+    <empty-state
+      wx:elif="{{ !members.length && !errorText }}"
+      icon="usergroup"
+      title="还没有成员记录"
+      desc="成员加入后会显示在这里。"
+    />
+
+    <view wx:else class="hg-members__list">
+      <view wx:for="{{ members }}" wx:key="targetUserId" class="hg-members__card hg-card">
+        <view class="hg-members__card-main">
+          <view class="hg-members__name">{{ item.displayName }}</view>
+          <view class="hg-members__meta">{{ item.roleText }} · {{ item.statusText }}</view>
+          <view wx:if="{{ item.mutedUntilText }}" class="hg-members__muted">{{ item.mutedUntilText }}</view>
+        </view>
+        <view wx:if="{{ item.isSelf }}" class="hg-members__self">当前账号</view>
+        <view wx:elif="{{ item.status === 'active' }}" class="hg-members__actions">
+          <view class="hg-members__action" data-id="{{ item.targetUserId }}" data-key="{{ item.role === 'moderator' ? 'demote' : 'promote' }}" bindtap="onActionTap" aria-role="button">
+            {{ item.role === 'moderator' ? '降为成员' : '设为 moderator' }}
+          </view>
+          <view class="hg-members__action" data-id="{{ item.targetUserId }}" data-key="{{ item.mutedUntil ? 'unmute' : 'mute' }}" bindtap="onActionTap" aria-role="button">
+            {{ item.mutedUntil ? '解除禁言' : '禁言 24 小时' }}
+          </view>
+          <view class="hg-members__action hg-members__action--danger" data-id="{{ item.targetUserId }}" data-key="remove" bindtap="onActionTap" aria-role="button">移除</view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{ reasonSheetVisible }}" class="hg-members__sheet-wrap">
+      <view class="hg-members__mask" catchtap="onReasonCancel"></view>
+      <view class="hg-members__sheet" catchtap="onStopPropagation">
+        <view class="hg-members__sheet-head">
+          <view class="hg-members__section-title">填写处理理由</view>
+          <view class="hg-members__close" bindtap="onReasonCancel" aria-role="button">取消</view>
+        </view>
+        <view class="hg-members__sheet-hint">理由会写入审计记录并通知相关成员，最多 500 字。</view>
+        <textarea class="hg-members__reason" maxlength="500" placeholder="请填写理由" value="{{ reason }}" bindinput="onReasonInput" />
+        <view class="hg-members__submit {{ actionBusy ? 'hg-members__btn--disabled' : '' }}" bindtap="onReasonSubmit" aria-role="button">确认操作</view>
+      </view>
+    </view>
+  </block>
+</view>

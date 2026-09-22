@@ -1,0 +1,61 @@
+<view class="hg-page hg-appeals">
+  <hg-nav title="我的申诉" />
+
+  <empty-state
+    wx:if="{{ accessState === 'denied' }}"
+    icon="secured"
+    title="请先完成授权"
+    desc="登录后可以提交申诉并查看处理结果。"
+  />
+
+  <block wx:elif="{{ accessState === 'allowed' }}">
+    <view class="hg-appeals__notice">
+      <t-icon name="info-circle" size="30rpx" />
+      <text>申诉只面向你自己的 hidden/rejected 内容。批准后会重新进入安全审核。</text>
+    </view>
+
+    <view class="hg-appeals__form hg-card">
+      <view class="hg-appeals__title">提交申诉</view>
+      <view class="hg-appeals__hint">请从内容详情进入此页，或填写需要复核的内容 ID 与版本。</view>
+      <view class="hg-appeals__field">
+        <text class="hg-appeals__label">内容 ID</text>
+        <input class="hg-appeals__input" value="{{ postId }}" placeholder="例如 post:..." bindinput="onPostIdInput" />
+      </view>
+      <view class="hg-appeals__field">
+        <text class="hg-appeals__label">内容版本</text>
+        <input class="hg-appeals__input" type="number" value="{{ contentVersion }}" placeholder="提交时看到的版本号" bindinput="onVersionInput" />
+      </view>
+      <view class="hg-appeals__field">
+        <text class="hg-appeals__label">申诉理由</text>
+        <textarea class="hg-appeals__textarea" maxlength="1000" value="{{ reason }}" placeholder="说明希望复核的原因" bindinput="onReasonInput" />
+      </view>
+      <view class="hg-appeals__submit {{ submitting ? 'hg-appeals__btn--disabled' : '' }}" bindtap="onSubmit" aria-role="button">
+        {{ submitting ? '提交中…' : '提交申诉' }}
+      </view>
+    </view>
+
+    <view class="hg-appeals__list-title">我的工单</view>
+    <view wx:if="{{ errorText }}" class="hg-appeals__error" bindtap="onRetry" aria-role="button">
+      <t-icon name="error-circle" size="28rpx" />
+      <text>{{ errorText }} · 点此重试</text>
+    </view>
+    <view wx:if="{{ loading }}" class="hg-appeals__loading">正在读取工单…</view>
+    <empty-state
+      wx:elif="{{ !appeals.length && !errorText }}"
+      icon="task-complete"
+      title="还没有申诉工单"
+      desc="提交后，处理状态和决定理由会显示在这里。"
+    />
+    <view wx:else class="hg-appeals__list">
+      <view wx:for="{{ appeals }}" wx:key="appealId" class="hg-appeals__card">
+        <view class="hg-appeals__card-head">
+          <view class="hg-appeals__status">{{ item.statusText }}</view>
+          <view class="hg-appeals__version">工单 v{{ item.version }}</view>
+        </view>
+        <view class="hg-appeals__meta">内容 {{ item.postId }} · 内容版本 {{ item.contentVersion }}</view>
+        <view class="hg-appeals__reason">申诉：{{ item.reason }}</view>
+        <view wx:if="{{ item.decisionReason }}" class="hg-appeals__decision">决定：{{ item.decisionReason }}</view>
+      </view>
+    </view>
+  </block>
+</view>

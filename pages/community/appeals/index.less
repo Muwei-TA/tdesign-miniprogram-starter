@@ -1,0 +1,153 @@
+@import '/styles/tokens.less';
+@import '/styles/mixins.less';
+
+.hg-appeals {
+  min-height: 100vh;
+  padding-bottom: 72rpx;
+
+  &__notice,
+  &__error {
+    display: flex;
+    gap: @hg-sp-1;
+    align-items: flex-start;
+    margin: @hg-sp-3 @hg-page-x 0;
+    padding: @hg-sp-2 @hg-sp-3;
+    border-radius: @hg-radius-md;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+  }
+
+  &__notice {
+    background: @hg-clay-soft;
+    color: @hg-clay-ink;
+  }
+
+  &__error {
+    align-items: center;
+    color: @hg-danger;
+  }
+
+  &__form,
+  &__card {
+    .hg-card();
+  }
+
+  &__form {
+    margin: @hg-sp-4 @hg-page-x 0;
+    padding: @hg-sp-3;
+  }
+
+  &__title,
+  &__list-title {
+    color: @hg-ink;
+    .hg-serif(@hg-fs-h2);
+  }
+
+  &__hint,
+  &__label,
+  &__loading {
+    color: @hg-ink-4;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+  }
+
+  &__hint {
+    margin-top: @hg-sp-1;
+  }
+
+  &__field {
+    margin-top: @hg-sp-3;
+  }
+
+  &__label {
+    display: block;
+    margin-bottom: @hg-sp-1;
+  }
+
+  &__input,
+  &__textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: @hg-sp-2;
+    background: @hg-surface-sunk;
+    border-radius: @hg-radius-sm;
+    color: @hg-ink;
+    font-size: @hg-fs-sm;
+  }
+
+  &__input {
+    min-height: 76rpx;
+  }
+
+  &__textarea {
+    min-height: 220rpx;
+    line-height: @hg-lh-base;
+  }
+
+  &__submit {
+    .hg-btn-primary();
+
+    margin-top: @hg-sp-3;
+  }
+
+  &__btn--disabled {
+    opacity: 0.5;
+  }
+
+  &__list-title {
+    margin: @hg-sp-5 @hg-page-x @hg-sp-2;
+  }
+
+  &__loading {
+    padding: @hg-sp-5 @hg-page-x;
+    text-align: center;
+  }
+
+  &__list {
+    padding: 0 @hg-page-x;
+  }
+
+  &__card {
+    margin-top: @hg-sp-2;
+    padding: @hg-sp-3;
+  }
+
+  &__card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__status {
+    color: @hg-green;
+    font-size: @hg-fs-sm;
+    font-weight: 600;
+  }
+
+  &__version,
+  &__meta {
+    color: @hg-ink-4;
+    font-size: @hg-fs-2xs;
+  }
+
+  &__meta {
+    margin-top: @hg-sp-2;
+    word-break: break-all;
+  }
+
+  &__reason,
+  &__decision {
+    margin-top: @hg-sp-2;
+    color: @hg-ink-2;
+    font-size: @hg-fs-sm;
+    line-height: @hg-lh-base;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  &__decision {
+    padding-top: @hg-sp-2;
+    border-top: 1rpx solid @hg-line;
+    color: @hg-clay-ink;
+  }
+}

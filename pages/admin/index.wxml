@@ -18,6 +18,19 @@
       <text>{{ queueHint }}</text>
     </view>
 
+    <view class="hg-admin__governance-links">
+      <view class="hg-admin__governance-link" bindtap="onMembersPage" aria-role="button">
+        <t-icon name="usergroup" size="30rpx" />
+        <text>成员与邀请码</text>
+        <t-icon name="chevron-right" size="28rpx" />
+      </view>
+      <view class="hg-admin__governance-link" bindtap="onAppealsPage" aria-role="button">
+        <t-icon name="file-paste" size="30rpx" />
+        <text>申诉工单</text>
+        <t-icon name="chevron-right" size="28rpx" />
+      </view>
+    </view>
+
     <scroll-view class="hg-admin__queues" scroll-x="true" enable-flex="true">
       <view
         wx:for="{{ queues }}"
