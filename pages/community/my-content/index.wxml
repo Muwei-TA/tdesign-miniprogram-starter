@@ -103,6 +103,15 @@
             aria-role="button"
             >删除</view
           >
+          <view
+            wx:if="{{ item.status === 'rejected' || item.status === 'hidden' }}"
+            class="hg-my-content__post-appeal"
+            data-id="{{ item.id }}"
+            catchtap="onAppealContent"
+            aria-role="button"
+          >
+            申诉
+          </view>
         </view>
       </view>
 

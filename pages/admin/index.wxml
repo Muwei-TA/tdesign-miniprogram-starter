@@ -19,7 +19,12 @@
     </view>
 
     <view class="hg-admin__governance-links">
-      <view class="hg-admin__governance-link" bindtap="onMembersPage" aria-role="button">
+      <view
+        wx:if="{{ session && session.role === 'moderator' }}"
+        class="hg-admin__governance-link"
+        bindtap="onMembersPage"
+        aria-role="button"
+      >
         <t-icon name="usergroup" size="30rpx" />
         <text>成员与邀请码</text>
         <t-icon name="chevron-right" size="28rpx" />

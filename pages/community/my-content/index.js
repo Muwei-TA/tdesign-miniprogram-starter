@@ -51,6 +51,8 @@ Page({
   applySession(session) {
     if (!session) return;
     const isGuest = !session.user;
+    // 账号切换或退出时，丢弃仍在途的列表请求，避免旧账号内容回写。
+    this.tabRequestId = (this.tabRequestId || 0) + 1;
     this.setData({ session, sessionReady: true, isGuest }, () => {
       if (isGuest) {
         this.setData({ loading: false, list: [], unavailable: [], drafts: [], topics: [] });
@@ -62,9 +64,12 @@ Page({
 
   async loadTab({ silent = false } = {}) {
     if (!this.data.sessionReady || this.data.isGuest) return;
+    const requestedTab = this.data.tab;
+    const requestId = (this.tabRequestId || 0) + 1;
+    this.tabRequestId = requestId;
     if (!silent) this.setData({ loading: true, errorText: '' });
 
-    if (this.data.tab === 'draft') {
+    if (requestedTab === 'draft') {
       this.setData({
         loading: false,
         stale: false,
@@ -82,18 +87,20 @@ Page({
     }
 
     try {
-      const result = await fetchMyContents({ tab: this.data.tab });
+      const result = await fetchMyContents({ tab: requestedTab });
+      if (requestId !== this.tabRequestId || requestedTab !== this.data.tab) return;
       const items = result.items || [];
       this.setData({
         loading: false,
         stale: false,
         errorText: '',
-        list: this.data.tab === 'topics' ? [] : items.filter((item) => !item.unavailable),
-        unavailable: this.data.tab === 'bookmark' ? items.filter((item) => item.unavailable) : [],
-        topics: this.data.tab === 'topics' ? items : [],
+        list: requestedTab === 'topics' ? [] : items.filter((item) => !item.unavailable),
+        unavailable: requestedTab === 'bookmark' ? items.filter((item) => item.unavailable) : [],
+        topics: requestedTab === 'topics' ? items : [],
         drafts: [],
       });
     } catch (err) {
+      if (requestId !== this.tabRequestId || requestedTab !== this.data.tab) return;
       this.setData({
         loading: false,
         stale: this.data.list.length > 0 || this.data.unavailable.length > 0 || this.data.topics.length > 0,
@@ -188,6 +195,29 @@ Page({
     } catch (err) {
       wx.showToast({ title: err.message || '内容当前不可访问', icon: 'none' });
       this.contentDeleting = false;
+    }
+  },
+
+  async onAppealContent(e) {
+    const { id } = e.currentTarget.dataset;
+    if (!id || this.appealOpening) return;
+    this.appealOpening = true;
+    try {
+      // 列表 DTO 没有 version；详情重新鉴权后才允许带版本进入申诉表单。
+      const detail = await fetchPostDetail(id);
+      if (!detail || (detail.status !== 'rejected' && detail.status !== 'hidden')) {
+        wx.showToast({ title: '这条内容当前不能申诉', icon: 'none' });
+        return;
+      }
+      if (!Number.isInteger(detail.version) || detail.version < 1) {
+        wx.showToast({ title: '内容版本暂时无法确认', icon: 'none' });
+        return;
+      }
+      navigateTo(`/pages/community/appeals/index?postId=${encodeURIComponent(id)}&version=${detail.version}`);
+    } catch (err) {
+      wx.showToast({ title: err.message || '申诉入口暂时无法打开', icon: 'none' });
+    } finally {
+      this.appealOpening = false;
     }
   },
 

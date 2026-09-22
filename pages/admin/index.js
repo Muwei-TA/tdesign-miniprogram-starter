@@ -35,6 +35,7 @@ function canAccess(session) {
 
 Page({
   data: {
+    session: null,
     queues: QUEUES,
     activeQueue: 'content',
     queueHint: QUEUE_HINTS.content,
@@ -80,6 +81,7 @@ Page({
     if (!session) return;
     if (!canAccess(session)) {
       this.setData({
+        session,
         accessState: 'denied',
         items: [],
         nextCursor: null,
@@ -90,7 +92,7 @@ Page({
     }
 
     const shouldLoad = this.data.accessState !== 'allowed';
-    this.setData({ accessState: 'allowed' }, () => {
+    this.setData({ session, accessState: 'allowed' }, () => {
       if (shouldLoad) this.loadQueue();
     });
   },
