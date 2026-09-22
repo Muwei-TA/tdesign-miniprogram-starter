@@ -1,4 +1,5 @@
 import { getCapabilities, getSession, scopedKey } from '~/services/session';
+import { requestAccountDeletion, requestContentExport } from '~/services/account';
 import { navigateTo } from '~/utils/navigate';
 
 /**
@@ -12,6 +13,10 @@ Page({
     readingFontIndex: 1,
     nightMode: false,
     rulesVersion: 'v1.1',
+    exportStatusText: '',
+    deletionStatusText: '',
+    exportSubmitting: false,
+    deletionSubmitting: false,
   },
 
   onLoad() {
@@ -35,7 +40,8 @@ Page({
   onIdentityExplain() {
     wx.showModal({
       title: '树洞身份的边界',
-      content: '以树洞身份发布时，其他人看不到你的昵称与头像。这不是绝对匿名——具体经历、地名、画面与文风仍可能让人猜到你，截图也无法追回。',
+      content:
+        '以树洞身份发布时，其他人看不到你的昵称与头像。这不是绝对匿名——具体经历、地名、画面与文风仍可能让人猜到你，截图也无法追回。',
       showCancel: false,
     });
   },
@@ -82,17 +88,28 @@ Page({
     });
   },
 
-  onExport() {
+  async onExport() {
     if (!this.data.capabilities.export) {
       wx.showModal({ title: '暂未开放', content: '数据导出功能尚未开放。', showCancel: false });
       return;
     }
+    if (this.data.exportSubmitting) return;
     wx.showModal({
       title: '导出我的内容',
       content: '确认本人身份后会生成异步任务，完成后通过站内消息通知。导出内容不包含他人的私密信息。',
       confirmText: '提交申请',
-      success: (res) => {
-        if (res.confirm) wx.showToast({ title: '已提交，完成后会通知你', icon: 'none' });
+      success: async (res) => {
+        if (!res.confirm) return;
+        this.setData({ exportSubmitting: true, exportStatusText: '正在提交…' });
+        try {
+          const result = await requestContentExport();
+          if (!result || result.state !== 'queued') throw new Error('导出任务状态暂时无法确认');
+          this.setData({ exportSubmitting: false, exportStatusText: '已提交，完成后会通知你' });
+          wx.showToast({ title: '已提交，完成后会通知你', icon: 'none' });
+        } catch (err) {
+          this.setData({ exportSubmitting: false, exportStatusText: '待处理' });
+          wx.showToast({ title: err.message || '申请未完成，请稍后重试', icon: 'none' });
+        }
       },
     });
   },
@@ -106,9 +123,11 @@ Page({
   },
 
   onDeleteAccount() {
+    if (this.data.deletionSubmitting) return;
     wx.showModal({
       title: '注销账号',
-      content: '注销会停止展示你的内容，并按规定清理或依法必要保留数据。处理需要时间，结果会通知你。如果只是想撤回文集授权，不需要注销账号。',
+      content:
+        '注销会停止展示你的内容，并按规定清理或依法必要保留数据。处理需要时间，结果会通知你。如果只是想撤回文集授权，不需要注销账号。',
       confirmText: '继续',
       confirmColor: '#A85648',
       success: (res) => {
@@ -118,8 +137,18 @@ Page({
           content: '这一步不可撤销。确认提交注销申请？',
           confirmText: '提交申请',
           confirmColor: '#A85648',
-          success: (second) => {
-            if (second.confirm) wx.showToast({ title: '已提交，处理中', icon: 'none' });
+          success: async (second) => {
+            if (!second.confirm) return;
+            this.setData({ deletionSubmitting: true, deletionStatusText: '正在提交…' });
+            try {
+              const result = await requestAccountDeletion();
+              if (!result || result.state !== 'pending') throw new Error('注销任务状态暂时无法确认');
+              this.setData({ deletionSubmitting: false, deletionStatusText: '处理中，结果会通过通知告知' });
+              wx.showToast({ title: '已提交，处理中', icon: 'none' });
+            } catch (err) {
+              this.setData({ deletionSubmitting: false, deletionStatusText: '待处理' });
+              wx.showToast({ title: err.message || '申请未完成，请稍后重试', icon: 'none' });
+            }
           },
         });
       },

@@ -1,0 +1,166 @@
+@import '/styles/tokens.less';
+@import '/styles/mixins.less';
+
+.hg-rules {
+  padding-bottom: 64rpx;
+
+  &__intro {
+    margin: @hg-sp-3 @hg-page-x 0;
+    padding: @hg-sp-4 @hg-block-x;
+    background: @hg-green-mist;
+    border-radius: @hg-radius-lg;
+  }
+
+  &__kicker {
+    color: @hg-green;
+    font-size: @hg-fs-2xs;
+    letter-spacing: 2rpx;
+  }
+
+  &__title {
+    margin-top: @hg-sp-2;
+    color: @hg-ink;
+    white-space: pre-line;
+    .hg-serif(@hg-fs-display);
+  }
+
+  &__desc {
+    margin-top: @hg-sp-3;
+    color: @hg-ink-2;
+    font-size: @hg-fs-sm;
+    line-height: @hg-lh-loose;
+  }
+
+  &__source {
+    .hg-notice();
+
+    margin: @hg-sp-3 @hg-page-x 0;
+  }
+
+  &__section {
+    margin: @hg-sp-5 @hg-page-x 0;
+  }
+
+  &__section-head {
+    padding: 0 @hg-sp-1;
+  }
+
+  &__section-title {
+    color: @hg-ink;
+    .hg-serif(@hg-fs-h2);
+  }
+
+  &__section-intro {
+    margin-top: @hg-sp-1;
+    color: @hg-ink-3;
+    font-size: @hg-fs-sm;
+    line-height: @hg-lh-base;
+  }
+
+  &__items {
+    margin-top: @hg-sp-2;
+    padding: 0 @hg-sp-3;
+    background: @hg-surface;
+    border: 1rpx solid @hg-line;
+    border-radius: @hg-radius-lg;
+  }
+
+  &__item {
+    display: flex;
+    align-items: flex-start;
+    gap: @hg-sp-2;
+    padding: @hg-sp-3 0;
+    border-bottom: 1rpx solid @hg-line;
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  &__item-mark {
+    width: 22rpx;
+    color: @hg-clay;
+    font-family: @hg-font-serif;
+    font-size: 36rpx;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  &__item-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__item-title {
+    color: @hg-ink;
+    font-size: @hg-fs-body;
+    font-weight: 600;
+  }
+
+  &__item-body {
+    color: @hg-ink-2;
+    font-size: @hg-fs-sm;
+    line-height: @hg-lh-loose;
+  }
+
+  &__item-title + &__item-body {
+    margin-top: @hg-sp-1;
+  }
+
+  &__version {
+    margin: @hg-sp-5 @hg-page-x 0;
+    padding: @hg-sp-3;
+    background: @hg-surface-sunk;
+    border-radius: @hg-radius-md;
+  }
+
+  &__version-head {
+    color: @hg-ink;
+    font-size: @hg-fs-body;
+    font-weight: 600;
+  }
+
+  &__version-summary {
+    margin-top: @hg-sp-1;
+    color: @hg-ink-3;
+    font-size: @hg-fs-sm;
+    line-height: @hg-lh-base;
+  }
+
+  &__footnote {
+    margin: @hg-sp-5 @hg-page-x 0;
+    color: @hg-ink-4;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+    text-align: center;
+  }
+
+  &__loading {
+    margin: @hg-sp-4 @hg-page-x;
+  }
+
+  &__skeleton {
+    margin-bottom: @hg-sp-3;
+    background: @hg-surface-sunk;
+    border-radius: @hg-radius-md;
+
+    &--title {
+      width: 70%;
+      height: 70rpx;
+    }
+
+    &--line {
+      width: 92%;
+      height: 28rpx;
+    }
+
+    &--short {
+      width: 64%;
+    }
+
+    &--card {
+      height: 520rpx;
+      margin-top: @hg-sp-4;
+    }
+  }
+}
