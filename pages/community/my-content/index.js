@@ -203,17 +203,18 @@ Page({
     if (!id || this.appealOpening) return;
     this.appealOpening = true;
     try {
-      // 列表 DTO 没有 version；详情重新鉴权后才允许带版本进入申诉表单。
-      const detail = await fetchPostDetail(id);
-      if (!detail || (detail.status !== 'rejected' && detail.status !== 'hidden')) {
+      // 本人列表 DTO 已带当前版本。hidden/rejected 正文可能无法按普通详情权限读取，
+      // 所以申诉入口不能先读取详情再决定是否跳转。
+      const item = this.data.list.find((entry) => entry.id === id);
+      if (!item || (item.status !== 'rejected' && item.status !== 'hidden')) {
         wx.showToast({ title: '这条内容当前不能申诉', icon: 'none' });
         return;
       }
-      if (!Number.isInteger(detail.version) || detail.version < 1) {
+      if (!Number.isInteger(item.version) || item.version < 1) {
         wx.showToast({ title: '内容版本暂时无法确认', icon: 'none' });
         return;
       }
-      navigateTo(`/pages/community/appeals/index?postId=${encodeURIComponent(id)}&version=${detail.version}`);
+      navigateTo(`/pages/community/appeals/index?postId=${encodeURIComponent(id)}&version=${item.version}`);
     } catch (err) {
       wx.showToast({ title: err.message || '申诉入口暂时无法打开', icon: 'none' });
     } finally {

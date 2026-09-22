@@ -18,6 +18,7 @@ const calls = [];
 const endpoints = {
   adminQueue: '/admin/queues/:queue',
   adminDecision: '/admin/reviews/:id/decision',
+  adminCommentDecision: '/admin/comments/:id/decision',
   adminMemberDecision: '/admin/members/applications/:id',
 };
 const withPath = (template, params = {}) => Object.keys(params).reduce(
@@ -55,7 +56,7 @@ const request = (url, options = {}) => {
 
 const module = { exports: {} };
 vm.runInNewContext(
-  `${serviceSource}\nmodule.exports = { QUEUES, QUEUE_LABELS, ACTIONS_BY_QUEUE, getQueueActions, normalizeQueueItem, fetchQueue, submitDecision, decideMembership, decideTopic, decideReport, decideCollection };`,
+  `${serviceSource}\nmodule.exports = { QUEUES, QUEUE_LABELS, ACTIONS_BY_QUEUE, getQueueActions, normalizeQueueItem, fetchQueue, submitDecision, decideComment, decideMembership, decideTopic, decideReport, decideCollection };`,
   {
     module,
     exports: module.exports,
@@ -69,9 +70,10 @@ vm.runInNewContext(
 
 const moderation = module.exports;
 
-assert.deepEqual(plain(moderation.QUEUES.map((queue) => queue.value)), ['content', 'topic', 'member', 'report', 'collection']);
+assert.deepEqual(plain(moderation.QUEUES.map((queue) => queue.value)), ['content', 'comment', 'topic', 'member', 'report', 'collection']);
 assert.equal(moderation.ACTIONS_BY_QUEUE.report.find((action) => action.key === 'keep').requiresReason, true);
 assert.equal(moderation.ACTIONS_BY_QUEUE.content.find((action) => action.key === 'approve').requiresReason, false);
+assert.equal(moderation.ACTIONS_BY_QUEUE.comment.find((action) => action.key === 'reject').requiresReason, true);
 assert.equal(moderation.ACTIONS_BY_QUEUE.collection.some((action) => action.key === 'reveal'), false);
 
 const item = moderation.normalizeQueueItem({
@@ -101,6 +103,36 @@ assert.deepEqual(plain(item), {
 assert.equal(Object.prototype.hasOwnProperty.call(item, 'reporterId'), false);
 assert.equal(Object.prototype.hasOwnProperty.call(item, 'mappings'), false);
 
+const commentItem = moderation.normalizeQueueItem({
+  id: 'c-1',
+  queue: 'comment',
+  comment: '回应正文',
+  title: '回应',
+  summary: '回应正文',
+  postId: 'p-1',
+  version: 2,
+  isAnonymous: true,
+  ownerId: 'secret',
+  mappings: [{ userId: 'secret' }],
+}, 'comment');
+assert.deepEqual(plain(commentItem), {
+  id: 'c-1',
+  queue: 'comment',
+  queueLabel: '回应',
+  title: '回应',
+  summary: '回应正文',
+  submittedAtText: '',
+  statusText: '',
+  version: 2,
+  actions: plain(moderation.ACTIONS_BY_QUEUE.comment),
+  isAnonymous: true,
+  assetIds: [],
+  comment: '回应正文',
+  postId: 'p-1',
+});
+assert.equal(Object.prototype.hasOwnProperty.call(commentItem, 'ownerId'), false);
+assert.equal(Object.prototype.hasOwnProperty.call(commentItem, 'mappings'), false);
+
 const queue = await moderation.fetchQueue({ queue: 'content', cursor: 'cursor-1' });
 assert.equal(calls[0].url, '/admin/queues/content?cursor=cursor-1');
 assert.equal(queue.items[0].isAnonymous, true);
@@ -116,12 +148,18 @@ await moderation.decideTopic('t-1', { decision: 'archive', reason: '已过活动
 await moderation.decideMembership('m-1', { decision: 'reject', reason: '信息不足' });
 await moderation.decideReport('r-1', { decision: 'hide', reason: '需要进一步核查' });
 await moderation.decideCollection('c-1', { decision: 'skip', reason: '本期范围已满' });
+await moderation.decideComment('comment-1', { decision: 'reject', reason: '请补充表达', expectedVersion: 2 });
 assert.deepEqual(calls.slice(2).map((call) => call.url), [
   '/admin/topics/t-1/decision',
   '/admin/members/applications/m-1',
   '/admin/reports/r-1/decision',
   '/admin/collections/c-1/decision',
+  '/admin/comments/comment-1/decision',
 ]);
+assert.deepEqual(plain(calls[6]), {
+  url: '/admin/comments/comment-1/decision',
+  options: { method: 'POST', data: { decision: 'reject', reason: '请补充表达', expectedVersion: 2 } },
+});
 
 const transportSource = readFileSync(join(ROOT, 'api/transport.js'), 'utf8')
   .replace(/export const /g, 'const ')
@@ -138,6 +176,7 @@ const adminRoutes = [
   ['POST', '/admin/members/applications/m-1', { decision: 'approve', reason: '' }, 'admin/membership/decide', { id: 'm-1', decision: 'approve', reason: '' }],
   ['POST', '/admin/reports/r-1/decision', { decision: 'hide', reason: '待核查' }, 'admin/report/decide', { id: 'r-1', decision: 'hide', reason: '待核查' }],
   ['POST', '/admin/collections/c-1/decision', { decision: 'skip', reason: '本期已满' }, 'admin/collection/decide', { id: 'c-1', decision: 'skip', reason: '本期已满' }],
+  ['POST', '/admin/comments/comment-1/decision', { decision: 'reject', reason: '请补充表达', expectedVersion: 2 }, 'admin/comment/decide', { id: 'comment-1', decision: 'reject', reason: '请补充表达', expectedVersion: 2 }],
 ];
 adminRoutes.forEach(([method, url, body, action, payload]) => {
   const resolved = transportModule.exports.resolveTransport(url, method, body);
@@ -147,6 +186,8 @@ adminRoutes.forEach(([method, url, body, action, payload]) => {
 const pageSource = readFileSync(join(ROOT, 'pages/admin/index.js'), 'utf8');
 const componentSource = readFileSync(join(ROOT, 'components/moderation-item/index.wxml'), 'utf8');
 assert.match(pageSource, /expectedVersion: item\.version/);
+assert.match(pageSource, /item\.queue === 'comment'/);
+assert.match(pageSource, /decideComment/);
 assert.match(pageSource, /请填写处理理由/);
 assert.match(pageSource, /session\.role === 'admin'|session\.role === 'moderator'/);
 assert.match(componentSource, /bindtap="onAction"/);

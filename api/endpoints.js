@@ -41,6 +41,7 @@ export default {
 
   adminQueue: '/admin/queues/:queue',
   adminDecision: '/admin/reviews/:id/decision',
+  adminCommentDecision: '/admin/comments/:id/decision',
   adminMemberDecision: '/admin/members/applications/:id',
   adminMembers: '/admin/members',
   adminMemberRemove: '/admin/members/:targetUserId/remove',

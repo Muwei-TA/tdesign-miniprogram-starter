@@ -118,6 +118,7 @@ const ROUTES = [
   // 管理台。
   { method: 'GET', pattern: '/admin/queues/:queue', action: 'admin/queue' },
   { method: 'POST', pattern: '/admin/reviews/:id/decision', action: 'admin/content/decide' },
+  { method: 'POST', pattern: '/admin/comments/:id/decision', action: 'admin/comment/decide' },
   { method: 'POST', pattern: '/admin/topics/:id/decision', action: 'admin/topic/decide' },
   { method: 'POST', pattern: '/admin/members/applications/:id', action: 'admin/membership/decide' },
   { method: 'POST', pattern: '/admin/reports/:id/decision', action: 'admin/report/decide' },

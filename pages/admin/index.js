@@ -3,6 +3,7 @@ import {
   fetchQueue,
   fetchAssetReviewStatuses,
   submitDecision,
+  decideComment,
   decideTopic,
   decideMembership,
   decideReport,
@@ -14,6 +15,7 @@ const app = getApp();
 
 const QUEUE_HINTS = {
   content: '只处理公开或社内、正在等待审核的内容。',
+  comment: '只处理已提交、正在等待审核的回应。',
   topic: '确认社内话题是否可以进入话题广场。',
   member: '处理入社申请，批准后成员资格才会生效。',
   report: '举报不等于违规事实，处理决定需要留下理由。',
@@ -237,6 +239,8 @@ Page({
           reason,
           expectedVersion: item.version,
         });
+      } else if (item.queue === 'comment') {
+        result = await decideComment(item.id, { decision: key, reason, expectedVersion: item.version });
       } else if (item.queue === 'topic') {
         result = await decideTopic(item.id, { decision: key, reason, expectedVersion: item.version });
       } else if (item.queue === 'member') {

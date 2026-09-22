@@ -2,12 +2,13 @@ import request, { withPath, withQuery } from '~/api/request';
 import endpoints from '~/api/endpoints';
 
 /**
- * 管理台五队列。注意：分包与前端隐藏都不是安全边界，接口必须由服务端按角色鉴权。
+ * 管理台六队列。注意：分包与前端隐藏都不是安全边界，接口必须由服务端按角色鉴权。
  * 普通管理员不可读私密手记与匿名映射；举报记录不暴露举报人。
  */
 
 export const QUEUES = [
   { value: 'content', label: '内容' },
+  { value: 'comment', label: '回应' },
   { value: 'topic', label: '话题' },
   { value: 'member', label: '入社' },
   { value: 'report', label: '举报' },
@@ -25,6 +26,11 @@ export const ACTIONS_BY_QUEUE = {
     { key: 'approve', label: '通过', theme: 'primary', requiresReason: false },
     { key: 'reject', label: '退回修改', theme: 'secondary', requiresReason: true },
     { key: 'hide', label: '暂时隐藏', theme: 'danger', requiresReason: true },
+  ],
+  comment: [
+    { key: 'approve', label: '通过回应', theme: 'primary', requiresReason: false },
+    { key: 'reject', label: '退回回应', theme: 'secondary', requiresReason: true },
+    { key: 'hide', label: '隐藏回应', theme: 'danger', requiresReason: true },
   ],
   topic: [
     { key: 'approve', label: '通过话题', theme: 'primary', requiresReason: false },
@@ -47,6 +53,7 @@ export const ACTIONS_BY_QUEUE = {
 };
 
 const DECISION_ENDPOINTS = {
+  comment: endpoints.adminCommentDecision,
   topic: '/admin/topics/:id/decision',
   report: '/admin/reports/:id/decision',
   collection: '/admin/collections/:id/decision',
@@ -72,11 +79,16 @@ export function normalizeQueueItem(item = {}, queue = item.queue || 'content') {
     version: Number.isInteger(item.version) ? item.version : null,
     actions: getQueueActions(queue),
     // 组件只显示"树洞身份"标记，不接收任何身份映射字段。
-    isAnonymous: queue === 'content' && item.isAnonymous === true,
+    isAnonymous: (queue === 'content' || queue === 'comment') && item.isAnonymous === true,
     assetIds: queue === 'content' && Array.isArray(item.assetIds) ? item.assetIds.slice() : [],
   };
 
   if (queue === 'content') normalized.visibility = item.visibility || '';
+  if (queue === 'comment') {
+    // 只保留回应正文，拒绝将未来 DTO 中可能出现的身份字段带入页面。
+    normalized.comment = typeof item.comment === 'string' ? item.comment : '';
+    normalized.postId = item.postId || '';
+  }
   if (queue === 'report') {
     normalized.targetType = item.targetType || '';
     normalized.targetId = item.targetId || '';
@@ -138,6 +150,13 @@ export function decideCollection(id, { decision, reason = '', expectedVersion })
   });
 }
 
+export function decideComment(id, { decision, reason, expectedVersion }) {
+  return request(withPath(DECISION_ENDPOINTS.comment, { id }), {
+    method: 'POST',
+    data: { decision, reason, expectedVersion },
+  });
+}
+
 export default {
   QUEUES,
   QUEUE_LABELS,
@@ -147,6 +166,7 @@ export default {
   fetchQueue,
   fetchAssetReviewStatuses,
   submitDecision,
+  decideComment,
   decideMembership,
   decideTopic,
   decideReport,
