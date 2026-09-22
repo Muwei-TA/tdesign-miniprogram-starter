@@ -1,5 +1,10 @@
 {
-  "pages": ["pages/home/index", "pages/topics/index", "pages/anthology/index", "pages/my/index"],
+  "pages": [
+    "pages/home/index",
+    "pages/topics/index",
+    "pages/anthology/index",
+    "pages/my/index"
+  ],
   "usingComponents": {
     "t-toast": "tdesign-miniprogram/toast/toast"
   },
@@ -7,32 +12,54 @@
     {
       "root": "pages/community",
       "name": "community",
-      "pages": ["post/index", "result/index", "join/index", "club/index", "rules/index"]
+      "pages": [
+        "post/index",
+        "result/index",
+        "join/index",
+        "club/index",
+        "rules/index"
+      ]
     },
     {
       "root": "pages/message",
       "name": "message",
-      "pages": ["index"]
+      "pages": [
+        "index"
+      ]
     },
     {
       "root": "pages/search",
       "name": "search",
-      "pages": ["index"]
+      "pages": [
+        "index"
+      ]
     },
     {
       "root": "pages/release",
       "name": "release",
-      "pages": ["index"]
+      "pages": [
+        "index"
+      ]
     },
     {
       "root": "pages/setting",
       "name": "setting",
-      "pages": ["index"]
+      "pages": [
+        "index"
+      ]
     },
     {
       "root": "pages/my/info-edit",
       "name": "edit",
-      "pages": ["index"]
+      "pages": [
+        "index"
+      ]
+    },
+    {
+      "root": "pages/admin",
+      "pages": [
+        "index"
+      ]
     }
   ],
   "window": {

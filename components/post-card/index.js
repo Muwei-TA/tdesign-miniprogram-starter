@@ -1,3 +1,9 @@
+function formatDuration(seconds) {
+  const s = Math.max(0, Math.round(Number(seconds) || 0));
+  const pad = (n) => (n < 10 ? `0${n}` : `${n}`);
+  return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`;
+}
+
 /**
  * 内容卡（碎片 / 文章 / 视频 / 活动）。
  *
@@ -91,8 +97,3 @@ Component({
   },
 });
 
-function formatDuration(seconds) {
-  const s = Math.max(0, Math.round(Number(seconds) || 0));
-  const pad = (n) => (n < 10 ? `0${n}` : `${n}`);
-  return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`;
-}

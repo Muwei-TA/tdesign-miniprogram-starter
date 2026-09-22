@@ -96,7 +96,7 @@
     />
   </view>
 
-  <view class="hg-footnote">当前为 Mock 数据的界面基线，昵称、正文与计数均为虚构示例。</view>
+  <view wx:if="{{isMock}}" class="hg-footnote">当前为 Mock 数据的界面基线，昵称、正文与计数均为虚构示例。</view>
 
   <!-- 写一笔 -->
   <view class="hg-home__fab" bindtap="onCompose" aria-role="button" aria-label="写一笔">

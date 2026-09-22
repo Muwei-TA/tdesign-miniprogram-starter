@@ -1,4 +1,5 @@
 import { fetchFeed, toggleReaction, toggleBookmark, FEED_FILTERS } from '~/services/posts';
+import config from '~/config';
 import { getSession } from '~/services/session';
 import { navigateTo } from '~/utils/navigate';
 
@@ -6,6 +7,7 @@ const app = getApp();
 
 Page({
   data: {
+    isMock: config.isMock,
     filters: FEED_FILTERS,
     filter: 'all',
     list: [],

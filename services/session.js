@@ -12,6 +12,8 @@ const GUEST_SESSION = {
   user: null,
   club: null,
   capabilities: {
+    publishing: false,
+    uploads: false,
     publicScope: false,
     video: false,
     anthology: false,
@@ -29,6 +31,8 @@ function normalize(payload) {
     user: payload.user || null,
     club: payload.club || null,
     capabilities: {
+      publishing: false,
+      uploads: false,
       publicScope: false,
       video: false,
       anthology: false,

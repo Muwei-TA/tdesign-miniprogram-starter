@@ -46,7 +46,7 @@
       wx:elif="{{ !loading }}"
       icon="chat-bubble-1"
       title="还没有话题"
-      desc="{{ isMember ? '发起一个具体的问题，\n比讨论宏大议题更容易开始。' : '先了解一下这个社团，\n或者申请加入。' }}"
+      desc="{{ isMember ? '发起一个具体的问题，比讨论宏大议题更容易开始。' : '先了解一下这个社团，或者申请加入。' }}"
       action="{{ isMember ? '发起一个话题' : '了解社团' }}"
       bind:action="onEmptyAction"
     />

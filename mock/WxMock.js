@@ -9,6 +9,14 @@ const originRequest = wx.request;
 /** routes: Array<{ method, segments, hasParam, handler }> */
 const routes = [];
 
+function safeParse(text) {
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    return {};
+  }
+}
+
 function normalizePath(url) {
   const withoutQuery = String(url).split('?')[0];
   return withoutQuery.replace(/\/+$/, '') || '/';
@@ -93,14 +101,6 @@ export function install() {
       if (typeof config.complete === 'function') config.complete(response);
     }, 180 + Math.random() * 220);
   };
-}
-
-function safeParse(text) {
-  try {
-    return JSON.parse(text);
-  } catch (err) {
-    return {};
-  }
 }
 
 /** 构造错误响应：route('GET /posts', () => fail(404, 'not_accessible')) */

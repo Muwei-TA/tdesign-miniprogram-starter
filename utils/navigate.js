@@ -12,7 +12,6 @@ const PENDING_PAGES = {
   '/pages/community/collection/index': 'P07 文集目录（任务 T-08）',
   '/pages/community/my-content/index': 'P10 我的内容列表（任务 T-09）',
   '/pages/community/profile/index': 'P18 社员主页（任务 T-14）',
-  '/pages/admin/index': 'P15 社团管理台（任务 T-13）',
 };
 
 function pathOf(url) {
