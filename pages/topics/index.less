@@ -43,6 +43,28 @@
     padding: 0 @hg-page-x;
   }
 
+  &__stale {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: @hg-sp-2;
+    margin-bottom: @hg-sp-2;
+    padding: @hg-sp-2 @hg-sp-3;
+    background: @hg-clay-soft;
+    border-radius: @hg-radius-md;
+    color: @hg-clay-ink;
+    font-size: @hg-fs-2xs;
+  }
+
+  &__retry {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    min-height: @hg-touch-min;
+    color: @hg-green;
+    text-decoration: underline;
+  }
+
   &__create-wrap {
     padding: @hg-sp-5 @hg-page-x 40rpx;
   }

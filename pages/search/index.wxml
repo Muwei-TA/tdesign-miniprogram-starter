@@ -52,6 +52,11 @@
   <!-- 结果 -->
   <block wx:else>
     <view class="hg-search__results">
+      <view wx:if="{{ stale }}" class="hg-search__stale">
+        <text>搜索未更新：{{ errorText }}，仍显示上次成功结果。</text>
+        <text class="hg-search__retry" bindtap="onRetry" aria-role="button">重试</text>
+      </view>
+
       <block wx:if="{{ results.length > 0 && scope === 'post' }}">
         <post-card
           wx:for="{{ results }}"
@@ -68,7 +73,7 @@
       </block>
 
       <empty-state
-        wx:elif="{{ errorText }}"
+        wx:elif="{{ errorText && !stale }}"
         icon="error-circle"
         title="查询没有完成"
         desc="{{ errorText }}"

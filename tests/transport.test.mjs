@@ -59,6 +59,10 @@ assert.deepEqual(plain(resolveTransport('/session/wechat', 'POST', { code: 'igno
   action: 'session/me',
   payload: {},
 });
+assert.deepEqual(plain(resolveTransport('/admin/usage/status', 'GET', {})), {
+  action: 'admin/usage/status',
+  payload: {},
+});
 
 const first = withIdempotency({ body: 'draft' }, 'post-key-1');
 const retry = withIdempotency(first, 'post-key-1');

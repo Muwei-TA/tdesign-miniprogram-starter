@@ -14,6 +14,7 @@ Page({
     tab: 'reply',
     list: [],
     loading: true,
+    stale: false,
     errorText: '',
   },
 
@@ -26,19 +27,23 @@ Page({
   },
 
   async loadList() {
-    this.setData({ loading: true, errorText: '' });
+    this.setData({ loading: true, stale: false, errorText: '' });
     try {
       const data = await fetchNotifications({ tab: this.data.tab });
-      this.setData({ list: data.items || [], loading: false });
+      this.setData({ list: data.items || [], loading: false, stale: false, errorText: '' });
     } catch (err) {
-      this.setData({ loading: false, errorText: err.message || '加载失败' });
+      this.setData({
+        loading: false,
+        stale: this.data.list.length > 0,
+        errorText: err.message || '加载失败',
+      });
     }
   },
 
   onTabTap(e) {
     const { value } = e.currentTarget.dataset;
     if (value === this.data.tab) return;
-    this.setData({ tab: value, list: [] }, () => this.loadList());
+    this.setData({ tab: value, list: [], stale: false, errorText: '' }, () => this.loadList());
   },
 
   onItemTap(e) {

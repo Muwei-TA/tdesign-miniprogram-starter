@@ -8,6 +8,7 @@ Page({
     category: 'all',
     list: [],
     loading: true,
+    stale: false,
     errorText: '',
     isMember: false,
 
@@ -34,19 +35,23 @@ Page({
   },
 
   async loadTopics() {
-    this.setData({ loading: true, errorText: '' });
+    this.setData({ loading: true, stale: false, errorText: '' });
     try {
       const data = await fetchTopics({ category: this.data.category });
-      this.setData({ list: data.items || [], loading: false });
+      this.setData({ list: data.items || [], loading: false, stale: false, errorText: '' });
     } catch (err) {
-      this.setData({ loading: false, errorText: err.message || '加载失败' });
+      this.setData({
+        loading: false,
+        stale: this.data.list.length > 0,
+        errorText: err.message || '加载失败',
+      });
     }
   },
 
   onCategoryTap(e) {
     const { value } = e.currentTarget.dataset;
     if (value === this.data.category) return;
-    this.setData({ category: value, list: [] }, () => this.loadTopics());
+    this.setData({ category: value, list: [], stale: false, errorText: '' }, () => this.loadTopics());
   },
 
   onTopicTap(e) {

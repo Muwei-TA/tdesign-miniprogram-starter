@@ -16,6 +16,11 @@
     </view>
   </view>
 
+  <view wx:if="{{ stale }}" class="hg-message__stale">
+    <text>消息未更新：{{ errorText }}</text>
+    <text class="hg-message__retry" bindtap="onRetry" aria-role="button">重试</text>
+  </view>
+
   <view class="hg-message__list" wx:if="{{ list.length > 0 }}">
     <view
       wx:for="{{ list }}"
@@ -38,7 +43,7 @@
   </view>
 
   <empty-state
-    wx:elif="{{ errorText }}"
+    wx:elif="{{ errorText && !stale }}"
     icon="error-circle"
     title="没能读到消息"
     desc="{{ errorText }}"

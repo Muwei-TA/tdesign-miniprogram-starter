@@ -48,6 +48,7 @@ export default {
   adminMemberMute: '/admin/members/:targetUserId/mute',
   adminMemberRole: '/admin/members/:targetUserId/role',
   adminInvites: '/admin/invites',
+  adminUsageStatus: '/admin/usage/status',
   myAppeals: '/appeals/mine',
   appeals: '/appeals',
   adminAppeals: '/admin/appeals',

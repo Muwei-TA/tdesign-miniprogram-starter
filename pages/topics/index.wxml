@@ -23,6 +23,11 @@
   </scroll-view>
 
   <view class="hg-topics__list">
+    <view wx:if="{{ stale }}" class="hg-topics__stale">
+      <text>话题未更新：{{ errorText }}</text>
+      <text class="hg-topics__retry" bindtap="onRetry" aria-role="button">重试</text>
+    </view>
+
     <block wx:if="{{ list.length > 0 }}">
       <topic-card
         wx:for="{{ list }}"
@@ -34,7 +39,7 @@
     </block>
 
     <empty-state
-      wx:elif="{{ errorText }}"
+      wx:elif="{{ errorText && !stale }}"
       icon="error-circle"
       title="没能读到话题"
       desc="{{ errorText }}"

@@ -18,6 +18,70 @@
       <text>{{ queueHint }}</text>
     </view>
 
+    <view class="hg-admin__usage">
+      <view class="hg-admin__usage-head">
+        <view class="hg-admin__usage-title">用量护栏</view>
+        <view
+          class="hg-admin__usage-refresh"
+          bindtap="onUsageRefresh"
+          aria-role="button"
+          aria-label="刷新用量护栏状态"
+        >
+          {{ usageLoading ? '刷新中…' : '刷新' }}
+        </view>
+      </view>
+
+      <view wx:if="{{ usageLoading && !usageStatus }}" class="hg-admin__usage-loading">正在读取用量状态…</view>
+      <view wx:if="{{ usageErrorText }}" class="hg-admin__usage-error">
+        <text>读取失败：{{ usageErrorText }}</text>
+        <text class="hg-admin__usage-retry" bindtap="onUsageRefresh" aria-role="button">重试</text>
+      </view>
+
+      <block wx:if="{{ usageStatus }}">
+        <view wx:if="{{ usageLoading }}" class="hg-admin__usage-stale">刷新中，下面仍是上次读取的快照。</view>
+        <view class="hg-admin__usage-meta">UTC 日窗 {{ usageStatus.date }} · 汇总于 {{ usageStatus.updatedAt }}</view>
+
+        <view class="hg-admin__usage-section">
+          <view class="hg-admin__usage-section-head">
+            <view class="hg-admin__usage-label">社团日上传</view>
+            <view class="hg-admin__usage-badge hg-admin__usage-badge--{{ usageStatus.upload.state }}">
+              {{ usageStatus.upload.label }}
+            </view>
+          </view>
+          <view class="hg-admin__usage-metric">已上传 {{ usageStatus.upload.usedText }} · 已预留 {{ usageStatus.upload.reservedText }}</view>
+          <view wx:if="{{ !usageStatus.upload.disabled }}" class="hg-admin__usage-metric">
+            社团日限额 {{ usageStatus.upload.limitText }} · 剩余 {{ usageStatus.upload.remainingText }} · 预警阈值 {{ usageStatus.upload.warningText }}
+          </view>
+          <view wx:else class="hg-admin__usage-note">社团总量护栏未配置或已关闭；不会把零限额显示为正常额度。</view>
+          <view wx:if="{{ usageStatus.upload.userLimitDisabled }}" class="hg-admin__usage-note">
+            单账号滚动 24 小时上传限额已关闭。
+          </view>
+          <view wx:else class="hg-admin__usage-note">
+            单账号滚动 24 小时上限 {{ usageStatus.upload.userLimitText }}；此页不展示单人用量或身份。
+          </view>
+        </view>
+
+        <view class="hg-admin__usage-section">
+          <view class="hg-admin__usage-section-head">
+            <view class="hg-admin__usage-label">审核调用</view>
+            <view class="hg-admin__usage-badge hg-admin__usage-badge--{{ usageStatus.review.state }}">
+              {{ usageStatus.review.label }}
+            </view>
+          </view>
+          <view class="hg-admin__usage-metric">
+            已调用 {{ usageStatus.review.calls }} 次（文字 {{ usageStatus.review.textCalls }} · 图片 {{ usageStatus.review.imageCalls }}）
+          </view>
+          <view wx:if="{{ !usageStatus.review.disabled }}" class="hg-admin__usage-metric">
+            UTC 日限额 {{ usageStatus.review.limitCalls }} 次 · 剩余 {{ usageStatus.review.remainingCalls }} 次 · 预警阈值 {{ usageStatus.review.warningText }}
+          </view>
+          <view wx:else class="hg-admin__usage-note">审核调用限额未配置或已关闭；请确认当前审核能力配置。</view>
+          <view wx:if="{{ usageStatus.review.alertedAt }}" class="hg-admin__usage-note">
+            最近越过预警阈值：{{ usageStatus.review.alertedAt }} UTC
+          </view>
+        </view>
+      </block>
+    </view>
+
     <view class="hg-admin__governance-links">
       <view
         wx:if="{{ session && session.role === 'moderator' }}"

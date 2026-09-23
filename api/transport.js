@@ -107,6 +107,7 @@ const ROUTES = [
   { method: 'GET', pattern: '/assets/:id', action: 'assets/status', map: ({ params }) => ({ assetId: params.id }) },
 
   { method: 'GET', pattern: '/admin/members', action: 'admin/members/list' },
+  { method: 'GET', pattern: '/admin/usage/status', action: 'admin/usage/status' },
   { method: 'POST', pattern: '/admin/members/:targetUserId/remove', action: 'admin/member/remove' },
   { method: 'POST', pattern: '/admin/members/:targetUserId/mute', action: 'admin/member/mute' },
   { method: 'POST', pattern: '/admin/members/:targetUserId/role', action: 'admin/member/role' },

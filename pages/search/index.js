@@ -20,6 +20,7 @@ Page({
     results: [],
     searched: false,
     loading: false,
+    stale: false,
     errorText: '',
   },
 
@@ -45,13 +46,15 @@ Page({
 
   onInput(e) {
     const keyword = e.detail.value;
+    this.searchRequestId = (this.searchRequestId || 0) + 1;
     this.setData({ keyword });
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     if (!keyword.trim()) {
       // 清空恢复推荐词
-      this.setData({ results: [], searched: false, errorText: '' });
+      this.setData({ results: [], searched: false, loading: false, stale: false, errorText: '' });
       return;
     }
+    this.setData({ loading: false, stale: false, errorText: '' });
     this.debounceTimer = setTimeout(() => this.runSearch(), 300);
   },
 
@@ -62,7 +65,8 @@ Page({
   onScopeTap(e) {
     const { value } = e.currentTarget.dataset;
     if (value === this.data.scope) return;
-    this.setData({ scope: value, results: [] }, () => {
+    this.searchRequestId = (this.searchRequestId || 0) + 1;
+    this.setData({ scope: value, results: [], loading: false, stale: false, errorText: '' }, () => {
       if (this.data.keyword.trim()) this.runSearch();
     });
   },
@@ -75,15 +79,33 @@ Page({
   async runSearch() {
     const keyword = this.data.keyword.trim();
     if (!keyword) return;
-    this.setData({ loading: true, errorText: '' });
+    const requestId = (this.searchRequestId || 0) + 1;
+    this.searchRequestId = requestId;
+    const { scope } = this.data;
+    this.setData({ loading: true, stale: false, errorText: '' });
     try {
-      const data = await search({ q: keyword, scope: this.data.scope });
+      const data = await search({ q: keyword, scope });
+      if (requestId !== this.searchRequestId) return;
       // 慢响应不覆盖新查询
-      if (data.stale) return;
-      this.setData({ results: data.items || [], searched: true, loading: false });
+      if (data.stale) {
+        this.setData({
+          loading: false,
+          searched: true,
+          stale: this.data.results.length > 0,
+          errorText: '这次搜索结果已过期，请重试',
+        });
+        return;
+      }
+      this.setData({ results: data.items || [], searched: true, loading: false, stale: false, errorText: '' });
     } catch (err) {
+      if (requestId !== this.searchRequestId) return;
       // 失败重试不清空输入
-      this.setData({ loading: false, searched: true, errorText: err.message || '查询失败' });
+      this.setData({
+        loading: false,
+        searched: true,
+        stale: this.data.results.length > 0,
+        errorText: err.message || '查询失败',
+      });
     }
   },
 
@@ -97,6 +119,6 @@ Page({
   },
 
   onRetry() {
-    this.runSearch();
+    return this.runSearch();
   },
 });

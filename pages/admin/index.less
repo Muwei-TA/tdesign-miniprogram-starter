@@ -20,6 +20,116 @@
     margin: @hg-sp-3 @hg-page-x 0;
   }
 
+  &__usage {
+    margin: @hg-sp-3 @hg-page-x 0;
+    padding: @hg-sp-3;
+    background: @hg-surface;
+    border: 1rpx solid @hg-line;
+    border-radius: @hg-radius-lg;
+  }
+
+  &__usage-head,
+  &__usage-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: @hg-sp-2;
+  }
+
+  &__usage-title {
+    .hg-serif(@hg-fs-h3);
+
+    color: @hg-ink;
+  }
+
+  &__usage-refresh,
+  &__usage-retry {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    min-height: @hg-touch-min;
+    color: @hg-green;
+    font-size: @hg-fs-xs;
+    text-decoration: underline;
+  }
+
+  &__usage-meta,
+  &__usage-loading,
+  &__usage-stale {
+    margin-top: @hg-sp-2;
+    color: @hg-ink-3;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+  }
+
+  &__usage-stale {
+    color: @hg-clay-ink;
+  }
+
+  &__usage-error {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: @hg-sp-2;
+    margin-top: @hg-sp-2;
+    padding: @hg-sp-2 @hg-sp-3;
+    background: @hg-clay-soft;
+    border-radius: @hg-radius-md;
+    color: @hg-danger;
+    font-size: @hg-fs-xs;
+  }
+
+  &__usage-section {
+    margin-top: @hg-sp-3;
+    padding-top: @hg-sp-3;
+    border-top: 1rpx solid @hg-line;
+  }
+
+  &__usage-label {
+    color: @hg-ink;
+    font-size: @hg-fs-sm;
+    font-weight: 600;
+  }
+
+  &__usage-badge {
+    flex: 0 0 auto;
+    padding: @hg-sp-1 @hg-sp-2;
+    border-radius: @hg-radius-pill;
+    font-size: @hg-fs-2xs;
+
+    &--ok {
+      background: @hg-green-soft;
+      color: @hg-green;
+    }
+
+    &--near_limit {
+      background: @hg-clay-soft;
+      color: @hg-clay-ink;
+    }
+
+    &--limit_reached {
+      background: fade(@hg-danger, 12%);
+      color: @hg-danger;
+    }
+
+    &--disabled {
+      background: @hg-surface-sunk;
+      color: @hg-ink-3;
+    }
+  }
+
+  &__usage-metric,
+  &__usage-note {
+    margin-top: @hg-sp-1;
+    color: @hg-ink-2;
+    font-size: @hg-fs-xs;
+    line-height: @hg-lh-base;
+  }
+
+  &__usage-note {
+    color: @hg-ink-3;
+  }
+
   &__queues {
     display: flex;
     white-space: nowrap;
