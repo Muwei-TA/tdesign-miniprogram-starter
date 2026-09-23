@@ -11,6 +11,7 @@ export default {
 
   posts: '/posts',
   postDetail: '/posts/:id',
+  postResubmit: '/posts/:id/resubmit',
   postVisibility: '/posts/:id/visibility',
   postReaction: '/posts/:id/reaction',
   postBookmark: '/posts/:id/bookmark',

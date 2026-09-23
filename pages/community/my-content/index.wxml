@@ -104,6 +104,15 @@
             >删除</view
           >
           <view
+            wx:if="{{ item.status === 'rejected' }}"
+            class="hg-my-content__post-appeal"
+            data-id="{{ item.id }}"
+            catchtap="onEditRejected"
+            aria-role="button"
+          >
+            重新编辑
+          </view>
+          <view
             wx:if="{{ item.status === 'rejected' || item.status === 'hidden' }}"
             class="hg-my-content__post-appeal"
             data-id="{{ item.id }}"

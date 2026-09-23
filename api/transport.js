@@ -21,6 +21,7 @@ const ROUTES = [
   // 内容。
   { method: 'GET', pattern: '/posts', action: 'posts/list' },
   { method: 'POST', pattern: '/posts', action: 'posts/create' },
+  { method: 'PATCH', pattern: '/posts/:id/resubmit', action: 'posts/resubmit' },
   { method: 'GET', pattern: '/posts/:id', action: 'posts/detail', map: ({ params }) => ({ id: params.id }) },
   { method: 'DELETE', pattern: '/posts/:id', action: 'posts/delete' },
   { method: 'PATCH', pattern: '/posts/:id/visibility', action: 'posts/visibility' },

@@ -5,9 +5,6 @@
     "pages/anthology/index",
     "pages/my/index"
   ],
-  "usingComponents": {
-    "t-toast": "tdesign-miniprogram/toast/toast"
-  },
   "subpackages": [
     {
       "root": "pages/community",
@@ -19,6 +16,7 @@
         "club/index",
         "rules/index",
         "my-content/index",
+        "resubmit/index",
         "topic/index",
         "collection/index",
         "profile/index",

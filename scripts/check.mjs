@@ -14,6 +14,7 @@ import { join, extname, relative, dirname, resolve, sep } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SKIP = new Set(['node_modules', '.git', '.session_tmps', '.github', 'docs', 'scripts', 'cloudfunctions']);
@@ -111,7 +112,23 @@ function componentExists(base, p) {
   const raw = p.startsWith('/') ? join(ROOT, p) : resolve(base, p);
   if (existsSync(`${raw}.json`) || existsSync(`${raw}.wxml`)) return true;
   const npm = join(NPM_ROOT, p);
-  return existsSync(`${npm}.json`) || existsSync(`${npm}.wxml`);
+  if (existsSync(`${npm}.json`) || existsSync(`${npm}.wxml`)) return true;
+
+  // NPM packages are copied to miniprogram_npm by WeChat DevTools. Before that
+  // build step, resolve their declared mini-program entry from node_modules.
+  const packageName = p.startsWith('@') ? p.split('/').slice(0, 2).join('/') : p.split('/')[0];
+  const packageRequire = createRequire(join(ROOT, 'package.json'));
+  try {
+    const packageJsonPath = packageRequire.resolve(`${packageName}/package.json`);
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+    const packageRoot = dirname(packageJsonPath);
+    const packagePath = p.slice(packageName.length).replace(/^\//, '');
+    const miniProgramRoot = packageJson.miniprogram || packageJson.miniProgram || '';
+    const target = resolve(packageRoot, miniProgramRoot, packagePath);
+    return existsSync(`${target}.json`) || existsSync(`${target}.wxml`);
+  } catch {
+    return false;
+  }
 }
 
 for (const jsonPath of jsonFiles) {

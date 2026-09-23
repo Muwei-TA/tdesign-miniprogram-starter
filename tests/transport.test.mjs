@@ -27,6 +27,12 @@ assert.deepEqual(plain(resolveTransport('/posts/p-1', 'GET', {})), {
   action: 'posts/detail',
   payload: { id: 'p-1' },
 });
+assert.deepEqual(plain(resolveTransport('/posts/p-1/resubmit', 'PATCH', {
+  title: 'revised', body: 'new text', expectedVersion: 2, idempotencyKey: 'retry-1',
+})), {
+  action: 'posts/resubmit',
+  payload: { id: 'p-1', title: 'revised', body: 'new text', expectedVersion: 2, idempotencyKey: 'retry-1' },
+});
 assert.deepEqual(plain(resolveTransport('/posts/p-1/reaction', 'DELETE', {})), {
   action: 'posts/reaction',
   payload: { id: 'p-1', next: false },

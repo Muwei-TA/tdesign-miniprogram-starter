@@ -1,0 +1,23 @@
+<view class="hg-page hg-resubmit">
+  <hg-nav title="重新编辑" />
+  <view wx:if="{{ loading }}" class="hg-resubmit__notice">正在读取原稿…</view>
+  <empty-state wx:elif="{{ errorText }}" icon="error-circle" title="暂时无法编辑" desc="{{ errorText }}" action="重试" bind:action="onRetry" />
+  <block wx:else>
+    <view class="hg-resubmit__notice">{{ statusText }}</view>
+    <view class="hg-resubmit__form">
+      <view class="hg-resubmit__hint">修改原稿后会重新审核；保留原附件、发布身份和可见范围。</view>
+      <view wx:if="{{ kind === 'article' }}" class="hg-resubmit__field">
+        <text class="hg-resubmit__label">标题</text>
+        <input class="hg-resubmit__input" value="{{ title }}" maxlength="60" disabled="{{ submitting }}" bindinput="onTitleInput" />
+      </view>
+      <view class="hg-resubmit__field">
+        <text class="hg-resubmit__label">正文</text>
+        <textarea class="hg-resubmit__textarea" value="{{ body }}" maxlength="{{ bodyLimit }}" disabled="{{ submitting }}" bindinput="onBodyInput" />
+        <view class="hg-resubmit__count">{{ body.length }} / {{ bodyLimit }}</view>
+      </view>
+      <view wx:if="{{ mediaCount > 0 }}" class="hg-resubmit__hint">原有 {{ mediaCount }} 张图片将保留；此处暂不更换附件。</view>
+      <view class="hg-resubmit__hint">身份：{{ identityText }} · 范围：{{ visibilityText }}</view>
+      <view class="hg-resubmit__submit" bindtap="onSubmit" aria-role="button">{{ submitting ? '提交中…' : '重新提交审核' }}</view>
+    </view>
+  </block>
+</view>
