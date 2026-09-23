@@ -23,11 +23,11 @@
 ## 本地运行
 
 ```bash
-npm install     # 首次；仅用于 eslint/prettier，运行小程序本身不需要
+npm ci          # 首次安装，或重新拉取项目后安装锁定版本的依赖
 ```
 
-1. 用微信开发者工具导入本目录（`miniprogram_npm` 已随仓库提供）。
-2. 如改动过 `package.json`，需「工具 → 构建 npm」。
+1. 用微信开发者工具导入本目录。
+2. 在开发者工具中选择「工具 → 构建 npm」，生成被 Git 忽略的 `miniprogram_npm`。首次运行和重新拉取项目后都需执行；依赖变化后重新执行。
 3. 编译预览。默认 `config.js` 的 `isMock = true`，全部数据来自 `mock/`。
 
 ## 提交前自检

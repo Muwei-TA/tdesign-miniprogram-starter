@@ -102,12 +102,12 @@ mock/
 ## 10.5 lint 与构建
 
 ```bash
-npm install          # 首次（仓库当前未安装 node_modules）
+npm ci               # 首次或重新拉取项目后安装锁定版本的依赖
 npm run lint         # 提交前必过
 ```
 
 微信开发者工具：导入项目 → 构建 npm → 编译。基础库按 `project.config.json`。
-**注意**：`miniprogram_npm` 已在仓库中，如改动 `package.json` 需重新构建 npm（首版不改）。
+**注意**：`miniprogram_npm` 被 Git 忽略，首次运行和重新拉取项目后都需在开发者工具中构建 npm；依赖变化后重新构建。
 
 ### 无依赖下的静态自检（推荐，无需 npm install）
 
