@@ -9,6 +9,7 @@ import { formatRelativeTime, excerpt } from '~/utils/format';
  */
 const MOCK_ROLE = 'member';
 let MOCK_APPLICATION = null;
+const RESUBMISSION_RESULTS = new Map();
 
 const CAPABILITIES = {
   // 文本发布链路已接入；媒体上传仍保持关闭，直到附件审核验收完成。
@@ -37,6 +38,7 @@ function visibleForFeed(post) {
 function toCardDTO(post) {
   return {
     id: post.id,
+    version: post.version || 1,
     kind: post.kind,
     category: post.category,
     categoryText: post.categoryText,
@@ -64,7 +66,7 @@ function toDetailDTO(post) {
       .split(/\n{2,}/)
       .filter(Boolean),
     commentsEnabled: post.viewer.canComment,
-    version: 1,
+    version: post.version || 1,
     consent: { collectionGranted: false },
     viewer: {
       ...post.viewer,
@@ -159,6 +161,29 @@ export default function registerCommunityMock() {
     // 仅自己内容不进入审核流程，直接保存
     state: body.visibility === 'private' ? 'private_saved' : 'pending',
   }));
+
+  route('PATCH /posts/:id/resubmit', ({ params, body }) => {
+    const post = POSTS.find((item) => item.id === params.id);
+    if (!post || post.ownerId !== ME.id) return fail(404, 'not_accessible');
+    if (!isMember()) return fail(403, 'membership_invalid');
+    const key = `${params.id}:${body.idempotencyKey || ''}`;
+    const fingerprint = JSON.stringify({ version: body.expectedVersion, title: body.title, body: body.body });
+    if (RESUBMISSION_RESULTS.has(key)) {
+      const previous = RESUBMISSION_RESULTS.get(key);
+      return previous.fingerprint === fingerprint ? previous.result : fail(409, 'conflict');
+    }
+    if (post.status !== 'rejected' || (post.version || 1) !== Number(body.expectedVersion)) {
+      return fail(409, 'conflict');
+    }
+    post.title = body.title || '';
+    post.body = body.body || '';
+    post.status = 'pending';
+    post.version = (post.version || 1) + 1;
+    post.statusText = '已收到，等待审核';
+    const result = { id: post.id, state: post.status, version: post.version };
+    RESUBMISSION_RESULTS.set(key, { fingerprint, result });
+    return result;
+  });
 
   route('PUT /posts/:id/reaction', () => ({ ok: true }));
   route('DELETE /posts/:id/reaction', () => ({ ok: true }));

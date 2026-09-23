@@ -222,6 +222,13 @@ Page({
     }
   },
 
+  onEditRejected(e) {
+    const { id } = e.currentTarget.dataset;
+    const item = this.data.list.find((entry) => entry.id === id);
+    if (!item || item.status !== 'rejected') return;
+    navigateTo(`/pages/community/resubmit/index?id=${encodeURIComponent(id)}`);
+  },
+
   onTopicTap(e) {
     const id = (e.detail && e.detail.id) || e.currentTarget.dataset.id;
     if (id) navigateTo(`/pages/community/topic/index?id=${id}`);

@@ -41,6 +41,16 @@ export function submitPost(payload, idempotencyKey = createIdempotencyKey('post'
   return request(endpoints.posts, { method: 'POST', data: payload, idempotencyKey, timeout: 30000 });
 }
 
+/** 退回内容只修改文字；原附件、身份和可见范围由服务端保持。 */
+export function resubmitRejectedPost(id, { title, body, expectedVersion }, idempotencyKey) {
+  return request(withPath(endpoints.postResubmit, { id }), {
+    method: 'PATCH',
+    data: { title, body, expectedVersion },
+    idempotencyKey,
+    timeout: 30000,
+  });
+}
+
 /** 首版只允许缩小范围；扩大需新建内容（docs/05 5.4） */
 export function shrinkVisibility(id, visibility, expectedVersion) {
   return request(withPath(endpoints.postVisibility, { id }), {
@@ -98,6 +108,7 @@ export default {
   fetchFeed,
   fetchPostDetail,
   submitPost,
+  resubmitRejectedPost,
   shrinkVisibility,
   deletePost,
   toggleReaction,

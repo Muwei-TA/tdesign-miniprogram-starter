@@ -104,6 +104,7 @@ notifyType:    comment | reply | reaction_digest | system_review | system_report
 | B1 | `/posts` | GET | `cursor`、`type`、`topicId`、`filter=awaiting_reply` | `PostCardDTO` 列表；仅返回允许展示 |
 | B2 | `/posts/{id}` | GET | — | `PostDetailDTO`；无权统一 `not_accessible` |
 | B3 | `/posts` | POST | 正文、`assetIds`、`visibility`、`identityMode`、`topicId`、`commentsEnabled`、`Idempotency-Key` | `{ id, version, state }`，`state ∈ pending/private_saved` |
+| B3a | `/posts/{id}/resubmit` | PATCH | `title`、`body`、`expectedVersion`、`Idempotency-Key` | 仅有效成员本人对 `rejected` 原帖重提；保留原附件/身份/可见范围，原子增加版本并新建审核任务；返回 `{ id, version, state }` |
 | B4 | `/posts/{id}/visibility` | PATCH | `visibility`、`expectedVersion` | 首版只允许缩小；同步失效权限版本 |
 | B5 | `/posts/{id}` | DELETE | `expectedVersion` | 停止展示 + 媒体权限回收 + 异步清理 |
 | B6 | `/posts/{id}/reaction` | PUT/DELETE | — | 幂等；删除/隐藏后不可新增 |

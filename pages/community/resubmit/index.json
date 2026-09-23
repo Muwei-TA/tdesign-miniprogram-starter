@@ -1,0 +1,8 @@
+{
+  "navigationStyle": "custom",
+  "backgroundTextStyle": "dark",
+  "usingComponents": {
+    "hg-nav": "/components/hg-nav/index",
+    "empty-state": "/components/empty-state/index"
+  }
+}

@@ -1,0 +1,68 @@
+@import '/styles/tokens.less';
+@import '/styles/mixins.less';
+
+.hg-resubmit {
+  min-height: 100vh;
+  padding-bottom: 72rpx;
+
+  &__notice,
+  &__form {
+    margin: @hg-sp-3 @hg-page-x 0;
+    padding: @hg-sp-3;
+    border-radius: @hg-radius-md;
+  }
+
+  &__notice {
+    background: @hg-clay-soft;
+    color: @hg-clay-ink;
+    font-size: @hg-fs-sm;
+  }
+
+  &__form {
+    .hg-card();
+  }
+
+  &__hint,
+  &__label,
+  &__count {
+    color: @hg-ink-4;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+  }
+
+  &__field {
+    margin-top: @hg-sp-3;
+  }
+
+  &__label {
+    display: block;
+    margin-bottom: @hg-sp-1;
+  }
+
+  &__input,
+  &__textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: @hg-sp-2;
+    background: @hg-surface-sunk;
+    border-radius: @hg-radius-sm;
+    color: @hg-ink;
+    font-size: @hg-fs-sm;
+  }
+
+  &__textarea {
+    min-height: 360rpx;
+    line-height: @hg-lh-base;
+  }
+
+  &__count {
+    margin-top: @hg-sp-1;
+    text-align: right;
+  }
+
+  &__submit {
+    .hg-btn-primary();
+
+    margin-top: @hg-sp-4;
+  }
+}
