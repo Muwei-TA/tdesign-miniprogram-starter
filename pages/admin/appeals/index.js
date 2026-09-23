@@ -1,4 +1,4 @@
-import { fetchAdminAppeals, decideAppeal } from '~/services/governance';
+import { fetchAdminAppeals, decideAppeal } from '../governance';
 
 const app = getApp();
 

@@ -1,4 +1,4 @@
-import { fetchMyAppeals, createAppeal } from '~/services/governance';
+import { fetchMyAppeals, createAppeal } from '../governance';
 import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();

@@ -1,6 +1,6 @@
 import { deletePost, fetchMyContents, fetchPostDetail, toggleBookmark } from '~/services/posts';
-import { listDrafts, removeDraft } from '~/services/drafts';
-import { formatRelativeTime } from '~/utils/format';
+import { listDrafts, removeDraft } from '../drafts';
+import { formatRelativeTime } from '../format';
 import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();

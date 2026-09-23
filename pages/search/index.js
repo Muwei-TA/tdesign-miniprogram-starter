@@ -1,4 +1,4 @@
-import { search, fetchSuggestions } from '~/services/search';
+import { search, fetchSuggestions } from './search';
 import { navigateTo } from '~/utils/navigate';
 
 /**

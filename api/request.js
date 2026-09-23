@@ -1,7 +1,7 @@
 import config from '~/config';
 import { resolveTransport, withIdempotency } from '~/api/transport';
 
-const { baseUrl = '', cloudFunctionName = 'api' } = config;
+const { cloudFunctionName = 'api' } = config;
 
 /**
  * 统一错误对象。kind 枚举与 docs/04-data-model-and-api.md 4.6 一致。
@@ -125,32 +125,6 @@ function withTimeout(promise, timeout) {
   return Promise.race([Promise.resolve(promise), timeoutPromise]).finally(() => clearTimeout(timer));
 }
 
-function requestMock(url, { method, data, header, timeout }) {
-  return new Promise((resolve, reject) => {
-    wx.request({
-      url: baseUrl + url,
-      method,
-      data,
-      timeout,
-      dataType: 'json',
-      header: {
-        'content-type': 'application/json',
-        ...header,
-      },
-      success(res) {
-        try {
-          resolve(resolveResponse(res && res.data, res && res.statusCode));
-        } catch (err) {
-          reject(err);
-        }
-      },
-      fail(err) {
-        reject(buildTransportError(err));
-      },
-    });
-  });
-}
-
 function requestCloud(url, { method, data, timeout }) {
   let call;
   try {
@@ -184,16 +158,13 @@ function requestCloud(url, { method, data, timeout }) {
 
 /**
  * @param {string} url 以 / 开头的接口路径
- * @param {object} options { method, data, header, timeout, idempotencyKey }
+ * @param {object} options { method, data, timeout, idempotencyKey }
  * @returns {Promise<any>} 成功时 resolve 业务 data
  */
 export default function request(url, options = {}) {
-  const { method = 'GET', data = {}, header = {}, timeout = 10000, idempotencyKey } = options;
+  const { method = 'GET', data = {}, timeout = 10000, idempotencyKey } = options;
   const payload = withIdempotency(data, idempotencyKey);
-  const pending = config.isMock
-    ? requestMock(url, { method, data: payload, header, timeout })
-    : requestCloud(url, { method, data: payload, timeout });
-  return pending.catch((err) => {
+  return requestCloud(url, { method, data: payload, timeout }).catch((err) => {
     if (err.kind === 'unauthenticated' || err.kind === 'membership_invalid') {
       const app = typeof getApp === 'function' ? getApp() : null;
       if (app && app.invalidateSession) app.invalidateSession();

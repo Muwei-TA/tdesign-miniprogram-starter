@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const serviceSource = readFileSync(join(ROOT, 'services/uploads.js'), 'utf8')
+const serviceSource = readFileSync(join(ROOT, 'pages/release/uploads.js'), 'utf8')
   .replace("import request, { withPath } from '~/api/request';", 'const request = __request; const withPath = __withPath;')
   .replace("import endpoints from '~/api/endpoints';", 'const endpoints = __endpoints;')
   .replace("import { createIdempotencyKey } from '~/utils/idempotency';", 'const createIdempotencyKey = __createIdempotencyKey;')

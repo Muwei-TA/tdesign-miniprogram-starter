@@ -1,5 +1,5 @@
 import { bootstrapSession, getSession } from '~/services/session';
-import { updateMyProfile } from '~/services/profiles';
+import { updateMyProfile } from './profile-service';
 
 const app = getApp();
 

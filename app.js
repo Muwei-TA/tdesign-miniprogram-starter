@@ -1,13 +1,8 @@
 // app.js
 import config from './config';
-import Mock from './mock/index';
 import createBus from './utils/eventBus';
 import { fetchUnreadCount } from './services/notifications';
 import { bootstrapSession, clearAccountScope } from './services/session';
-
-if (config.isMock) {
-  Mock();
-}
 
 App({
   globalData: {
@@ -28,7 +23,7 @@ App({
 
   /** CloudBase 小程序身份由微信自动注入，不再交换或持久化会话令牌。 */
   initCloudBase() {
-    if (config.isMock || !wx.cloud || typeof wx.cloud.init !== 'function') return;
+    if (!wx.cloud || typeof wx.cloud.init !== 'function') return;
     wx.cloud.init({
       env: config.env,
       traceUser: config.traceUser,

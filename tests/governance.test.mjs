@@ -8,7 +8,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const plain = (value) => JSON.parse(JSON.stringify(value));
 const calls = [];
 
-const serviceSource = readFileSync(join(ROOT, 'services/governance.js'), 'utf8')
+const serviceSource = readFileSync(join(ROOT, 'pages/admin/governance.js'), 'utf8')
   .replace("import request, { withPath, withQuery } from '~/api/request';", 'const request = __request; const withPath = __withPath; const withQuery = __withQuery;')
   .replace("import endpoints from '~/api/endpoints';", 'const endpoints = __endpoints;')
   .replace(/export const /g, 'const ')
@@ -108,6 +108,28 @@ assert.deepEqual(calls.slice(1).map((call) => call.url), [
 assert.equal(calls[4].options.data.ttlSeconds, 3600);
 assert.equal(calls[7].options.data.contentVersion, 3);
 assert.equal(calls[8].options.data.decision, 'approve');
+
+const communitySource = readFileSync(join(ROOT, 'pages/community/governance.js'), 'utf8')
+  .replace("import request, { withQuery } from '~/api/request';", 'const request = __request; const withQuery = __withQuery;')
+  .replace("import endpoints from '~/api/endpoints';", 'const endpoints = __endpoints;')
+  .replace(/export function /g, 'function ')
+  .concat('\nmodule.exports = { normalizeAppeal, fetchMyAppeals, createAppeal };');
+const communityModule = { exports: {} };
+vm.runInNewContext(communitySource, {
+  module: communityModule,
+  __request: request,
+  __withQuery: withQuery,
+  __endpoints: endpoints,
+  encodeURIComponent,
+});
+const communityAppeal = communityModule.exports.normalizeAppeal({
+  appealId: 'a-1', postId: 'p-1', contentVersion: 3, status: 'submitted', version: 1,
+  body: 'private body', ownerId: 'private-owner',
+});
+assert.equal(communityAppeal.body, undefined);
+assert.equal(communityAppeal.ownerId, undefined);
+await communityModule.exports.fetchMyAppeals({ limit: 10 });
+assert.equal(calls.at(-1).url, '/appeals/mine?limit=10');
 
 const membersPage = readFileSync(join(ROOT, 'pages/admin/members/index.js'), 'utf8');
 const adminAppealsPage = readFileSync(join(ROOT, 'pages/admin/appeals/index.js'), 'utf8');

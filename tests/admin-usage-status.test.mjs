@@ -6,7 +6,7 @@ import vm from 'node:vm';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-const usageServiceSource = readFileSync(join(ROOT, 'services/usage.js'), 'utf8')
+const usageServiceSource = readFileSync(join(ROOT, 'pages/admin/usage.js'), 'utf8')
   .replace("import request from '~/api/request';", 'const request = __request;')
   .replace("import endpoints from '~/api/endpoints';", 'const endpoints = __endpoints;')
   .replace(/export function /g, 'function ')
@@ -32,10 +32,10 @@ assert.deepEqual(usageCalls, ['/admin/usage/status']);
 function loadAdminPage(fetchUsageStatus, { mediaFetcher, wxApi } = {}) {
   const source = readFileSync(join(ROOT, 'pages/admin/index.js'), 'utf8')
     .replace(
-      /import \{[\s\S]*?\} from '~\/services\/moderation';/,
+      /import \{[\s\S]*?\} from '\.\/moderation';/,
       'const { QUEUES, fetchQueue, fetchAssetReviewStatuses, submitDecision, decideComment, decideTopic, decideMembership, decideReport, decideCollection } = __moderation;',
     )
-    .replace("import { fetchUsageStatus } from '~/services/usage';", 'const { fetchUsageStatus } = __usage;')
+    .replace("import { fetchUsageStatus } from './usage';", 'const { fetchUsageStatus } = __usage;')
     .replace("import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;');
 
   let definition;

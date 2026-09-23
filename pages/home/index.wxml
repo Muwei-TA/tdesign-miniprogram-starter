@@ -2,12 +2,10 @@
   <hg-nav
     theme="transparent"
     show-back="{{ false }}"
-    tools="{{ navTools }}"
-    bind:tooltap="onNavTool"
   >
-    <view slot="left" class="hg-home__brand" bindtap="onClubTap" aria-role="button" aria-label="社团名片">
-      <view class="hg-home__emblem">黑</view>
-      <text class="hg-home__brand-text">黑光文学社</text>
+    <view slot="left" class="hg-home__notice" hover-class="hg-home__notice--hover" bindtap="onNoticeTap" aria-role="button" aria-label="消息">
+      <t-icon name="notification" size="42rpx" />
+      <view wx:if="{{ unread > 0 }}" class="hg-home__notice-dot"></view>
     </view>
   </hg-nav>
 
@@ -22,7 +20,6 @@
 
   <!-- 搜索入口（不在本页输入） -->
   <view class="hg-home__search" hover-class="hg-home__search--hover" bindtap="onSearchTap" aria-role="button" aria-label="搜索">
-    <t-icon name="search" size="34rpx" />
     <text>找回一句话、一张照片</text>
   </view>
 
@@ -73,6 +70,7 @@
         bind:tapmedia="onTapMedia"
         bind:taptopic="onTapTopic"
         bind:tapauthor="onTapAuthor"
+        bind:more="onMore"
         bind:react="onReact"
         bind:bookmark="onBookmark"
       />
@@ -97,11 +95,18 @@
     />
   </view>
 
-  <view wx:if="{{isMock}}" class="hg-footnote">当前为 Mock 数据的界面基线，昵称、正文与计数均为虚构示例。</view>
-
   <!-- 写一笔 -->
   <view class="hg-home__fab" hover-class="hg-home__fab--hover" bindtap="onCompose" aria-role="button" aria-label="写一笔">
     <t-icon name="pen" size="34rpx" />
     <text>写一笔</text>
   </view>
+
+  <scope-picker
+    visible="{{ scopeVisible }}"
+    value="{{ scopeValue }}"
+    allow-public="{{ capabilities.publicScope }}"
+    mode="shrink"
+    bind:change="onScopeChange"
+    bind:close="onScopeClose"
+  />
 </view>

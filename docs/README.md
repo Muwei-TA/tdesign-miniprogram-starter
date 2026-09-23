@@ -2,6 +2,8 @@
 
 # 黑光文学社 · 树洞｜开发工程书
 
+> 当前前端已接入 CloudBase 开发环境，运行时 Mock 与虚构数据已清除。下文记录早期 UI 基线和当时的任务分工，现状以项目根目录 `README.md`、最新交接及源码为准。
+
 本目录是「黑光文学社树洞」微信小程序的**开发交接工程书**，供多个编程智能体并行开发使用。
 基线代码库为当前仓库（TDesign 小程序通用模板），设计输入为 `D:\Github\blacklight\docs\heiguang_design`
 下的策划文档（`product-plan.md`）、交互原型（`prototype.html`）与测试记录（`qa-report.md`）。

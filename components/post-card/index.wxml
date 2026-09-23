@@ -12,7 +12,7 @@
       </view>
     </view>
     <visibility-badge scope="{{ post.visibility }}" />
-    <view wx:if="{{ showInteractions }}" class="hg-post__more" hover-class="hg-post__more--hover" catchtap="onMore" aria-role="button" aria-label="更多">
+    <view wx:if="{{ showMoreActions }}" class="hg-post__more" hover-class="hg-post__more--hover" catchtap="onMore" aria-role="button" aria-label="更多">
       <t-icon name="ellipsis" size="34rpx" />
     </view>
   </view>

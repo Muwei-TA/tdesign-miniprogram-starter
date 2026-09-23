@@ -10,8 +10,8 @@ const source = readFileSync(join(ROOT, 'pages/community/my-content/index.js'), '
     "import { deletePost, fetchMyContents, fetchPostDetail, toggleBookmark } from '~/services/posts';",
     'const deletePost = __deletePost; const fetchMyContents = __fetchMyContents; const fetchPostDetail = __fetchPostDetail; const toggleBookmark = __toggleBookmark;',
   )
-  .replace("import { listDrafts, removeDraft } from '~/services/drafts';", 'const listDrafts = __listDrafts; const removeDraft = __removeDraft;')
-  .replace("import { formatRelativeTime } from '~/utils/format';", 'const formatRelativeTime = __formatRelativeTime;')
+  .replace("import { listDrafts, removeDraft } from '../drafts';", 'const listDrafts = __listDrafts; const removeDraft = __removeDraft;')
+  .replace("import { formatRelativeTime } from '../format';", 'const formatRelativeTime = __formatRelativeTime;')
   .replace("import { navigateTo } from '~/utils/navigate';", 'const navigateTo = __navigateTo;');
 
 let page;

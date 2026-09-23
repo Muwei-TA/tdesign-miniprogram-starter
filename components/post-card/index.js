@@ -27,6 +27,7 @@ Component({
     avatarText: '',
     authorText: '',
     showInteractions: false,
+    showMoreActions: false,
     isGrid: false,
     durationText: '',
   },
@@ -37,6 +38,7 @@ Component({
       if (!post) return;
 
       const author = post.author || {};
+      const viewer = post.viewer || {};
       const name = author.isAnonymous ? author.alias || '树洞旅人' : author.displayName || '';
       const media = post.media || {};
       const video = media.video || null;
@@ -46,6 +48,8 @@ Component({
         avatarText: name.slice(0, 1),
         // private 不参与社区互动；非 published 状态只显示状态标签
         showInteractions: showActions && post.visibility !== 'private' && post.status === 'published',
+        // 管理入口只由服务端返回的本人权限决定，不跟随互动区显隐。
+        showMoreActions: showActions && viewer.isOwner && (viewer.canDelete || viewer.canShrinkVisibility),
         isGrid: media.type === 'image' && (media.images || []).length > 1,
         durationText: video ? formatDuration(video.duration) : '',
       });
@@ -96,4 +100,3 @@ Component({
     },
   },
 });
-

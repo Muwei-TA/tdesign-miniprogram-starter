@@ -23,7 +23,6 @@ function loadTransport() {
 function loadApp() {
   const source = readFileSync(join(ROOT, 'app.js'), 'utf8')
     .replace("import config from './config';", 'const config = __config;')
-    .replace("import Mock from './mock/index';", 'const Mock = __Mock;')
     .replace("import createBus from './utils/eventBus';", 'const createBus = __createBus;')
     .replace(
       "import { fetchUnreadCount } from './services/notifications';",
@@ -48,8 +47,7 @@ function loadApp() {
     App(definition) {
       holder.definition = definition;
     },
-    __config: { isMock: false },
-    __Mock() {},
+    __config: {},
     __createBus: () => bus,
     __fetchUnreadCount: async () => 0,
     __bootstrapSession: async () => guestSession,
@@ -86,7 +84,7 @@ function loadRequest(app) {
   const runtime = {
     module: { exports: {} },
     exports: {},
-    __config: { isMock: false, baseUrl: '', cloudFunctionName: 'api' },
+    __config: { cloudFunctionName: 'api' },
     __transport: loadTransport(),
     wx: {
       cloud: {

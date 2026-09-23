@@ -1,4 +1,4 @@
-import { scopedKey } from './session';
+import { scopedKey } from '~/services/session';
 import { createIdempotencyKey } from '~/utils/idempotency';
 
 /**

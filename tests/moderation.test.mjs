@@ -7,7 +7,7 @@ import vm from 'node:vm';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const plain = (value) => JSON.parse(JSON.stringify(value));
 
-const serviceSource = readFileSync(join(ROOT, 'services/moderation.js'), 'utf8')
+const serviceSource = readFileSync(join(ROOT, 'pages/admin/moderation.js'), 'utf8')
   .replace("import request, { withPath, withQuery } from '~/api/request';", 'const request = __request; const withPath = __withPath; const withQuery = __withQuery;')
   .replace("import endpoints from '~/api/endpoints';", 'const endpoints = __endpoints;')
   .replace(/export const /g, 'const ')

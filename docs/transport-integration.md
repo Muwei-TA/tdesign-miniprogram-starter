@@ -4,11 +4,10 @@
 
 ## 运行模式
 
-`config.js` 默认使用真实 CloudBase：
+`config.js` 使用 CloudBase：
 
 ```js
 {
-  isMock: false,
   env: 'shudong-d4g4blap4a5069a28',
   cloudFunctionName: 'api',
   traceUser: true,
@@ -17,7 +16,7 @@
 
 应用启动时调用一次 `wx.cloud.init`。`appid` 由 `project.config.json` 固定为 `wx39773ed34aa30776`。小程序身份由微信自动注入云函数上下文，前端不调用 `/session/wechat` 换 token，不读写 `Authorization: Bearer`。
 
-Mock 只用于明确的开发预览：临时把 `isMock` 改为 `true`，应用才会装载 `mock/` 并继续使用 `wx.request` 路径拦截。提交联调代码时应恢复为 `false`。
+前端 Mock 拦截和虚构数据已移除；业务请求统一经 `wx.cloud.callFunction`。
 
 ## Endpoint 到 action 的转换
 

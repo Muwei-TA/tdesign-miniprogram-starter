@@ -1,5 +1,5 @@
 import { submitPost } from '~/services/posts';
-import { saveDraft, getDraft, removeDraft } from '~/services/drafts';
+import { saveDraft, getDraft, removeDraft } from './drafts';
 import { bootstrapSession } from '~/services/session';
 import {
   IMAGE_STATUS,
@@ -8,7 +8,7 @@ import {
   prepareImageFiles,
   uploadImages,
   validateImages,
-} from '~/services/uploads';
+} from './uploads';
 import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();

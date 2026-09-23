@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { resolve, basename } from 'node:path';
 import { execFileSync } from 'node:child_process';
 const frontend = fileURLToPath(new URL('..', import.meta.url));
-const backend = resolve(process.argv[2] || resolve(frontend, '../backend'));
+const backend = resolve(process.argv[2] || resolve(frontend, '../blacklight-development'));
 if (!existsSync(resolve(backend, 'scripts/sync-shared.mjs'))) throw new Error('Supply the blacklight backend checkout path');
 execFileSync(process.execPath, ['scripts/sync-shared.mjs'], { cwd: backend, stdio: 'inherit' });
 for (const name of ['api', 'worker']) {

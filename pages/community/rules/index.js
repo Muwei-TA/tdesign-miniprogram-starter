@@ -1,4 +1,4 @@
-import { fetchMembershipSession } from '~/services/membership';
+import { fetchMembershipSession } from '../membership';
 
 const CLUB_RULES = [
   { title: '不涉黄', body: '不发布露骨色情内容，也不把他人当作猎奇对象。' },

@@ -4,7 +4,7 @@ import {
   muteMember,
   changeMemberRole,
   createInvite,
-} from '~/services/governance';
+} from '../governance';
 
 const app = getApp();
 const DAY_SECONDS = 24 * 60 * 60;

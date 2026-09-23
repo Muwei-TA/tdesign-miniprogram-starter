@@ -119,7 +119,7 @@ const searchPage = loadPage(
   'pages/search/index.js',
   [
     [
-      "import { search, fetchSuggestions } from '~/services/search';",
+      "import { search, fetchSuggestions } from './search';",
       'const { search, fetchSuggestions } = __search;',
     ],
     ["import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;'],

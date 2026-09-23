@@ -1,5 +1,5 @@
 import { getCapabilities, getSession, scopedKey } from '~/services/session';
-import { requestAccountDeletion, requestContentExport } from '~/services/account';
+import { requestAccountDeletion, requestContentExport } from './account';
 import { navigateTo } from '~/utils/navigate';
 
 /**

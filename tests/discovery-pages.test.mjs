@@ -25,10 +25,11 @@ assert.match(collection, /fetchCollectionDetail\(this\.data\.id\)/);
 assert.match(collection, /collectionId=\$\{encodeURIComponent\(collection\.id\)\}/);
 assert.match(read('pages/community/collection/index.wxml'), /投稿需要单独勾选授权/);
 
-const profileService = read('services/profiles.js');
+const profileService = read('pages/community/profile-service.js');
+const infoEditService = read('pages/my/info-edit/profile-service.js');
 assert.match(profileService, /profile\/\$\{encodeURIComponent\(targetUserId\)\}/);
-assert.match(profileService, /method: 'PATCH'/);
-assert.match(profileService, /displayName/);
+assert.match(infoEditService, /method: 'PATCH'/);
+assert.match(infoEditService, /displayName/);
 const profilePage = read('pages/community/profile/index.js');
 assert.match(profilePage, /fetchProfile\(this\.data\.userId\)/);
 assert.doesNotMatch(profilePage, /nextCursor|loadMore|onReachBottom/);

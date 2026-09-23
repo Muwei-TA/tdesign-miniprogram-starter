@@ -82,13 +82,14 @@ const appSource = readFileSync(join(ROOT, 'app.js'), 'utf8');
 const configSource = readFileSync(join(ROOT, 'config.js'), 'utf8');
 assert.match(appSource, /wx\.cloud\.init/);
 assert.match(appSource, /env:\s*config\.env/);
-assert.match(configSource, /isMock:\s*false/);
+assert.doesNotMatch(configSource, /isMock|baseUrl/);
 assert.match(requestSource, /wx\.cloud\.callFunction/);
+assert.doesNotMatch(requestSource, /wx\.request/);
 assert.doesNotMatch(requestSource, /Bearer|SESSION_TOKEN_KEY|Idempotency-Key/);
 
-// 加载实际 request.js（去掉小程序 alias import），验证真实/Mock 分支的运行行为。
+// 加载实际 request.js（去掉小程序 alias import），验证 CloudBase 请求的运行行为。
 const requestModule = { exports: {} };
-const runtimeConfig = { isMock: false, baseUrl: '', cloudFunctionName: 'api' };
+const runtimeConfig = { cloudFunctionName: 'api' };
 const runtime = {
   module: requestModule,
   exports: requestModule.exports,
@@ -145,18 +146,5 @@ await assert.rejects(request('/session/me', { timeout: 1 }), (error) => {
   assert.equal(error.kind, 'timeout');
   return true;
 });
-
-runtimeConfig.isMock = true;
-let mockRequest;
-runtime.wx.request = (options) => {
-  mockRequest = options;
-  options.success({ statusCode: 200, data: { code: 0, message: 'ok', data: { mocked: true } } });
-};
-assert.deepEqual(
-  plain(await request('/posts', { method: 'POST', data: { body: 'mock' }, idempotencyKey: 'post-key-3' })),
-  { mocked: true },
-);
-assert.equal(mockRequest.data.idempotencyKey, 'post-key-3');
-assert.equal(mockRequest.header.Authorization, undefined);
 
 console.log('OK: transport mapping, native auth boundary, and idempotency payload checks passed');

@@ -6,6 +6,7 @@
     "t-icon": "tdesign-miniprogram/icon/icon",
     "hg-nav": "/components/hg-nav/index",
     "post-card": "/components/post-card/index",
-    "empty-state": "/components/empty-state/index"
+    "empty-state": "/components/empty-state/index",
+    "scope-picker": "/components/scope-picker/index"
   }
 }

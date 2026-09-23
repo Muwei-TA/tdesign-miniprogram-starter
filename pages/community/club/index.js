@@ -1,4 +1,4 @@
-import { fetchMembershipSession, fetchMyMembershipApplication } from '~/services/membership';
+import { fetchMembershipSession, fetchMyMembershipApplication } from '../membership';
 import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();

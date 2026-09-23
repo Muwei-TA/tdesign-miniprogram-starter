@@ -7,7 +7,7 @@
 
 - 技术基线：原生微信小程序 + [TDesign MiniProgram](https://tdesign.tencent.com/miniprogram/overview)（不引入新依赖）
 - 四个底部入口：**树洞 / 话题 / 文集 / 我的**；消息在树洞首页顶部；「写一笔」为悬浮主操作
-- 当前状态：**前端 UI 基线 + Mock 数据**。未接入微信登录、真实上传、服务端鉴权、内容审核与通知服务
+- 当前状态：前端通过 CloudBase `api` 云函数连接开发环境；模拟数据入口已移除。开发环境联调不等于真机验收或正式上线。
 
 ## 开发工程书
 
@@ -28,13 +28,14 @@ npm ci          # 首次安装，或重新拉取项目后安装锁定版本的�
 
 1. 用微信开发者工具导入本目录。
 2. 在开发者工具中选择「工具 → 构建 npm」，生成被 Git 忽略的 `miniprogram_npm`。首次运行和重新拉取项目后都需执行；依赖变化后重新执行。
-3. 编译预览。默认 `config.js` 的 `isMock = true`，全部数据来自 `mock/`。
+3. 编译预览。页面使用 `config.js` 指定的 CloudBase 开发环境；需要有效的小程序登录与云函数。
 
 ## 提交前自检
 
 ```bash
 node scripts/check.mjs    # 零依赖静态自检：语法 / BOM / 事件绑定 / 组件注册 / 路由
 npm run lint              # 需要先 npm install
+npm test                  # 开发时运行自动化测试；测试源码不进入小程序包
 ```
 
 自检覆盖的常见坑见 [`docs/10-mock-and-quality.md`](./docs/10-mock-and-quality.md) 10.5。
@@ -43,21 +44,21 @@ npm run lint              # 需要先 npm install
 
 ```text
 api/            传输层：请求封装、接口路径常量
-services/       用例层：会话、内容、话题、文集、通知、搜索、草稿、上传、管理
+services/       主包共享用例；仅分包使用的用例放在对应 pages/ 分包内
 components/     展示组件：只渲染入参、只抛事件，不请求数据、不判断权限
 pages/          页面：界面状态、导航、事件编排
   home/         P01 树洞    topics/    P02 话题    anthology/ P06 文集    my/  P09 我的
   message/      P08 消息    release/   P04 写一笔  search/    P11 搜索    setting/ P13 设置
   community/    分包：post（P05 详情/长文）、result（P17 发布结果）
 styles/         设计令牌与 mixin（唯一色值/字号来源）
-mock/           Mock 拦截与虚构数据（仅 isMock 时装载）
 scripts/        零依赖静态自检
+tests/          自动化测试（开发时运行，不进入小程序包）
 docs/           开发工程书
 ```
 
 ## 边界声明
 
-- 文档与代码中的昵称、正文、计数、活动、图片均为**虚构或本地占位**，不得直接用于生产发布。
+- `docs/evidence/` 保留历史开发验收记录，不进入小程序包；其中的样本不能代替真实用户验收。
 - 界面上看不到某条内容**不等于**服务端已完成鉴权；真实的成员鉴权、匿名映射隔离、媒体授权、
   内容审核、审计与删除流程必须由后端实现。
 - 上线前须完成 `docs/01` 中的 **G0 核验**（主体资质、服务类目、内容安全能力、隐私告知、素材授权）。

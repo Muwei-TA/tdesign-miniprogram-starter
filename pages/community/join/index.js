@@ -2,7 +2,7 @@ import {
   fetchMembershipSession,
   fetchMyMembershipApplication,
   submitMembershipApplication,
-} from '~/services/membership';
+} from '../membership';
 import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();

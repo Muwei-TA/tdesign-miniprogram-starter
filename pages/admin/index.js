@@ -8,8 +8,8 @@ import {
   decideMembership,
   decideReport,
   decideCollection,
-} from '~/services/moderation';
-import { fetchUsageStatus } from '~/services/usage';
+} from './moderation';
+import { fetchUsageStatus } from './usage';
 import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();
