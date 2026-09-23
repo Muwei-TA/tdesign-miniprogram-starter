@@ -8,6 +8,8 @@ const TABS = [
   { value: 'system', label: '系统' },
 ];
 
+const ADMIN_QUEUES = ['content', 'comment', 'topic', 'member', 'report', 'collection'];
+
 Page({
   data: {
     tabs: TABS,
@@ -19,7 +21,18 @@ Page({
   },
 
   onLoad() {
+    this.hasShownOnce = false;
     this.loadList();
+  },
+
+  onShow() {
+    if (!this.hasShownOnce) {
+      this.hasShownOnce = true;
+      return;
+    }
+    this.loadList();
+    const { session } = app.globalData;
+    if (session && session.role !== 'guest') return app.refreshUnreadCount();
   },
 
   onPullDownRefresh() {
@@ -27,11 +40,16 @@ Page({
   },
 
   async loadList() {
+    const requestId = (this.listRequestId || 0) + 1;
+    this.listRequestId = requestId;
+    const { tab } = this.data;
     this.setData({ loading: true, stale: false, errorText: '' });
     try {
-      const data = await fetchNotifications({ tab: this.data.tab });
+      const data = await fetchNotifications({ tab });
+      if (requestId !== this.listRequestId) return;
       this.setData({ list: data.items || [], loading: false, stale: false, errorText: '' });
     } catch (err) {
+      if (requestId !== this.listRequestId) return;
       this.setData({
         loading: false,
         stale: this.data.list.length > 0,
@@ -51,8 +69,9 @@ Page({
     const item = this.data.list.find((row) => row.id === id);
     if (!item) return;
 
+    const { target } = item;
     // 目标失效时给中性提示，不泄露原内容
-    if (!item.target.accessible) {
+    if (!target || typeof target !== 'object' || target.accessible !== true) {
       wx.showModal({
         title: '内容不可访问',
         content: '相关内容当前不可访问，可能已被作者调整范围或删除。',
@@ -62,11 +81,21 @@ Page({
       return;
     }
 
-    if (item.target.type === 'post') {
-      navigateTo(`/pages/community/post/index?id=${item.target.id}&from=notice`);
+    if (target.type === 'admin_queue') {
+      if (this.data.tab !== 'system' || !ADMIN_QUEUES.includes(target.queue) || target.id !== target.queue) return;
+      navigateTo(`/pages/admin/index?queue=${target.queue}`);
       return;
     }
-    if (item.target.type === 'rules') {
+    if (target.type === 'admin_appeals') {
+      if (this.data.tab !== 'system' || target.queue !== 'appeals' || target.id !== 'appeals') return;
+      navigateTo('/pages/admin/appeals/index');
+      return;
+    }
+    if (target.type === 'post' && typeof target.id === 'string' && target.id) {
+      navigateTo(`/pages/community/post/index?id=${encodeURIComponent(target.id)}&from=notice`);
+      return;
+    }
+    if (target.type === 'rules') {
       navigateTo('/pages/community/rules/index');
     }
   },

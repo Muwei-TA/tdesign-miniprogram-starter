@@ -1,5 +1,5 @@
 import request from '~/api/request';
-import { getSession, isAdmin, clearAccountScope } from '~/services/session';
+import { getSession, isAdmin } from '~/services/session';
 import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();
@@ -129,10 +129,7 @@ Page({
       confirmText: '退出',
       success: (res) => {
         if (!res.confirm) return;
-        const session = clearAccountScope();
-        app.globalData.session = session;
-        app.eventBus.emit('session-changed', session);
-        this.syncSession(session);
+        app.invalidateSession();
         this.setData({ profile: null, stats: { posts: 0, bookmarks: 0, topics: 0 } });
         wx.showToast({ title: '已切换为访客', icon: 'none' });
       },

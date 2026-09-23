@@ -101,8 +101,8 @@ function loadMyPage(app, getSession) {
   const source = read('pages/my/index.js')
     .replace("import request from '~/api/request';", 'const request = __request;')
     .replace(
-      "import { getSession, isAdmin, clearAccountScope } from '~/services/session';",
-      'const { getSession, isAdmin, clearAccountScope } = __session;',
+      "import { getSession, isAdmin } from '~/services/session';",
+      'const { getSession, isAdmin } = __session;',
     )
     .replace("import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;');
   let definition;
@@ -119,9 +119,14 @@ function loadMyPage(app, getSession) {
     Page(value) { definition = value; },
     getApp: () => app,
     __request: async () => ({ stats: { posts: 0, bookmarks: 0, topics: 0 } }),
-    __session: { getSession, isAdmin: () => false, clearAccountScope: () => guestSession },
+    __session: { getSession, isAdmin: () => false },
     __navigation: { navigateTo() {} },
-    wx: { showModal() {}, showToast() {} },
+    wx: {
+      showModal(options) {
+        if (options.success) options.success({ confirm: true });
+      },
+      showToast() {},
+    },
   });
   const page = {
     data: { ...definition.data },
@@ -161,6 +166,24 @@ unavailablePage.page.onLoad();
 await unavailablePage.page.onShow();
 assert.equal(unavailablePage.page.data.sessionError, true);
 assert.equal(unavailablePage.page.data.isMember, false);
+
+let invalidationCalls = 0;
+pageApp.invalidateSession = () => {
+  invalidationCalls += 1;
+  pageApp.globalData.session = guestSession;
+  pageApp.eventBus.emit('session-changed', guestSession);
+};
+unavailablePage.page.data.profile = { displayName: '成员' };
+unavailablePage.page.data.stats = { posts: 1, bookmarks: 2, topics: 3 };
+unavailablePage.page.onLogout();
+assert.equal(invalidationCalls, 1, 'logout must use the app-level session invalidation path');
+assert.equal(unavailablePage.page.data.session.memberStatus, 'none');
+assert.equal(unavailablePage.page.data.isMember, false);
+assert.equal(unavailablePage.page.data.profile, null);
+assert.deepEqual(
+  JSON.parse(JSON.stringify(unavailablePage.page.data.stats)),
+  { posts: 0, bookmarks: 0, topics: 0 },
+);
 
 const markup = read('pages/my/index.wxml');
 assert.match(markup, /wx:elif="\{\{ sessionError \}\}"[\s\S]*?暂时无法确认成员状态[\s\S]*?bind:action="onSessionRetry"/);

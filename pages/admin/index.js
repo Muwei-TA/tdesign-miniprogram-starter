@@ -150,7 +150,15 @@ Page({
     mediaTitle: '',
   },
 
-  onLoad() {
+  onLoad(options = {}) {
+    const requestedQueue = options && QUEUES.find((queue) => queue.value === options.queue);
+    if (requestedQueue) {
+      this.setData({
+        activeQueue: requestedQueue.value,
+        queueHint: QUEUE_HINTS[requestedQueue.value],
+      });
+    }
+
     this.onSessionChanged = (session) => this.applySession(session);
     app.eventBus.on('session-changed', this.onSessionChanged);
 

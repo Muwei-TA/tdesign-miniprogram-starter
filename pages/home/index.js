@@ -56,6 +56,12 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ value: 'home' });
     }
+    if (!this.hasShownOnce) {
+      this.hasShownOnce = true;
+      return;
+    }
+    const { session } = app.globalData;
+    if (session && session.role !== 'guest') return app.refreshUnreadCount();
   },
 
   onPullDownRefresh() {
