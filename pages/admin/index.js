@@ -425,7 +425,7 @@ Page({
   },
 
   async onPreviewImage(e) {
-    const assetId = e.currentTarget.dataset.assetId;
+    const { assetId } = e.currentTarget.dataset;
     if (this.data.accessState !== 'allowed' || !assetId) return;
     try {
       const ids = this.data.mediaItems.filter((item) => item.mediaType === 'image').map((item) => item.assetId);
