@@ -28,6 +28,11 @@ page {
   font-size: @hg-fs-body;
   line-height: @hg-lh-base;
 
+  // 禁止整页横向滚动：子元素溢出不再带动页面左右滑动
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+
   // 全局启用触控反馈
   -webkit-tap-highlight-color: transparent;
 
@@ -36,9 +41,12 @@ page {
 }
 
 .hg-page {
+  width: 100%;
+  max-width: 100%;
   min-height: 100vh;
   background: @hg-paper;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 // Tab 页内容区需要为自定义 TabBar 留出空间

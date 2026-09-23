@@ -4,6 +4,7 @@
     <view
       wx:if="{{ showBack }}"
       class="hg-nav__back"
+      hover-class="hg-nav__back--hover"
       bindtap="onBack"
       aria-role="button"
       aria-label="返回"
@@ -13,7 +14,7 @@
 
     <slot name="left" />
 
-    <view wx:if="{{ variant === 'search' }}" class="hg-nav__search" bindtap="onSearchTap" aria-role="button" aria-label="搜索">
+    <view wx:if="{{ variant === 'search' }}" class="hg-nav__search" hover-class="hg-nav__search--hover" bindtap="onSearchTap" aria-role="button" aria-label="搜索">
       <t-icon name="search" size="34rpx" />
       <text class="hg-nav__search-text">找回一句话、一张照片</text>
     </view>
@@ -25,6 +26,7 @@
         wx:key="key"
         class="hg-nav__tool"
         data-key="{{ item.key }}"
+        hover-class="hg-nav__tool--hover"
         bindtap="onToolTap"
         aria-role="button"
         aria-label="{{ item.label }}"

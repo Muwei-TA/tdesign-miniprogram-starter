@@ -4,6 +4,7 @@
     wx:for="{{ list }}"
     wx:key="value"
     data-value="{{ item.value }}"
+    hover-class="hg-tabbar__item--hover"
     bindtap="handleChange"
     aria-role="button"
     aria-label="{{ item.label }}"

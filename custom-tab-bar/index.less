@@ -1,4 +1,5 @@
 @import '/styles/tokens.less';
+@import '/styles/mixins.less';
 
 .hg-tabbar {
   position: fixed;
@@ -9,11 +10,11 @@
   display: flex;
   height: @hg-tab-bar-height;
   padding-bottom: env(safe-area-inset-bottom);
-  background: rgba(255, 254, 250, 0.95); // 半透明毛玻璃效果
+  background: @hg-surface-glass; // 半透明毛玻璃效果
   backdrop-filter: blur(20rpx);
   -webkit-backdrop-filter: blur(20rpx);
-  border-top: 1rpx solid rgba(231, 231, 221, 0.6);
-  box-shadow: 0 -2rpx 12rpx rgba(34, 59, 50, 0.04);
+  border-top: 1rpx solid fade(@hg-line, 60%);
+  box-shadow: 0 -2rpx 12rpx fade(@hg-ink, 4%);
 
   &__item {
     flex: 1;
@@ -23,13 +24,12 @@
     justify-content: center;
     gap: 4rpx;
     min-height: @hg-touch-min;
-    color: #969d92;
+    color: @hg-tab-inactive;
     position: relative;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: color @hg-ease, opacity @hg-ease;
 
     &--on {
       color: @hg-green;
-      transform: translateY(-2rpx);
 
       &::before {
         content: '';
@@ -44,8 +44,8 @@
       }
     }
 
-    &:active {
-      transform: scale(0.95);
+    &--hover {
+      .hg-hover-dim();
     }
   }
 

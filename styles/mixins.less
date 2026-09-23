@@ -16,17 +16,12 @@
 }
 
 // 纸感卡片
+// 注意：小程序 view 不支持 :active 伪类，按压反馈统一用 wxml 的 hover-class
 .hg-card() {
   background: @hg-surface;
-  border: 0; // 移除边框，用阴影营造层次
+  border: 0;
   border-radius: @hg-radius-lg;
   box-shadow: @hg-shadow-card;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-
-  &:active {
-    box-shadow: 0 1rpx 4rpx rgba(34, 59, 50, 0.08);
-    transform: scale(0.99);
-  }
 }
 
 // 主按钮
@@ -36,18 +31,12 @@
   justify-content: center;
   min-height: 88rpx;
   padding: 0 @hg-sp-4;
-  background: linear-gradient(135deg, @hg-green 0%, @hg-green-dark 100%);
+  background: @hg-green;
   color: @hg-surface;
-  border-radius: 44rpx; // 全圆角
+  border-radius: 44rpx;
   font-size: @hg-fs-sm;
   font-weight: 600;
-  box-shadow: 0 4rpx 12rpx rgba(49, 89, 72, 0.2);
-  transition: all 0.2s ease;
-
-  &:active {
-    transform: scale(0.96);
-    box-shadow: 0 2rpx 6rpx rgba(49, 89, 72, 0.25);
-  }
+  box-shadow: 0 4rpx 12rpx rgba(49, 89, 72, 0.18);
 }
 
 // 次按钮
@@ -63,13 +52,6 @@
   color: @hg-ink-2;
   font-size: @hg-fs-sm;
   font-weight: 500;
-  transition: all 0.2s ease;
-
-  &:active {
-    background: rgba(233, 238, 228, 0.5);
-    border-color: rgba(49, 89, 72, 0.25);
-    transform: scale(0.97);
-  }
 }
 
 // 保留换行的正文（长文 / 诗歌空行）
@@ -99,6 +81,15 @@
 // 底部安全区
 .hg-safe-bottom(@extra: 0rpx) {
   padding-bottom: calc(@extra + env(safe-area-inset-bottom));
+}
+
+// 按压反馈（配合 wxml hover-class 使用）
+.hg-hover-dim() {
+  opacity: 0.72;
+}
+
+.hg-hover-sink() {
+  background: rgba(233, 238, 228, 0.45);
 }
 
 // 赭色提示条（边界说明 / 隐私提示）

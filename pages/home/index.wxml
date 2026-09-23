@@ -21,13 +21,13 @@
   </view>
 
   <!-- 搜索入口（不在本页输入） -->
-  <view class="hg-home__search" bindtap="onSearchTap" aria-role="button" aria-label="搜索">
+  <view class="hg-home__search" hover-class="hg-home__search--hover" bindtap="onSearchTap" aria-role="button" aria-label="搜索">
     <t-icon name="search" size="34rpx" />
     <text>找回一句话、一张照片</text>
   </view>
 
   <!-- 本周共写 -->
-  <view wx:if="{{ weekPrompt }}" class="hg-home__week" bindtap="onWeekTap" aria-role="button">
+  <view wx:if="{{ weekPrompt }}" class="hg-home__week" hover-class="hg-home__week--hover" bindtap="onWeekTap" aria-role="button" aria-label="本周共写">
     <view class="hg-home__week-eyebrow">{{ weekPrompt.eyebrow }}</view>
     <view class="hg-home__week-title">{{ weekPrompt.title }}</view>
     <view class="hg-home__week-desc">{{ weekPrompt.desc }}</view>
@@ -41,6 +41,7 @@
       wx:key="value"
       class="hg-home__filter {{ filter === item.value ? 'hg-home__filter--on' : '' }}"
       data-value="{{ item.value }}"
+      hover-class="hg-home__filter--hover"
       bindtap="onFilterTap"
       aria-role="button"
     >
@@ -51,7 +52,7 @@
   <!-- 未更新提示（保留已加载数据） -->
   <view wx:if="{{ stale }}" class="hg-home__stale">
     <text>内容未更新：{{ errorText }}</text>
-    <text class="hg-home__retry" bindtap="onRetry">重试</text>
+    <text class="hg-home__retry" bindtap="onRetry" aria-role="button">重试</text>
   </view>
 
   <!-- 内容流 -->
@@ -99,7 +100,7 @@
   <view wx:if="{{isMock}}" class="hg-footnote">当前为 Mock 数据的界面基线，昵称、正文与计数均为虚构示例。</view>
 
   <!-- 写一笔 -->
-  <view class="hg-home__fab" bindtap="onCompose" aria-role="button" aria-label="写一笔">
+  <view class="hg-home__fab" hover-class="hg-home__fab--hover" bindtap="onCompose" aria-role="button" aria-label="写一笔">
     <t-icon name="pen" size="34rpx" />
     <text>写一笔</text>
   </view>

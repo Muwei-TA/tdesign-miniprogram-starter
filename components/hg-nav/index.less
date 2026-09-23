@@ -7,7 +7,7 @@
   background: @hg-paper;
 
   &--transparent {
-    background: rgba(248, 246, 240, 0.85);
+    background: @hg-paper-glass;
     backdrop-filter: blur(20rpx);
     -webkit-backdrop-filter: blur(20rpx);
   }
@@ -29,9 +29,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 56rpx;
-    min-height: 80rpx;
-    margin-left: -12rpx;
+    width: @hg-touch-min;
+    min-height: @hg-touch-min;
+    margin-left: -28rpx; // 扩大触控区，图标位置不变
+    transition: opacity @hg-ease;
+
+    &--hover {
+      .hg-hover-dim();
+    }
   }
 
   &__title {
@@ -46,11 +51,17 @@
     display: flex;
     align-items: center;
     gap: @hg-sp-2;
-    height: 78rpx;
+    height: @hg-touch-min;
     padding: 0 @hg-sp-3;
     background: @hg-surface-sunk;
-    border-radius: 20rpx;
+    border: 1rpx solid @hg-line;
+    border-radius: @hg-radius-pill;
     color: @hg-ink-4;
+    transition: opacity @hg-ease;
+
+    &--hover {
+      .hg-hover-dim();
+    }
   }
 
   &__search-text {
@@ -60,7 +71,7 @@
   &__tools {
     display: flex;
     align-items: center;
-    gap: 4rpx;
+    margin-right: -@hg-sp-1; // 抵消按钮加宽，最右图标位置不变
   }
 
   &__tool {
@@ -68,15 +79,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 72rpx;
-    min-height: 76rpx;
+    width: @hg-touch-min;
+    min-height: @hg-touch-min;
     color: @hg-ink;
+    transition: opacity @hg-ease;
+
+    &--hover {
+      .hg-hover-dim();
+    }
   }
 
   &__dot {
     position: absolute;
-    top: 14rpx;
-    right: 12rpx;
+    top: 20rpx;
+    right: 20rpx;
     width: 12rpx;
     height: 12rpx;
     background: @hg-clay;

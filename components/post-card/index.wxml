@@ -1,7 +1,7 @@
 <view wx:if="{{ post }}" class="hg-post hg-post--{{ mode }}">
   <!-- 作者行 -->
   <view class="hg-post__head">
-    <view class="hg-post__author" bindtap="onTapAuthor" aria-role="button" aria-label="{{ authorText }}">
+    <view class="hg-post__author" hover-class="hg-post__author--hover" bindtap="onTapAuthor" aria-role="button" aria-label="{{ authorText }}">
       <view class="hg-post__avatar {{ post.author.isAnonymous ? 'hg-post__avatar--anon' : '' }}">{{ avatarText }}</view>
       <view class="hg-post__meta">
         <view class="hg-post__name">
@@ -12,7 +12,7 @@
       </view>
     </view>
     <visibility-badge scope="{{ post.visibility }}" />
-    <view wx:if="{{ showInteractions }}" class="hg-post__more" catchtap="onMore" aria-role="button" aria-label="更多">
+    <view wx:if="{{ showInteractions }}" class="hg-post__more" hover-class="hg-post__more--hover" catchtap="onMore" aria-role="button" aria-label="更多">
       <t-icon name="ellipsis" size="34rpx" />
     </view>
   </view>
@@ -61,7 +61,7 @@
   </view>
 
   <!-- 话题 -->
-  <view wx:if="{{ post.topic }}" class="hg-post__topic" catchtap="onTapTopic" aria-role="button">
+  <view wx:if="{{ post.topic }}" class="hg-post__topic" hover-class="hg-post__topic--hover" catchtap="onTapTopic" aria-role="button" aria-label="话题 {{ post.topic.title }}">
     <t-icon name="chat-bubble-1" size="22rpx" />
     <text class="hg-post__topic-text">{{ post.topic.title }}</text>
   </view>
@@ -71,15 +71,15 @@
 
   <!-- 互动区 -->
   <view wx:if="{{ showInteractions }}" class="hg-post__actions">
-    <view class="hg-post__action {{ post.viewer.reacted ? 'hg-post__action--on' : '' }}" catchtap="onReact" aria-role="button" aria-label="共鸣">
+    <view class="hg-post__action {{ post.viewer.reacted ? 'hg-post__action--on' : '' }}" hover-class="hg-post__action--hover" catchtap="onReact" aria-role="button" aria-label="共鸣">
       <t-icon name="{{ post.viewer.reacted ? 'heart-filled' : 'heart' }}" size="32rpx" />
       <text>{{ post.counters.reactions ? post.counters.reactions : '共鸣' }}</text>
     </view>
-    <view class="hg-post__action" catchtap="onComment" aria-role="button" aria-label="回应">
+    <view class="hg-post__action" hover-class="hg-post__action--hover" catchtap="onComment" aria-role="button" aria-label="回应">
       <t-icon name="chat-bubble-1" size="32rpx" />
       <text>{{ post.counters.comments ? post.counters.comments : '回应' }}</text>
     </view>
-    <view class="hg-post__action {{ post.viewer.bookmarked ? 'hg-post__action--on' : '' }}" catchtap="onBookmark" aria-role="button" aria-label="收藏">
+    <view class="hg-post__action {{ post.viewer.bookmarked ? 'hg-post__action--on' : '' }}" hover-class="hg-post__action--hover" catchtap="onBookmark" aria-role="button" aria-label="收藏">
       <t-icon name="{{ post.viewer.bookmarked ? 'bookmark-filled' : 'bookmark' }}" size="32rpx" />
       <text>收藏</text>
     </view>
