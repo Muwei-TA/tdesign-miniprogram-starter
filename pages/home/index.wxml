@@ -2,12 +2,10 @@
   <hg-nav
     theme="transparent"
     show-back="{{ false }}"
-    tools="{{ navTools }}"
-    bind:tooltap="onNavTool"
   >
-    <view slot="left" class="hg-home__brand" bindtap="onClubTap" aria-role="button" aria-label="社团名片">
-      <view class="hg-home__emblem">黑</view>
-      <text class="hg-home__brand-text">黑光文学社</text>
+    <view slot="left" class="hg-home__notice" bindtap="onNoticeTap" aria-role="button" aria-label="消息">
+      <t-icon name="notification" size="42rpx" />
+      <view wx:if="{{ unread > 0 }}" class="hg-home__notice-dot"></view>
     </view>
   </hg-nav>
 
@@ -22,7 +20,6 @@
 
   <!-- 搜索入口（不在本页输入） -->
   <view class="hg-home__search" bindtap="onSearchTap" aria-role="button" aria-label="搜索">
-    <t-icon name="search" size="34rpx" />
     <text>找回一句话、一张照片</text>
   </view>
 

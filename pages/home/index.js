@@ -20,10 +20,6 @@ Page({
     errorText: '',
     unread: 0,
     isMember: false,
-    navTools: [
-      { key: 'notice', icon: 'notification', badge: false, label: '消息' },
-      { key: 'search', icon: 'search', badge: false, label: '搜索' },
-    ],
   },
 
   onLoad() {
@@ -63,13 +59,7 @@ Page({
   },
 
   setUnread(count) {
-    this.setData({
-      unread: count,
-      navTools: [
-        { key: 'notice', icon: 'notification', badge: count > 0, label: '消息' },
-        { key: 'search', icon: 'search', badge: false, label: '搜索' },
-      ],
-    });
+    this.setData({ unread: count });
   },
 
   async loadFeed({ silent = false } = {}) {
@@ -106,18 +96,12 @@ Page({
     this.loadFeed();
   },
 
-  onNavTool(e) {
-    const { key } = e.detail;
-    if (key === 'notice') wx.navigateTo({ url: '/pages/message/index' });
-    if (key === 'search') wx.navigateTo({ url: '/pages/search/index' });
+  onNoticeTap() {
+    wx.navigateTo({ url: '/pages/message/index' });
   },
 
   onSearchTap() {
     wx.navigateTo({ url: '/pages/search/index' });
-  },
-
-  onClubTap() {
-    navigateTo('/pages/community/club/index');
   },
 
   onWeekTap() {

@@ -8,7 +8,7 @@
 | 页面 | 路径 | 入口 | 说明 |
 | --- | --- | --- | --- |
 | 加入文学社 | `/pages/community/join/index?from=<origin>` | 我的、话题空态、社团名片 | `from` 只用于批准后的返回位置，表单输入保留在当前页面栈 |
-| 社团名片 | `/pages/community/club/index` | 首页社徽、我的、加入页 | 访客只看公开介绍、约定入口和成员资格状态 |
+| 社团名片 | `/pages/community/club/index` | 我的、加入页 | 访客只看公开介绍、约定入口和成员资格状态 |
 | 社区约定 | `/pages/community/rules/index?from=<origin>` | 加入页、社团名片、设置、通知 | 返回使用原页面栈，不把昵称或邀请码放进 URL |
 
 三个页面已经加入 `community` 分包，`utils/navigate.js` 不再把它们标记为待实现。项目配置的
