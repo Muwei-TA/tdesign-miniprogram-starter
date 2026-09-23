@@ -2,7 +2,7 @@
 import config from './config';
 import createBus from './utils/eventBus';
 import { fetchUnreadCount } from './services/notifications';
-import { bootstrapSession, clearAccountScope } from './services/session';
+import { bootstrapSession, refreshSessionFromServer, clearAccountScope } from './services/session';
 
 App({
   globalData: {
@@ -47,11 +47,22 @@ App({
   /** 冷启动恢复会话，失败时按访客处理（fail-closed） */
   async initSession() {
     const session = await bootstrapSession();
-    this.globalData.session = session;
-    this.eventBus.emit('session-changed', session);
+    this.publishSession(session);
     if (session.role !== 'guest') {
       this.refreshUnreadCount();
     }
+  },
+
+  /** 页面重新显示时读取服务端会话，避免沿用已经过期的成员状态。 */
+  async refreshSession() {
+    const session = await refreshSessionFromServer();
+    this.publishSession(session);
+    return session;
+  },
+
+  publishSession(session) {
+    this.globalData.session = session;
+    this.eventBus.emit('session-changed', session);
   },
 
   invalidateSession() {

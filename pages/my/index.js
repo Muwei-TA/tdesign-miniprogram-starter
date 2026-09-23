@@ -8,6 +8,8 @@ Page({
   data: {
     session: null,
     isMember: false,
+    sessionLoading: true,
+    sessionError: false,
     showAdmin: false,
     profile: null,
     stats: { posts: 0, bookmarks: 0, topics: 0 },
@@ -38,6 +40,7 @@ Page({
   },
 
   onUnload() {
+    this.sessionRefreshId = (this.sessionRefreshId || 0) + 1;
     app.eventBus.off('session-changed', this.onSessionChanged);
   },
 
@@ -45,6 +48,29 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ value: 'my' });
     }
+    return this.refreshSession();
+  },
+
+  async refreshSession() {
+    const refreshId = (this.sessionRefreshId || 0) + 1;
+    this.sessionRefreshId = refreshId;
+    this.setData({ sessionLoading: true, sessionError: false });
+
+    try {
+      const session = await app.refreshSession();
+      if (refreshId !== this.sessionRefreshId) return;
+      this.syncSession(session);
+      this.setData({ sessionLoading: false, sessionError: false });
+    } catch (err) {
+      if (refreshId !== this.sessionRefreshId) return;
+      const invalidSession = err && ['unauthenticated', 'membership_invalid'].includes(err.kind);
+      if (invalidSession) this.syncSession(getSession());
+      this.setData({ sessionLoading: false, sessionError: !invalidSession });
+    }
+  },
+
+  onSessionRetry() {
+    return this.refreshSession();
   },
 
   syncSession(session) {

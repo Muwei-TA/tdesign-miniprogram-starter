@@ -22,6 +22,7 @@ const GUEST_SESSION = {
 };
 
 let current = { ...GUEST_SESSION };
+let sessionRequestVersion = 0;
 
 function normalize(payload) {
   if (!payload) return { ...GUEST_SESSION };
@@ -42,15 +43,27 @@ function normalize(payload) {
   };
 }
 
-/** 冷启动恢复会话；任何失败都降级为访客，不抛出以避免阻塞启动 */
-export async function bootstrapSession() {
+async function loadSession({ failClosed }) {
+  sessionRequestVersion += 1;
+  const requestVersion = sessionRequestVersion;
   try {
     const payload = await request(endpoints.sessionMe);
-    current = normalize(payload);
+    if (requestVersion === sessionRequestVersion) current = normalize(payload);
   } catch (err) {
-    current = { ...GUEST_SESSION };
+    if (!failClosed) throw err;
+    if (requestVersion === sessionRequestVersion) current = { ...GUEST_SESSION };
   }
   return current;
+}
+
+/** 冷启动恢复会话；任何失败都降级为访客，不抛出以避免阻塞启动 */
+export function bootstrapSession() {
+  return loadSession({ failClosed: true });
+}
+
+/** 页面重新显示时向服务端刷新；网络错误保留最后一次会话并交由页面显示错误态 */
+export function refreshSessionFromServer() {
+  return loadSession({ failClosed: false });
 }
 
 export function getSession() {
@@ -82,6 +95,8 @@ export async function loginWithWechat() {
  * 见 docs/05 5.6 的前端硬性检查清单。
  */
 export function clearAccountScope() {
+  // 使正在进行的旧会话读取失效，防止退出或撤权后旧响应重新写回成员态。
+  sessionRequestVersion += 1;
   const userId = current.user && current.user.id;
   try {
     const { keys } = wx.getStorageInfoSync();
@@ -103,6 +118,7 @@ export function scopedKey(name) {
 
 export default {
   bootstrapSession,
+  refreshSessionFromServer,
   getSession,
   getCapabilities,
   isMember,

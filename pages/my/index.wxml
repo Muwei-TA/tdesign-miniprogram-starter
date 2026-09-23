@@ -6,8 +6,22 @@
     bind:tooltap="onMessageTap"
   />
 
+  <block wx:if="{{ sessionLoading }}">
+    <view class="hg-my__session-state">正在确认成员状态…</view>
+  </block>
+
+  <block wx:elif="{{ sessionError }}">
+    <empty-state
+      icon="error-circle"
+      title="暂时无法确认成员状态"
+      desc="网络恢复后可以重试。"
+      action="重新加载"
+      bind:action="onSessionRetry"
+    />
+  </block>
+
   <!-- 成员态 -->
-  <block wx:if="{{ isMember }}">
+  <block wx:elif="{{ isMember }}">
     <view class="hg-my__hero">
       <view class="hg-my__top">
         <view class="hg-my__avatar">{{ session.user.displayName ? session.user.displayName[0] : '樨' }}</view>

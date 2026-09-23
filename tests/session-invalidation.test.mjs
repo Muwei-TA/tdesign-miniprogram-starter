@@ -29,8 +29,8 @@ function loadApp() {
       'const fetchUnreadCount = __fetchUnreadCount;',
     )
     .replace(
-      "import { bootstrapSession, clearAccountScope } from './services/session';",
-      'const bootstrapSession = __bootstrapSession; const clearAccountScope = __clearAccountScope;',
+      "import { bootstrapSession, refreshSessionFromServer, clearAccountScope } from './services/session';",
+      'const bootstrapSession = __bootstrapSession; const refreshSessionFromServer = __refreshSessionFromServer; const clearAccountScope = __clearAccountScope;',
     );
 
   const holder = {};
@@ -51,6 +51,7 @@ function loadApp() {
     __createBus: () => bus,
     __fetchUnreadCount: async () => 0,
     __bootstrapSession: async () => guestSession,
+    __refreshSessionFromServer: async () => guestSession,
     __clearAccountScope: () => guestSession,
     wx: {},
     console,
