@@ -8,6 +8,7 @@ import {
   shrinkVisibility,
   deletePost,
 } from '~/services/posts';
+import { previewPostImage } from '~/services/image-preview';
 import { createIdempotencyKey } from '~/utils/idempotency';
 import { getCapabilities, getSession, scopedKey } from '~/services/session';
 import { navigateTo } from '~/utils/navigate';
@@ -123,8 +124,7 @@ Page({
   // ---------- 媒体 ----------
   onPreviewImage(e) {
     const { index } = e.currentTarget.dataset;
-    const images = this.data.post.media.images || [];
-    wx.previewImage({ current: images[index], urls: images });
+    previewPostImage(this.data.id, index);
   },
 
   // ---------- 互动 ----------

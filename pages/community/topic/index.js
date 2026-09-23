@@ -1,4 +1,5 @@
 import { fetchTopicDetail, toggleFollow } from '~/services/topics';
+import { previewPostImage } from '~/services/image-preview';
 import { getSession } from '~/services/session';
 import { navigateTo } from '~/utils/navigate';
 
@@ -139,10 +140,8 @@ Page({
 
   onTapMedia(e) {
     const { id, index, type } = e.detail;
-    const post = this.data.list.find((item) => item.id === id);
-    if (!post) return;
-    if (type === 'image' && post.media && post.media.images && post.media.images.length > 0) {
-      wx.previewImage({ current: post.media.images[index], urls: post.media.images });
+    if (type === 'image') {
+      previewPostImage(id, index);
       return;
     }
     navigateTo(`/pages/community/post/index?id=${encodeURIComponent(id)}&from=topic`);

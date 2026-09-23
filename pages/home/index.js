@@ -1,4 +1,5 @@
 import { fetchFeed, toggleReaction, toggleBookmark, FEED_FILTERS } from '~/services/posts';
+import { previewPostImage } from '~/services/image-preview';
 import config from '~/config';
 import { getSession } from '~/services/session';
 import { navigateTo } from '~/utils/navigate';
@@ -131,10 +132,8 @@ Page({
 
   onTapMedia(e) {
     const { id, index, type } = e.detail;
-    const post = this.data.list.find((item) => item.id === id);
-    if (!post) return;
     if (type === 'image') {
-      wx.previewImage({ current: post.media.images[index], urls: post.media.images });
+      previewPostImage(id, index);
       return;
     }
     // 视频统一在详情页播放，列表不自动播放
