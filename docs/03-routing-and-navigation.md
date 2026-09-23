@@ -40,7 +40,7 @@
 | `community/my-content` | `tab` | 是 | `published/pending/draft/private/bookmark/topics` |
 | `community/profile` | `userId` | 是 | 仅署名作者；匿名作者禁止进入 |
 | `community/result` | `state`、`scope`、`identity`、`id` | `state` 必填 | `state ∈ pending/private_saved/published` |
-| `community/join` | `from` | 否 | 记录拦截来源，批准后回到原场景 |
+| `community/join` | `from` | 否 | 记录拦截来源，服务端确认入社后回到原场景 |
 | `release/index` | `draftId`、`topicId`、`mode`、`collectionId` | 否 | `mode ∈ fragment/article`；`collectionId` 表示文集投稿 |
 | `search/index` | `keyword` | 否 | 预填关键词 |
 | `admin/index` | `queue` | 否 | `content/topic/member/report/collection` |

@@ -38,7 +38,7 @@ export const ACTIONS_BY_QUEUE = {
     { key: 'reject', label: '退回话题', theme: 'danger', requiresReason: true },
   ],
   member: [
-    { key: 'approve', label: '批准入社', theme: 'primary', requiresReason: false },
+    { key: 'approve', label: '批准加入 / 恢复资格', theme: 'primary', requiresReason: false },
     { key: 'reject', label: '拒绝申请', theme: 'danger', requiresReason: true },
   ],
   report: [

@@ -39,7 +39,7 @@
 
     <view class="hg-join__notice">
       <t-icon name="info-circle" size="30rpx" />
-      <text>加入需要管理员确认。提交申请不等于已经获得成员资格。</text>
+      <text>有效邀请码通过服务端验证后会直接加入。历史待处理申请或成员资格被移除后的重新申请仍需确认。</text>
     </view>
 
     <view
@@ -57,9 +57,22 @@
       </view>
     </view>
 
-    <view wx:if="{{ status === 'pending' || status === 'duplicate' }}" class="hg-join__status-actions">
-      <view class="hg-join__secondary" bindtap="onRefreshStatus" aria-role="button">刷新申请状态</view>
-      <view class="hg-join__text-action" bindtap="onContact" aria-role="button">联系管理员</view>
+    <view wx:if="{{ status === 'pending' || status === 'duplicate' || status === 'uncertain' }}" class="hg-join__status-actions">
+      <view class="hg-join__secondary" bindtap="onRefreshStatus" aria-role="button">
+        {{ status === 'uncertain' ? (submitting ? '确认中…' : '重新确认状态') : '刷新状态' }}
+      </view>
+      <view
+        wx:if="{{ status === 'pending' }}"
+        class="hg-join__secondary"
+        bindtap="onPendingReapply"
+        aria-role="button"
+      >使用邀请码再次验证</view>
+      <view
+        wx:if="{{ status === 'pending' || status === 'duplicate' }}"
+        class="hg-join__text-action"
+        bindtap="onContact"
+        aria-role="button"
+      >联系管理员</view>
     </view>
 
     <view wx:if="{{ status === 'active' }}" class="hg-join__status-actions">
@@ -71,8 +84,11 @@
       <view class="hg-join__primary" bindtap="onContact" aria-role="button">联系社团管理员</view>
     </view>
 
-    <view wx:if="{{ status === 'idle' || status === 'invalid_code' || status === 'rejected' }}" class="hg-join__form">
-      <view class="hg-join__section-title">填写申请</view>
+    <view
+      wx:if="{{ status === 'idle' || status === 'invalid_code' || status === 'rejected' || status === 'pending' && showPendingReapplyForm }}"
+      class="hg-join__form"
+    >
+      <view class="hg-join__section-title">填写入社信息</view>
 
       <view class="hg-join__field">
         <text class="hg-join__label">你想使用的昵称</text>
@@ -120,7 +136,7 @@
         bindtap="onSubmit"
         aria-role="button"
       >
-        {{ submitting ? '提交中…' : (status === 'rejected' ? '重新提交申请' : '提交入社申请') }}
+        {{ submitting ? '提交中…' : (status === 'rejected' || status === 'pending' ? '使用邀请码重新验证' : '验证邀请码并加入') }}
       </view>
     </view>
 

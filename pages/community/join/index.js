@@ -1,5 +1,4 @@
 import {
-  fetchMembershipSession,
   fetchMyMembershipApplication,
   submitMembershipApplication,
 } from '../membership';
@@ -12,8 +11,8 @@ const MAX_DISPLAY_NAME_LENGTH = 20;
 
 const STATUS_META = {
   idle: {
-    label: '还没有提交申请',
-    desc: '填写昵称和邀请码，读完社区约定后再提交。',
+    label: '还没有完成入社',
+    desc: '填写昵称和有效邀请码，服务端验证通过后即可加入。',
     icon: 'edit-1',
     tone: 'neutral',
   },
@@ -25,13 +24,13 @@ const STATUS_META = {
   },
   duplicate: {
     label: '已有一条申请记录',
-    desc: '我们不会重复创建申请。可以刷新状态，或联系社团管理员。',
+    desc: '先刷新确认当前状态，避免重复提交邀请码。',
     icon: 'info-circle',
     tone: 'notice',
   },
   pending: {
-    label: '申请已收到，等待管理员确认',
-    desc: '管理员确认后，成员资格会在下一次会话刷新时生效。',
+    label: '入社状态待确认',
+    desc: '历史待处理申请或成员资格被移除后的重新申请仍需确认；首次凭有效邀请码会直接加入。',
     icon: 'time',
     tone: 'notice',
   },
@@ -46,6 +45,18 @@ const STATUS_META = {
     desc: '这不等于你的表达有问题。你可以联系社团管理员了解原因。',
     icon: 'error-circle',
     tone: 'danger',
+  },
+  confirming: {
+    label: '正在确认入社状态',
+    desc: '正在从服务端读取当前成员资格，稍后会显示最新状态。',
+    icon: 'time',
+    tone: 'notice',
+  },
+  uncertain: {
+    label: '入社结果待确认',
+    desc: '提交可能已经生效。请先刷新状态确认，不要重复提交邀请码。',
+    icon: 'info-circle',
+    tone: 'notice',
   },
 };
 
@@ -80,7 +91,7 @@ function statusForSubmitError(err) {
     return 'invalid_code';
   }
   if (err && err.kind === 'conflict') return 'duplicate';
-  return 'idle';
+  return 'uncertain';
 }
 
 Page({
@@ -99,13 +110,21 @@ Page({
     loading: true,
     loadError: '',
     submitting: false,
+    showPendingReapplyForm: false,
   },
 
   onLoad(options) {
     this.setData({ from: options.from || '' });
-    this.onSessionChanged = (session) => this.applySession(session);
+    this.awaitingMembershipRefresh = false;
+    this.onSessionChanged = (session) => {
+      if (this.awaitingMembershipRefresh && session && session.memberStatus !== 'active') {
+        this.setData({ session });
+        return;
+      }
+      this.applySession(session);
+    };
     app.eventBus.on('session-changed', this.onSessionChanged);
-    this.loadPage();
+    return this.loadPage();
   },
 
   onUnload() {
@@ -115,7 +134,7 @@ Page({
   async loadPage() {
     this.setData({ loading: true, loadError: '' });
     try {
-      const snapshot = await fetchMembershipSession();
+      const snapshot = await app.refreshSession();
       this.applySession(snapshot);
 
       if (snapshot && snapshot.user && snapshot.memberStatus !== 'active') {
@@ -129,33 +148,55 @@ Page({
 
   applySession(session) {
     if (!session) return;
-    const club = session.club || this.data.club;
     const nextStatus = normalizeStatus(session.memberStatus);
+    if (nextStatus === 'active') this.awaitingMembershipRefresh = false;
+    const club = session.club || this.data.club;
     this.setData({
       session,
       club,
       status: nextStatus,
       statusMeta: STATUS_META[nextStatus] || STATUS_META.idle,
+      statusReason: nextStatus === 'active' ? '' : this.data.statusReason,
+      showPendingReapplyForm: nextStatus === 'active' || nextStatus === 'pending'
+        ? false
+        : this.data.showPendingReapplyForm,
       rulesVersion: (club && club.rulesVersion) || this.data.rulesVersion,
     });
+  },
+
+  applyApplication(application) {
+    if (!application) return null;
+    const status = normalizeStatus(application.state);
+    // Only /session/me can establish active membership; an application DTO cannot promote the UI.
+    if (status === 'active' && (!this.data.session || this.data.session.memberStatus !== 'active')) {
+      this.setData({
+        status: 'uncertain',
+        statusMeta: STATUS_META.uncertain,
+        statusReason: '申请记录已更新，但当前会话尚未确认成员资格。请刷新状态确认，不要重复提交邀请码。',
+      });
+      return 'uncertain';
+    }
+    if (status === 'idle') return null;
+    this.setData({
+      status,
+      statusMeta: STATUS_META[status] || STATUS_META.idle,
+      statusReason: application.reason || '',
+      appliedAtText: application.appliedAtText || '',
+      showPendingReapplyForm: status === 'pending' ? false : this.data.showPendingReapplyForm,
+    });
+    return status;
   },
 
   async loadApplication() {
     try {
       const application = await fetchMyMembershipApplication();
-      if (!application) return;
-      const status = normalizeStatus(application.state);
-      this.setData({
-        status,
-        statusMeta: STATUS_META[status] || STATUS_META.idle,
-        statusReason: application.reason || '',
-        appliedAtText: application.appliedAtText || '',
-      });
+      return this.applyApplication(application);
     } catch (err) {
       // 访客可能还没有可查询的账号；此时仍允许阅读介绍并开始授权流程。
       if (err && err.kind !== 'unauthenticated') {
         this.setData({ statusReason: errorTextForLoad(err) });
       }
+      return null;
     }
   },
 
@@ -196,7 +237,7 @@ Page({
 
   async ensureSession() {
     if (this.data.session && this.data.session.user) return this.data.session;
-    const session = await fetchMembershipSession();
+    const session = await app.refreshSession();
     this.applySession(session);
     return session;
   },
@@ -233,44 +274,124 @@ Page({
     if (!form) return;
 
     this.setData({ submitting: true, statusReason: '' });
+    let session;
     try {
-      const session = await this.ensureSession();
+      session = await this.ensureSession();
       if (!session || !session.user) {
         throw new Error('会话还没有准备好，请稍后重试。');
       }
+      if (session.memberStatus === 'active') {
+        this.applySession(session);
+        this.setData({ submitting: false });
+        return;
+      }
+    } catch (err) {
+      this.setData({
+        submitting: false,
+        statusReason: (err && err.message) || '会话还没有准备好，请稍后重试。',
+      });
+      return;
+    }
 
-      const result = await submitMembershipApplication({
+    let result;
+    try {
+      result = await submitMembershipApplication({
         ...form,
         rulesVersion: this.data.rulesVersion,
       });
-      const status = normalizeStatus(result && result.state);
-      if (!result || !result.state || !STATUS_META[status] || status === 'idle') {
-        throw new Error('申请状态暂时无法确认，请稍后在本页重试。');
-      }
-      this.setData({
-        submitting: false,
-        status,
-        statusMeta: STATUS_META[status],
-        statusReason: result.reason || '',
-        appliedAtText: result.appliedAtText || '刚刚提交',
-      });
-      if (status === 'pending') {
-        wx.showToast({ title: '已提交，等待确认', icon: 'none' });
-      }
     } catch (err) {
-      const status = statusForSubmitError(err);
+      const errorStatus = statusForSubmitError(err);
+      if (errorStatus === 'invalid_code') {
+        this.setData({
+          submitting: false,
+          status: errorStatus,
+          statusMeta: STATUS_META[errorStatus],
+          statusReason: (err && err.message) || '',
+        });
+        return;
+      }
+      await this.reconcileJoinOutcome(errorStatus === 'duplicate' ? 'duplicate' : null);
+      return;
+    }
+
+    const resultStatus = normalizeStatus(result && result.state);
+    const knownStatus = result && result.state && STATUS_META[resultStatus] && resultStatus !== 'idle'
+      ? resultStatus
+      : null;
+    const finalStatus = await this.reconcileJoinOutcome(knownStatus);
+    if (finalStatus === 'active') {
+      wx.showToast({ title: '已加入社团', icon: 'success' });
+    } else if (finalStatus === 'pending') {
+      wx.showToast({ title: '入社状态仍待确认', icon: 'none' });
+    }
+  },
+
+  async reconcileJoinOutcome(knownStatus = null) {
+    this.awaitingMembershipRefresh = true;
+    this.setData({
+      submitting: true,
+      status: 'confirming',
+      statusMeta: STATUS_META.confirming,
+      statusReason: '',
+    });
+
+    try {
+      const session = await app.refreshSession();
+      this.awaitingMembershipRefresh = false;
+      this.applySession(session);
+
+      if (session && session.memberStatus === 'active') return 'active';
+
+      if (session && session.user) {
+        const application = await fetchMyMembershipApplication();
+        const applicationStatus = this.applyApplication(application);
+        if (applicationStatus && applicationStatus !== 'uncertain') return applicationStatus;
+      }
+
+      if (session && session.memberStatus === 'pending') return 'pending';
+      if (session && ['rejected', 'removed'].includes(session.memberStatus)) return 'rejected';
+
+      if (['pending', 'duplicate', 'rejected'].includes(knownStatus)) {
+        this.setData({
+          status: knownStatus,
+          statusMeta: STATUS_META[knownStatus],
+          statusReason: '服务端已收到状态，但成员资格暂未同步。请刷新状态确认，不要重复提交邀请码。',
+        });
+        return knownStatus;
+      }
+
       this.setData({
-        submitting: false,
-        status,
-        statusMeta: STATUS_META[status],
-        statusReason:
-          status === 'idle' ? (err && err.message) || '申请没有提交，请稍后重试。' : (err && err.message) || '',
+        status: 'uncertain',
+        statusMeta: STATUS_META.uncertain,
+        statusReason: '服务端暂未确认成员资格。请刷新状态确认；不要重复提交邀请码。',
       });
+      return 'uncertain';
+    } catch (err) {
+      const fallbackStatus = ['pending', 'duplicate', 'rejected'].includes(knownStatus)
+        ? knownStatus
+        : 'uncertain';
+      this.setData({
+        status: fallbackStatus,
+        statusMeta: STATUS_META[fallbackStatus],
+        statusReason: fallbackStatus === 'pending'
+          ? '重新入社请求已收到，但成员状态暂时无法同步。请刷新状态确认，不要重复提交。'
+          : '提交结果可能已经处理成功，但当前无法确认成员状态。请刷新状态确认；不要重复提交邀请码。',
+      });
+      return fallbackStatus;
+    } finally {
+      this.setData({ submitting: false });
     }
   },
 
   onRefreshStatus() {
+    if (this.data.submitting) return;
+    if (this.data.status === 'uncertain') return this.reconcileJoinOutcome();
     this.loadPage();
+  },
+
+  onPendingReapply() {
+    if (this.data.submitting) return;
+    this.setData({ showPendingReapplyForm: true });
   },
 
   onReturnOrigin() {

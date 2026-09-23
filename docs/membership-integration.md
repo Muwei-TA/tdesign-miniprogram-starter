@@ -7,7 +7,7 @@
 
 | 页面 | 路径 | 入口 | 说明 |
 | --- | --- | --- | --- |
-| 加入文学社 | `/pages/community/join/index?from=<origin>` | 我的、话题空态、社团名片 | `from` 只用于批准后的返回位置，表单输入保留在当前页面栈 |
+| 加入文学社 | `/pages/community/join/index?from=<origin>` | 我的、话题空态、社团名片 | `from` 只用于服务端确认入社后的返回位置，表单输入保留在当前页面栈 |
 | 社团名片 | `/pages/community/club/index` | 我的、加入页 | 访客只看公开介绍、约定入口和成员资格状态 |
 | 社区约定 | `/pages/community/rules/index?from=<origin>` | 加入页、社团名片、设置、通知 | 返回使用原页面栈，不把昵称或邀请码放进 URL |
 
@@ -26,8 +26,8 @@ AppID 是 `wx39773ed34aa30776`。
 | `POST /membership/applications` | `membership/apply` | 提交 `displayName`、`inviteCode`、`rulesVersion` |
 
 后端从 CloudBase 会话取得身份。页面不会索取手机号、位置、学号、通讯录，也不会把邀请码写入
-storage、埋点或 URL。申请成功只在接口返回 `state` 后更新状态；未知返回或请求超时均显示待确认/重试，
-不显示“已成功”。
+storage、埋点或 URL。提交后必须刷新 `/session/me` 并同步 `app.globalData.session` 与
+`session-changed`；只有服务端会话返回 `memberStatus: active` 才显示已入社。提交响应丢失或会话刷新失败时显示待确认与只读重试，不称申请失败，也不自动重复提交邀请码。
 
 ## 申请状态
 
@@ -38,8 +38,8 @@ storage、埋点或 URL。申请成功只在接口返回 `state` 后更新状态
 | `idle` | 尚未申请或会话尚未完成 | 显示表单 |
 | `invalid_code` | 后端 `invalid_input`（含无效、过期、用尽邀请码） | 统一显示“邀请码无效或已过期”，保留输入 |
 | `duplicate` | 后端 `conflict` 或返回 `duplicate` | 不重复创建，提供刷新和联系管理员 |
-| `pending` | 后端返回 `state: pending` | 显示已收到、等待确认；管理员批准后由下一次会话刷新生效 |
-| `active` | `session/me.memberStatus: active` 或返回 `approved` | 显示已加入，可回到 `from` 指定的 Tab |
+| `pending` | 后端返回 `state: pending`，或会话返回待确认 | 保留历史待处理申请与成员资格被移除后的恢复申请；可展开表单再次验证邀请码，最终状态仍由服务端决定；提供刷新/联系管理员，不自动重复提交 |
+| `active` | 仅 `session/me.memberStatus: active` | 显示已加入，可回到 `from` 指定的 Tab；新用户凭有效邀请码验证通过后直接生效 |
 | `rejected` | 后端返回 `rejected` 或 `removed` | 显示理由（如果服务端提供），提供联系管理员与重新提交入口 |
 
 后端对邀请码不存在、过期和用尽使用同一错误文案，前端不尝试区分这些原因，以免形成邀请码枚举入口。
@@ -62,6 +62,7 @@ storage、埋点或 URL。申请成功只在接口返回 `state` 后更新状态
 - Mock：确认 `session/me` 返回 `club` 后，社团名片与约定页能显示资料、版本和空公告态。
 - CloudBase：确认 `api` 云函数对 `session/me`、`membership/mine`、`membership/apply` 返回统一 `{ code, message, data }` 包装。
 - 使用无效/过期邀请码时，页面显示统一文案；不在日志、storage 或 URL 中出现邀请码。
-- 模拟 pending、approved、rejected 与重复申请响应，确认页面不会把未知或失败响应当作成功。
+- 模拟 active、pending、rejected 与重复申请响应；提交成功后需会话刷新为 active 才显示已加入。
+- 模拟提交请求超时但服务端已完成的情况，确认页面重读 `/session/me` 后识别 active，不误报失败或重复消耗邀请码。
 - 网络错误时页面显示可重试态；已有的社团资料不会被清空。
 - 只完成了代码、静态结构和 lint 验证；尚未在微信开发者工具或真机上验收，也没有部署或推送。

@@ -6,12 +6,12 @@ const app = getApp();
 const MEMBER_STATUS_TEXT = {
   none: {
     title: '还不是社内成员',
-    desc: '先了解这里，再决定是否提交申请。',
+    desc: '使用有效邀请码，服务端验证通过后即可加入。',
     action: '申请加入',
   },
   pending: {
-    title: '申请等待确认',
-    desc: '管理员确认后，成员资格会在会话刷新时生效。',
+    title: '入社状态待确认',
+    desc: '历史待处理申请或成员资格被移除后的重新申请仍需确认；首次凭有效邀请码验证通过后即可加入。',
     action: '查看申请状态',
   },
   active: {
@@ -26,7 +26,7 @@ const MEMBER_STATUS_TEXT = {
   },
   removed: {
     title: '成员资格已撤回',
-    desc: '如需重新加入，可以重新阅读约定并提交申请。',
+    desc: '如需重新加入，可阅读约定并提交恢复申请；恢复资格仍需管理员确认。',
     action: '重新申请',
   },
 };
