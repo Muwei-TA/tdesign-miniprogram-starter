@@ -82,7 +82,7 @@ function normalizeUsageStatus(status) {
   const uploadReservedBytes = requiredCount(upload.reservedBytes, 'upload.reservedBytes');
   const uploadLimitBytes = requiredCount(upload.dailyLimitBytes, 'upload.dailyLimitBytes');
   const uploadRemainingBytes = requiredCount(upload.remainingBytes, 'upload.remainingBytes');
-  const userUploadLimitBytes = requiredCount(status.userDailyLimitBytes, 'userDailyLimitBytes');
+  const userUploadLimitBytes = requiredCount(upload.userDailyLimitBytes, 'upload.userDailyLimitBytes');
   const uploadWarningRatio = requiredRatio(upload.warningRatio, 'upload.warningRatio');
   const reviewCalls = requiredCount(review.calls, 'review.calls');
   const reviewTextCalls = requiredCount(review.textCalls, 'review.textCalls');
@@ -175,6 +175,7 @@ Page({
   applySession(session) {
     if (!session) return;
     if (!canAccess(session)) {
+      this.usageRequestId = (this.usageRequestId || 0) + 1;
       this.setData({
         session,
         accessState: 'denied',
@@ -182,6 +183,9 @@ Page({
         nextCursor: null,
         loading: false,
         loadingMore: false,
+        usageStatus: null,
+        usageLoading: false,
+        usageErrorText: '',
       });
       return;
     }
