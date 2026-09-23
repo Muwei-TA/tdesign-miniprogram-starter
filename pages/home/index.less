@@ -51,23 +51,37 @@
     display: flex;
     align-items: center;
     gap: @hg-sp-2;
-    height: 78rpx;
-    margin: @hg-sp-4 @hg-page-x 0;
+    height: 72rpx;
+    margin: @hg-sp-3 @hg-page-x 0;
     padding: 0 @hg-sp-3;
-    background: @hg-surface-sunk;
-    border-radius: 20rpx;
+    background: rgba(239, 238, 230, 0.6);
+    border: 1rpx solid rgba(231, 231, 221, 0.8);
+    border-radius: 36rpx; // 更圆润
     color: @hg-ink-4;
     font-size: @hg-fs-sm;
+    transition: all 0.2s ease;
+
+    &:active {
+      background: @hg-surface-sunk;
+      transform: scale(0.98);
+    }
   }
 
   &__week {
     position: relative;
-    min-height: 238rpx;
-    margin: @hg-sp-4 @hg-page-x 0;
-    padding: 34rpx;
-    background: @hg-green-mist;
+    min-height: 220rpx;
+    margin: @hg-sp-3 @hg-page-x 0;
+    padding: 28rpx 24rpx;
+    background: linear-gradient(135deg, @hg-green-mist 0%, rgba(230, 236, 223, 0.5) 100%);
     border-radius: @hg-radius-lg;
     overflow: hidden;
+    box-shadow: 0 2rpx 12rpx rgba(49, 89, 72, 0.08);
+    transition: all 0.3s ease;
+
+    &:active {
+      transform: scale(0.98);
+      box-shadow: 0 1rpx 6rpx rgba(49, 89, 72, 0.12);
+    }
   }
 
   &__week-eyebrow {
@@ -105,16 +119,25 @@
   &__filter {
     display: inline-flex;
     align-items: center;
-    height: 64rpx;
+    height: 60rpx;
     margin-right: @hg-sp-1;
-    padding: 0 26rpx;
-    border-radius: 34rpx;
+    padding: 0 24rpx;
+    border-radius: 30rpx;
     color: @hg-ink-3;
     font-size: @hg-fs-xs;
+    font-weight: 500;
+    background: transparent;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
     &--on {
       background: @hg-green;
       color: #f5f4e9;
+      box-shadow: 0 2rpx 8rpx rgba(49, 89, 72, 0.2);
+      transform: scale(1.02);
+    }
+
+    &:active {
+      transform: scale(0.95);
     }
   }
 
@@ -160,18 +183,25 @@
 
   &__fab {
     position: fixed;
-    right: 36rpx;
-    bottom: calc(190rpx + env(safe-area-inset-bottom));
+    right: 28rpx;
+    bottom: calc(180rpx + env(safe-area-inset-bottom));
     z-index: 50;
     display: flex;
     align-items: center;
     gap: @hg-sp-1;
-    height: @hg-fab-height;
-    padding: 0 32rpx;
-    background: @hg-green;
+    height: 80rpx;
+    padding: 0 28rpx 0 24rpx;
+    background: linear-gradient(135deg, @hg-green 0%, @hg-green-dark 100%);
     color: @hg-surface;
     border-radius: @hg-radius-pill;
     box-shadow: @hg-shadow-fab;
     font-size: @hg-fs-sm;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:active {
+      transform: scale(0.92);
+      box-shadow: 0 4rpx 12rpx rgba(49, 89, 72, 0.3);
+    }
   }
 }

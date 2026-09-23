@@ -9,8 +9,11 @@
   display: flex;
   height: @hg-tab-bar-height;
   padding-bottom: env(safe-area-inset-bottom);
-  background: @hg-surface;
-  border-top: 1rpx solid @hg-line;
+  background: rgba(255, 254, 250, 0.95); // 半透明毛玻璃效果
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  border-top: 1rpx solid rgba(231, 231, 221, 0.6);
+  box-shadow: 0 -2rpx 12rpx rgba(34, 59, 50, 0.04);
 
   &__item {
     flex: 1;
@@ -21,14 +24,34 @@
     gap: 4rpx;
     min-height: @hg-touch-min;
     color: #969d92;
+    position: relative;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
     &--on {
       color: @hg-green;
+      transform: translateY(-2rpx);
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: -2rpx;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40rpx;
+        height: 6rpx;
+        background: @hg-green;
+        border-radius: 3rpx;
+      }
+    }
+
+    &:active {
+      transform: scale(0.95);
     }
   }
 
   &__label {
     font-size: @hg-fs-2xs;
     line-height: 1.4;
+    font-weight: 500;
   }
 }

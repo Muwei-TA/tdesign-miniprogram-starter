@@ -18,9 +18,15 @@
 // 纸感卡片
 .hg-card() {
   background: @hg-surface;
-  border: 1rpx solid @hg-line;
+  border: 0; // 移除边框，用阴影营造层次
   border-radius: @hg-radius-lg;
   box-shadow: @hg-shadow-card;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:active {
+    box-shadow: 0 1rpx 4rpx rgba(34, 59, 50, 0.08);
+    transform: scale(0.99);
+  }
 }
 
 // 主按钮
@@ -28,12 +34,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: @hg-touch-min;
+  min-height: 88rpx;
   padding: 0 @hg-sp-4;
-  background: @hg-green;
+  background: linear-gradient(135deg, @hg-green 0%, @hg-green-dark 100%);
   color: @hg-surface;
-  border-radius: 18rpx;
+  border-radius: 44rpx; // 全圆角
   font-size: @hg-fs-sm;
+  font-weight: 600;
+  box-shadow: 0 4rpx 12rpx rgba(49, 89, 72, 0.2);
+  transition: all 0.2s ease;
+
+  &:active {
+    transform: scale(0.96);
+    box-shadow: 0 2rpx 6rpx rgba(49, 89, 72, 0.25);
+  }
 }
 
 // 次按钮
@@ -43,11 +57,19 @@
   justify-content: center;
   min-height: 84rpx;
   padding: 0 @hg-sp-4;
-  background: #f8f9f1;
-  border: 1rpx solid @hg-green-line;
-  border-radius: 18rpx;
+  background: @hg-surface;
+  border: 2rpx solid rgba(49, 89, 72, 0.15);
+  border-radius: 42rpx;
   color: @hg-ink-2;
   font-size: @hg-fs-sm;
+  font-weight: 500;
+  transition: all 0.2s ease;
+
+  &:active {
+    background: rgba(233, 238, 228, 0.5);
+    border-color: rgba(49, 89, 72, 0.25);
+    transform: scale(0.97);
+  }
 }
 
 // 保留换行的正文（长文 / 诗歌空行）

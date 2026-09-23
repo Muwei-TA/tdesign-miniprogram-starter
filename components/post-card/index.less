@@ -4,8 +4,8 @@
 .hg-post {
   .hg-card();
 
-  padding: 30rpx;
-  margin-bottom: @hg-sp-3;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
 
   &--compact {
     padding: 24rpx;
@@ -120,6 +120,10 @@
     height: 360rpx;
     border-radius: @hg-radius-md;
     background: #e6e8db;
+
+    & + .hg-post__image {
+      margin-top: 12rpx;
+    }
   }
 
   &__video {

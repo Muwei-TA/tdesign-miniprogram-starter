@@ -77,21 +77,21 @@
 @hg-sp-4: 32rpx;
 @hg-sp-5: 40rpx;
 @hg-sp-6: 48rpx;
-@hg-page-x: 28rpx; // 页面水平内边距
-@hg-block-x: 38rpx; // 区块 hero 内边距
+@hg-page-x: 24rpx; // 页面水平内边距（从 28 改为 24，更贴合小程序规范）
+@hg-block-x: 32rpx; // 区块 hero 内边距（从 38 改为 32）
 
 // ---------- 圆角 ----------
-@hg-radius-sm: 10rpx;
-@hg-radius-md: 16rpx;
-@hg-radius-lg: 26rpx;
-@hg-radius-xl: 46rpx;
+@hg-radius-sm: 8rpx;  // 从 10 改为 8
+@hg-radius-md: 12rpx; // 从 16 改为 12
+@hg-radius-lg: 16rpx; // 从 26 改为 16，更小巧
+@hg-radius-xl: 32rpx; // 从 46 改为 32
 @hg-radius-pill: 999rpx;
 
 // ---------- 阴影 ----------
-@hg-shadow-card: 0 2rpx 12rpx rgba(34, 59, 50, 0.05);
-@hg-shadow-fab: 0 12rpx 28rpx rgba(23, 59, 66, 0.19);
-@hg-shadow-book: 6rpx 12rpx 24rpx rgba(35, 56, 39, 0.1);
-@hg-shadow-sheet: 0 -8rpx 32rpx rgba(24, 43, 37, 0.12);
+@hg-shadow-card: 0 2rpx 8rpx rgba(34, 59, 50, 0.06), 0 0 1rpx rgba(34, 59, 50, 0.08); // 双层阴影，更清晰
+@hg-shadow-fab: 0 8rpx 20rpx rgba(49, 89, 72, 0.25); // 增强对比
+@hg-shadow-book: 4rpx 8rpx 16rpx rgba(35, 56, 39, 0.12);
+@hg-shadow-sheet: 0 -6rpx 24rpx rgba(24, 43, 37, 0.15); // 增强深度
 
 // ---------- 结构尺寸 ----------
 @hg-nav-height: 100rpx; // 自定义导航内容区高度（不含状态栏）

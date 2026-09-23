@@ -4,9 +4,10 @@
 .hg-my {
   &__hero {
     margin: @hg-sp-2 @hg-page-x 0;
-    padding: 40rpx 34rpx 34rpx;
-    background: @hg-green-mist;
+    padding: 32rpx 28rpx 28rpx;
+    background: linear-gradient(135deg, @hg-green-mist 0%, rgba(230, 236, 223, 0.4) 100%);
     border-radius: @hg-radius-lg;
+    box-shadow: 0 2rpx 12rpx rgba(49, 89, 72, 0.06);
   }
 
   &__top {
@@ -113,13 +114,18 @@
     display: flex;
     align-items: center;
     gap: @hg-sp-3;
-    min-height: 104rpx;
+    min-height: 96rpx;
     padding: @hg-sp-2 0;
-    border-bottom: 1rpx solid @hg-line;
+    border-bottom: 1rpx solid rgba(231, 231, 221, 0.5);
     color: #869779;
+    transition: background 0.2s ease;
 
     &:last-child {
       border-bottom: 0;
+    }
+
+    &:active {
+      background: rgba(233, 238, 228, 0.3);
     }
   }
 

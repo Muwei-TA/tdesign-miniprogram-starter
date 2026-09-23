@@ -27,6 +27,12 @@ page {
   font-family: @hg-font-sans;
   font-size: @hg-fs-body;
   line-height: @hg-lh-base;
+
+  // 全局启用触控反馈
+  -webkit-tap-highlight-color: transparent;
+
+  // 优化滚动性能
+  -webkit-overflow-scrolling: touch;
 }
 
 .hg-page {
