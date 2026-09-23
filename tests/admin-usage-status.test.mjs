@@ -29,7 +29,7 @@ assert.deepEqual(
 );
 assert.deepEqual(usageCalls, ['/admin/usage/status']);
 
-function loadAdminPage(fetchUsageStatus) {
+function loadAdminPage(fetchUsageStatus, { mediaFetcher, wxApi } = {}) {
   const source = readFileSync(join(ROOT, 'pages/admin/index.js'), 'utf8')
     .replace(
       /import \{[\s\S]*?\} from '~\/services\/moderation';/,
@@ -47,7 +47,7 @@ function loadAdminPage(fetchUsageStatus) {
     __moderation: {
       QUEUES: [],
       fetchQueue() {},
-      fetchAssetReviewStatuses() {},
+      fetchAssetReviewStatuses: mediaFetcher || (() => {}),
       submitDecision() {},
       decideComment() {},
       decideTopic() {},
@@ -57,6 +57,7 @@ function loadAdminPage(fetchUsageStatus) {
     },
     __usage: { fetchUsageStatus },
     __navigation: { navigateTo() {} },
+    wx: wxApi,
   });
   assert.ok(definition, 'admin page must register a Page definition');
   return definition;
@@ -182,3 +183,23 @@ assert.equal(moderator.data.accessState, 'denied');
 assert.equal(moderator.data.usageStatus, null, 'a response from the previous moderator session must not repopulate the status');
 
 console.log('OK: admin usage status is role-gated, shows UTC limits, retains snapshots on errors, and labels disabled quotas');
+
+const previewCalls = [];
+const previewMessages = [];
+let denyAsset = false;
+const mediaPage = loadAdminPage(async () => status, {
+  mediaFetcher: async () => {
+    if (denyAsset) throw new Error('forbidden');
+    return [{ assetId: 'image-a', mediaType: 'image', url: 'https://example.test/fresh' }];
+  },
+  wxApi: { previewImage: (value) => previewCalls.push(value), showToast: (value) => previewMessages.push(value) },
+});
+const mediaContext = pageContext(mediaPage, {
+  accessState: 'allowed', mediaItems: [{ assetId: 'image-a', mediaType: 'image', url: 'https://example.test/expired' }],
+});
+await mediaContext.onPreviewImage({ currentTarget: { dataset: { assetId: 'image-a' } } });
+assert.equal(previewCalls[0].current, 'https://example.test/fresh');
+denyAsset = true;
+await mediaContext.onPreviewImage({ currentTarget: { dataset: { assetId: 'image-a' } } });
+assert.equal(previewCalls.length, 1, 'denied asset must not fall back to cached URL');
+assert.equal(previewMessages.length, 1);

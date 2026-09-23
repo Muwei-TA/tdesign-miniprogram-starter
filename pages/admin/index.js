@@ -424,13 +424,26 @@ Page({
     }
   },
 
-  onPreviewImage(e) {
-    const current = e.currentTarget.dataset.url;
-    const urls = this.data.mediaItems
-      .filter((item) => item.mediaType === 'image' && item.url)
-      .map((item) => item.url);
-    if (!current || !urls.length) return;
-    wx.previewImage({ current, urls });
+  async onPreviewImage(e) {
+    const assetId = e.currentTarget.dataset.assetId;
+    if (this.data.accessState !== 'allowed' || !assetId) return;
+    try {
+      const ids = this.data.mediaItems.filter((item) => item.mediaType === 'image').map((item) => item.assetId);
+      const mediaItems = await fetchAssetReviewStatuses(ids);
+      const selected = mediaItems.find((item) => item.assetId === assetId);
+      if (this.data.accessState !== 'allowed' || !selected || !selected.url) {
+        wx.showToast({ title: '图片当前不可访问', icon: 'none' });
+        return;
+      }
+      const urls = mediaItems.filter((item) => item.mediaType === 'image' && item.url).map((item) => item.url);
+      wx.previewImage({
+        current: selected.url,
+        urls,
+        fail: () => wx.showToast({ title: '图片打开失败，请重试', icon: 'none' }),
+      });
+    } catch (err) {
+      wx.showToast({ title: '图片刷新失败，请重试', icon: 'none' });
+    }
   },
 
   onStopPropagation() {},

@@ -172,7 +172,7 @@
               class="hg-admin__media-image"
               src="{{ item.url }}"
               mode="aspectFill"
-              data-url="{{ item.url }}"
+              data-asset-id="{{ item.assetId }}"
               bindtap="onPreviewImage"
             />
             <video
