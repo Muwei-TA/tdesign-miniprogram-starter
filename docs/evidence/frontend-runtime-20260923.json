@@ -1,0 +1,26 @@
+{
+  "surface": "WeChat DevTools simulator",
+  "listError": {
+    "faultInjection": "temporary wx.cloud.callFunction rejection, restored in finally",
+    "countBefore": 5,
+    "countAfter": 5,
+    "stale": true,
+    "visibleText": "消息未更新：网络不可用，请检查后重试",
+    "retryButtonTapped": true
+  },
+  "imagePreview": {
+    "faultInjection": "cached page image URL replaced with an invalid signed fixture",
+    "freshAuthorizationRequest": true,
+    "previewUsedFreshUrl": true,
+    "realPreviewVisible": true
+  },
+  "tests": {
+    "frontendFilesPassed": 11,
+    "backendTestsPassed": 118,
+    "lint": "passed both",
+    "check": "passed both",
+    "apiActions": 57,
+    "pages": 22
+  },
+  "physicalDeviceVerified": false
+}

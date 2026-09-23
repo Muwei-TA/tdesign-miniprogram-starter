@@ -167,3 +167,17 @@ notifyType:    comment | reply | reaction_digest | system_review | system_report
 ```
 
 失败分级提示：单附件失败 → 可单独重试；正文提交失败 → 保留草稿并给"重试提交"。
+
+
+## 4.8 用量护栏（2026-09-23 已联调）
+
+`GET /admin/usage/status` 由传输层映射为 `admin/usage/status`，payload 为空。后端依据当前微信成员身份核验 active moderator/admin，并从上下文取 clubId；客户端传入角色或 clubId 不授予权限。
+
+返回 `date`、`timezone: "UTC"`、`updatedAt`，以及：
+
+- `upload`: `usedBytes`、`reservedBytes`、`dailyLimitBytes`、`userDailyLimitBytes`、`remainingBytes`、`warningRatio`、`alertState`、`alertedAt`。个人限额为滚动 24 小时，社团为 UTC 日窗。
+- `review`: `calls`、`textCalls`、`imageCalls`、`dailyLimitCalls`、`remainingCalls`、`warningRatio`、`alertState`、`alertedAt`。
+
+`alertState` 为 `ok / near_limit / limit_reached / disabled`。缺字段或类型无效显示读取失败，不伪装为零用量；身份失效立即清空管理快照。上传超限返回 `rate_limited`，读取不受上传限额影响。审核额度不足保留 queued 至下一 UTC 窗口，不消耗失败次数。
+
+已发布图片预览每次重新请求 `posts/detail`；管理附件经 `assets/status` 重新授权。失败不会回落缓存签名链接；原生选图页面的本地预览保持不变。
