@@ -5,9 +5,6 @@
     "pages/anthology/index",
     "pages/my/index"
   ],
-  "usingComponents": {
-    "t-toast": "tdesign-miniprogram/toast/toast"
-  },
   "subpackages": [
     {
       "root": "pages/community",
