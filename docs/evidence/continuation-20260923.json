@@ -1,0 +1,99 @@
+{
+  "date": "2026-09-23",
+  "environment": "shudong-d4g4blap4a5069a28",
+  "signedImage": {
+    "environment": "shudong-d4g4blap4a5069a28",
+    "date": "2026-09-23",
+    "surface": "WeChat DevTools simulator, actual wx.cloud API and wx.getImageInfo",
+    "urlCheck": true,
+    "domainRefresh": "Reopened the project after user confirmed downloadFile domain registration",
+    "rootCauseAfterRefresh": "Existing OPA user policy denied all non-service storage access, including signed GET requests",
+    "policy": "cloudbase/policies/authz.user.rego",
+    "rollbackPolicy": "cloudbase/policies/authz.user.before-signed-download.rego",
+    "verifiedReadback": true,
+    "results": {
+      "signedImage": {
+        "success": true,
+        "width": 48,
+        "height": 48,
+        "type": "jpeg"
+      },
+      "signatureMissingStatus": 401,
+      "signatureForgedStatus": 401,
+      "unsignedObjectStatus": 403,
+      "detailPageTapPreview": "visible in DevTools",
+      "expiredLink": {
+        "elapsedSeconds": 334.775,
+        "status": 401
+      },
+      "freshlyAuthorizedLinkAfterExpiry": {
+        "success": true,
+        "width": 48,
+        "height": 48,
+        "type": "jpeg"
+      },
+      "privateBucket": true,
+      "objectsRlsEnabled": true,
+      "objectsClientPolicyCount": 0
+    },
+    "limitations": [
+      "Physical iOS and Android device acceptance pending",
+      "Revocation does not remove previously downloaded files"
+    ]
+  },
+  "timer": {
+    "environment": "shudong-d4g4blap4a5069a28",
+    "verifiedAt": "2026-09-23T01:53:03.334Z",
+    "trigger": "blacklight-review-minute",
+    "cron": "0 */1 * * * * *",
+    "registration": "WeChat DevTools worker/config.json > Upload triggers",
+    "trustedInvocation": {
+      "TCB_SOURCE": "wx_trigger",
+      "TRIGGER_SRC": "tcb",
+      "appIdMatches": true,
+      "hasOpenId": false
+    },
+    "fixture": {
+      "postId": "timer-probe-20260923-0949",
+      "creation": "development fixture through hg_create_post; no foreground review invoked",
+      "initialState": "pending",
+      "finalState": "published",
+      "version": 2
+    },
+    "reviewTask": {
+      "status": "passed",
+      "attempts": 0,
+      "lastError": "",
+      "finishedAt": "2026-09-23T01:53:03.334Z"
+    },
+    "forgedClientTimer": "forbidden",
+    "notes": [
+      "SCF trigger listing becomes empty for the WeChat-managed scheduler; do not recreate a second SCF timer",
+      "No token values were read or persisted",
+      "This is development backend verification, not physical-device or production acceptance"
+    ]
+  },
+  "pagination": {
+    "environment": "shudong-d4g4blap4a5069a28",
+    "date": "2026-09-23",
+    "transport": "real wx.cloud.callFunction api/posts/list",
+    "pageSize": 1,
+    "firstCode": 0,
+    "secondCode": 0,
+    "firstCount": 1,
+    "secondCount": 1,
+    "noDuplicates": true,
+    "secondHasCursor": false,
+    "regressions": [
+      "PostgreSQL ISO date cursor round-trip",
+      "pagination retains original OR visibility conditions",
+      "invalid cursor timestamps rejected"
+    ],
+    "deployment": "api/shared updated via WeChat DevTools incremental deployment"
+  },
+  "remaining": [
+    "Physical iOS/Android and multi-account acceptance",
+    "Production G0 and operational acceptance",
+    "Feature gaps enumerated in frontend-task-audit-2026-09-23.md"
+  ]
+}
