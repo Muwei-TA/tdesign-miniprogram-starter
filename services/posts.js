@@ -89,6 +89,19 @@ export function submitComment(id, { body, replyToId = '', identityMode = 'named'
   });
 }
 
+/** 回应共鸣：幂等开关，页面侧做乐观更新并在失败时回滚 */
+export function toggleCommentReaction(id, commentId, next) {
+  return request(withPath(endpoints.postCommentReaction, { id, commentId }), { method: next ? 'PUT' : 'DELETE' });
+}
+
+/** 评论者删除自己的回应；expectedVersion 来自 CommentDTO.version */
+export function deleteComment(id, commentId, expectedVersion) {
+  return request(withPath(endpoints.postCommentDetail, { id, commentId }), {
+    method: 'DELETE',
+    data: { expectedVersion },
+  });
+}
+
 /** 我的内容列表：published/pending/draft/private/bookmark/topics */
 export function fetchMyContents({ tab = 'published', cursor = '' } = {}) {
   return request(withQuery(endpoints.myContents, { tab, cursor }));
@@ -115,6 +128,8 @@ export default {
   toggleBookmark,
   fetchComments,
   submitComment,
+  toggleCommentReaction,
+  deleteComment,
   fetchMyContents,
   submitReport,
 };

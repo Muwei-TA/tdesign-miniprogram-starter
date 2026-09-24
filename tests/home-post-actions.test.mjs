@@ -9,7 +9,8 @@ const homeWxml = readFileSync(join(ROOT, 'pages/home/index.wxml'), 'utf8');
 const postCardSource = readFileSync(join(ROOT, 'components/post-card/index.js'), 'utf8');
 const homeSource = readFileSync(join(ROOT, 'pages/home/index.js'), 'utf8')
   .replace(
-    /import \{[\s\S]*?FEED_FILTERS,\n\} from '~\/services\/posts';/,
+    // \r? 兼容 Windows 检出的 CRLF 工作副本，否则导入块剥不掉会导致 vm 报 import 语法错误
+    /import \{[\s\S]*?FEED_FILTERS,\r?\n\} from '~\/services\/posts';/,
     'const { fetchFeed, toggleReaction, toggleBookmark, shrinkVisibility, deletePost, FEED_FILTERS } = __posts;',
   )
   .replace("import { previewPostImage } from '~/services/image-preview';", 'const { previewPostImage } = __helpers;')

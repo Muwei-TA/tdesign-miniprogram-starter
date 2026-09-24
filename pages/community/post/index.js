@@ -5,6 +5,8 @@ import {
   COMMENT_LIMIT,
   toggleReaction,
   toggleBookmark,
+  toggleCommentReaction,
+  deleteComment,
   shrinkVisibility,
   deletePost,
 } from '~/services/posts';
@@ -232,6 +234,9 @@ Page({
       body,
       createdAtText: '刚刚',
       status: 'pending',
+      version: 1,
+      counters: { reactions: 0 },
+      viewer: { reacted: false, canDelete: true },
       replies: [],
     };
     if (!replyToId) {
@@ -243,6 +248,116 @@ Page({
       return { ...item, replies: (item.replies || []).concat(comment) };
     });
     this.setData({ comments });
+  },
+
+  // ---------- 回应共鸣与删除 ----------
+  findCommentPath(id) {
+    const comments = this.data.comments || [];
+    for (let i = 0; i < comments.length; i += 1) {
+      const item = comments[i];
+      if (item.id === id) return { path: `comments[${i}]`, item };
+      const replies = item.replies || [];
+      for (let j = 0; j < replies.length; j += 1) {
+        if (replies[j].id === id) {
+          return { path: `comments[${i}].replies[${j}]`, item: replies[j], parent: item };
+        }
+      }
+    }
+    return null;
+  },
+
+  async onCommentReact(e) {
+    const { id } = e.detail;
+    const located = this.findCommentPath(id);
+    if (!located || located.item.deleted || located.item.status === 'pending') return;
+
+    this.commentReactBusy = this.commentReactBusy || {};
+    if (this.commentReactBusy[id]) return;
+    this.commentReactBusy[id] = true;
+
+    const next = !located.item.viewer.reacted;
+    const prevCount = located.item.counters.reactions;
+    this.setData({
+      [`${located.path}.viewer.reacted`]: next,
+      [`${located.path}.counters.reactions`]: Math.max(0, prevCount + (next ? 1 : -1)),
+    });
+    try {
+      await toggleCommentReaction(this.data.id, id, next);
+    } catch (err) {
+      this.setData({
+        [`${located.path}.viewer.reacted`]: !next,
+        [`${located.path}.counters.reactions`]: prevCount,
+      });
+      wx.showToast({ title: err.message || '操作未完成', icon: 'none' });
+    } finally {
+      this.commentReactBusy[id] = false;
+    }
+  },
+
+  onCommentDelete(e) {
+    const { id } = e.detail;
+    const located = this.findCommentPath(id);
+    if (!located || !located.item.viewer.canDelete) return;
+    const isReply = !!located.parent;
+
+    wx.showModal({
+      title: '删除这条回应',
+      content: isReply
+        ? '删除后无法恢复。'
+        : '删除后无法恢复；已收到的回复会保留，原位置显示已删除。',
+      confirmText: '删除',
+      confirmColor: '#A85648',
+      success: async (res) => {
+        if (!res.confirm) return;
+        // 本地占位（服务端尚未返回真实 id）直接移除
+        if (String(id).indexOf('local-comment-') === 0) {
+          this.removeCommentLocally(id);
+          return;
+        }
+        try {
+          await deleteComment(this.data.id, id, located.item.version);
+          if (located.item.status !== 'pending' && this.data.post) {
+            const prev = (this.data.post.counters && this.data.post.counters.comments) || 0;
+            this.setData({ 'post.counters.comments': Math.max(0, prev - 1) });
+          }
+          this.removeCommentLocally(id);
+          app.eventBus.emit('post-changed', { id: this.data.id, action: 'comment' });
+        } catch (err) {
+          wx.showToast({ title: err.message || '未能删除', icon: 'none' });
+        }
+      },
+    });
+  },
+
+  removeCommentLocally(id) {
+    const comments = this.data.comments || [];
+    const index = comments.findIndex((item) => item.id === id);
+    if (index >= 0) {
+      const next = comments.slice();
+      const item = next[index];
+      // 有可见回复的一级回应保留墓碑，其余直接移除
+      if ((item.replies || []).length > 0) {
+        next[index] = {
+          ...item,
+          author: { userId: null, displayName: null, isAnonymous: false, alias: null, isAuthor: false },
+          body: '这条回应已被删除。',
+          deleted: true,
+          status: 'deleted',
+          counters: { reactions: 0 },
+          viewer: { reacted: false, canDelete: false },
+        };
+      } else {
+        next.splice(index, 1);
+      }
+      this.setData({ comments: next });
+      return;
+    }
+
+    // 定向回复：从父级移除；父级是墓碑且再无回复时一并隐藏
+    const next = comments
+      .map((item) => ({ ...item, replies: (item.replies || []).filter((reply) => reply.id !== id) }))
+      .filter((item) => !item.deleted || (item.replies || []).length > 0);
+    this.setData({ comments: next });
   },
 
   onTapAuthor() {

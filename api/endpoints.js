@@ -16,6 +16,8 @@ export default {
   postReaction: '/posts/:id/reaction',
   postBookmark: '/posts/:id/bookmark',
   postComments: '/posts/:id/comments',
+  postCommentDetail: '/posts/:id/comments/:commentId',
+  postCommentReaction: '/posts/:id/comments/:commentId/reaction',
 
   topics: '/topics',
   topicDetail: '/topics/:id',

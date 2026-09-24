@@ -190,6 +190,8 @@
         submitting="{{ commentSubmitting }}"
         reset-key="{{ commentResetKey }}"
         bind:submit="onCommentSubmit"
+        bind:react="onCommentReact"
+        bind:delete="onCommentDelete"
       />
       <view wx:if="{{ commentsError && !commentsStale }}" class="hg-detail__comments-error">
         <text>{{ commentsError }}</text>

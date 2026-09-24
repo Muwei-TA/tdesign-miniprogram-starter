@@ -1,28 +1,52 @@
 <view class="hg-comment-list">
   <block wx:if="{{ comments.length > 0 }}">
     <view wx:for="{{ comments }}" wx:key="id" class="hg-comment-list__item">
-      <view class="hg-comment-list__avatar {{ item.author.isAnonymous ? 'hg-comment-list__avatar--anon' : '' }}">
+      <view
+        wx:if="{{ !item.deleted }}"
+        class="hg-comment-list__avatar {{ item.author.isAnonymous ? 'hg-comment-list__avatar--anon' : '' }}"
+      >
         {{ item.author.isAnonymous ? (item.author.alias || '树') : (item.author.displayName || '社内成员') }}
       </view>
       <view class="hg-comment-list__main">
         <view class="hg-comment-list__head">
-          <text class="hg-comment-list__name"
+          <text wx:if="{{ !item.deleted }}" class="hg-comment-list__name"
             >{{ item.author.isAnonymous ? item.author.alias : item.author.displayName }}</text
           >
           <text wx:if="{{ item.author.isAuthor }}" class="hg-comment-list__author">作者</text>
           <text wx:if="{{ item.status === 'pending' }}" class="hg-comment-list__pending">等待审核</text>
           <text class="hg-comment-list__time">{{ item.createdAtText }}</text>
         </view>
-        <view class="hg-comment-list__body">{{ item.body }}</view>
-        <view
-          wx:if="{{ item.status !== 'pending' }}"
-          class="hg-comment-list__reply-action"
-          data-id="{{ item.id }}"
-          data-label="{{ item.author.isAnonymous ? item.author.alias : item.author.displayName }}"
-          bindtap="onReply"
-          aria-role="button"
-        >
-          回复
+        <view class="hg-comment-list__body {{ item.deleted ? 'hg-comment-list__body--deleted' : '' }}">{{ item.body }}</view>
+        <view wx:if="{{ !item.deleted && (item.status !== 'pending' || item.viewer.canDelete) }}" class="hg-comment-list__actions">
+          <view
+            wx:if="{{ item.status !== 'pending' }}"
+            class="hg-comment-list__action {{ item.viewer.reacted ? 'hg-comment-list__action--on' : '' }}"
+            data-id="{{ item.id }}"
+            bindtap="onReact"
+            aria-role="button"
+          >
+            <t-icon name="{{ item.viewer.reacted ? 'heart-filled' : 'heart' }}" size="26rpx" />
+            <text>共鸣 {{ item.counters.reactions }}</text>
+          </view>
+          <view
+            wx:if="{{ item.status !== 'pending' }}"
+            class="hg-comment-list__action"
+            data-id="{{ item.id }}"
+            data-label="{{ item.author.isAnonymous ? item.author.alias : item.author.displayName }}"
+            bindtap="onReply"
+            aria-role="button"
+          >
+            回复
+          </view>
+          <view
+            wx:if="{{ item.viewer.canDelete }}"
+            class="hg-comment-list__action hg-comment-list__action--danger"
+            data-id="{{ item.id }}"
+            bindtap="onDelete"
+            aria-role="button"
+          >
+            删除
+          </view>
         </view>
 
         <view wx:for="{{ item.replies }}" wx:for-item="reply" wx:key="id" class="hg-comment-list__reply">
@@ -35,6 +59,27 @@
             <text class="hg-comment-list__time">{{ reply.createdAtText }}</text>
           </view>
           <view class="hg-comment-list__body">{{ reply.body }}</view>
+          <view wx:if="{{ reply.status !== 'pending' || reply.viewer.canDelete }}" class="hg-comment-list__actions">
+            <view
+              wx:if="{{ reply.status !== 'pending' }}"
+              class="hg-comment-list__action {{ reply.viewer.reacted ? 'hg-comment-list__action--on' : '' }}"
+              data-id="{{ reply.id }}"
+              bindtap="onReact"
+              aria-role="button"
+            >
+              <t-icon name="{{ reply.viewer.reacted ? 'heart-filled' : 'heart' }}" size="26rpx" />
+              <text>共鸣 {{ reply.counters.reactions }}</text>
+            </view>
+            <view
+              wx:if="{{ reply.viewer.canDelete }}"
+              class="hg-comment-list__action hg-comment-list__action--danger"
+              data-id="{{ reply.id }}"
+              bindtap="onDelete"
+              aria-role="button"
+            >
+              删除
+            </view>
+          </view>
         </view>
       </view>
     </view>

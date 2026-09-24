@@ -37,6 +37,18 @@ assert.deepEqual(plain(resolveTransport('/posts/p-1/reaction', 'DELETE', {})), {
   action: 'posts/reaction',
   payload: { id: 'p-1', next: false },
 });
+assert.deepEqual(plain(resolveTransport('/posts/p-1/comments/c-9/reaction', 'PUT', {})), {
+  action: 'posts/comments/reaction',
+  payload: { id: 'p-1', commentId: 'c-9', next: true },
+});
+assert.deepEqual(plain(resolveTransport('/posts/p-1/comments/c-9/reaction', 'DELETE', {})), {
+  action: 'posts/comments/reaction',
+  payload: { id: 'p-1', commentId: 'c-9', next: false },
+});
+assert.deepEqual(plain(resolveTransport('/posts/p-1/comments/c-9', 'DELETE', { expectedVersion: 3 })), {
+  action: 'posts/comments/delete',
+  payload: { id: 'p-1', commentId: 'c-9', expectedVersion: 3 },
+});
 assert.deepEqual(plain(resolveTransport('/assets/a-1', 'GET', {})), {
   action: 'assets/status',
   payload: { assetId: 'a-1' },
