@@ -1,7 +1,7 @@
 # 07｜组件契约
 
-> 通用原则：组件**只渲染入参、只抛事件**。禁止在组件内请求数据、判断业务权限、跳转页面
-> （例外：纯展示性的图片预览 `wx.previewImage` 允许在 `media-preview` 内调用）。
+> 通用原则：组件**只渲染入参、只抛事件**。禁止在组件内请求数据、判断业务权限、跳转页面。
+> 图片预览统一由页面调用 `services/image-preview.js`（`wx.previewImage` 仅传服务端授权 URL）。
 > 所有组件放 `components/<name>/`，`index.json` 中 `"component": true`。
 
 ## 7.1 组件总览
@@ -16,7 +16,6 @@
 | `empty-state` | `components/empty-state` | ✅ 已实现 | 基线 |
 | `scope-picker` | `components/scope-picker` | ✅ 已实现 | 基线 |
 | `identity-label` | `components/identity-label` | ⬜ 待实现 | T-02 |
-| `media-preview` | `components/media-preview` | ⬜ 待实现 | T-02 |
 | `comment-list` | `components/comment-list` | ⬜ 待实现 | T-06 |
 | `request-state` | `components/request-state` | ⬜ 待实现 | T-02 |
 | `moderation-item` | `components/moderation-item` | ⬜ 待实现 | T-13 |
@@ -92,20 +91,11 @@ events:
 
 匿名态点击**只触发** `explain`，不触发 `tapname`。
 
-## 7.6 `media-preview`（T-02）
+## 7.6 `media-preview`（已移除）
 
-```text
-properties:
-  media: Object  { type: 'image'|'video'|null, images: [], video: { url, cover, duration, ready } }
-  height: String 可选覆盖高度
-events:
-  bind:preview { index }
-  bind:play    无载荷
-```
-
-规则：1 张图满宽 360rpx 高；2–9 张两列网格 272rpx；超过 9 张不渲染（服务端已限制）。
-视频不自动播放；`ready=false` 显示处理中占位。图片预览用 `wx.previewImage`，
-**仅传服务端返回的授权 URL**，不拼接对象存储路径。
+该组件已随 T-F09 删除：媒体渲染由 `post-card` 与页面层直接完成，
+图片预览统一走 `services/image-preview.js`（`wx.previewImage` 仅传服务端授权 URL）。
+历史规格见 `11-task-board.md` T-02 与 `frontend-task-audit-2026-09-23.md`。
 
 ## 7.7 `topic-card`
 

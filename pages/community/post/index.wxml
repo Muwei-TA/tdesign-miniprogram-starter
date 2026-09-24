@@ -58,7 +58,7 @@
         </view>
 
         <view class="hg-detail__article" style="font-size: {{ fontSize }}rpx">
-          <view wx:for="{{ post.paragraphs }}" wx:key="index" class="hg-detail__para">{{ item }}</view>
+          <view wx:for="{{ post.paragraphs }}" wx:key="*this" class="hg-detail__para">{{ item }}</view>
         </view>
         <view class="hg-detail__end">· · ·</view>
 
@@ -69,6 +69,7 @@
             class="hg-detail__image"
             src="{{ item }}"
             mode="widthFix"
+            lazy-load
             data-index="{{ index }}"
             bindtap="onPreviewImage"
             aria-label="文章配图"
@@ -112,6 +113,7 @@
             class="hg-detail__image"
             src="{{ item }}"
             mode="widthFix"
+            lazy-load
             data-index="{{ index }}"
             bindtap="onPreviewImage"
             aria-label="内容配图"

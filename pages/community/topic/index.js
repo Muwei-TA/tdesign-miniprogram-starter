@@ -20,6 +20,9 @@ Page({
     id: '',
     topic: null,
     list: [],
+    nextCursor: null,
+    hasMore: false,
+    loadingMore: false,
     canPost: false,
     isMember: false,
     loading: true,
@@ -47,32 +50,51 @@ Page({
     this.loadDetail().then(() => wx.stopPullDownRefresh());
   },
 
+  onReachBottom() {
+    if (!this.data.hasMore || this.data.loadingMore) return;
+    this.loadDetail({ append: true });
+  },
+
   syncSession(session) {
     if (!session) return;
     this.setData({ isMember: session.memberStatus === 'active' });
   },
 
-  async loadDetail() {
+  async loadDetail({ append = false } = {}) {
     if (!this.data.id) return;
-    this.setData({ loading: true, errorText: '', errorKind: '' });
+    if (append && (this.data.loadingMore || !this.data.hasMore)) return;
+    this.setData(append ? { loadingMore: true } : { loading: true, errorText: '', errorKind: '' });
     try {
-      const data = (await fetchTopicDetail(this.data.id)) || {};
+      const data = (await fetchTopicDetail(this.data.id, append ? this.data.nextCursor : '')) || {};
       const topic = data.topic || null;
       if (!topic) {
         const err = new Error('当前话题不可访问');
         err.kind = 'not_accessible';
         throw err;
       }
-      this.setData({
-        topic,
-        list: data.items || [],
-        canPost: !!data.canPost,
+      const patch = {
+        list: append ? this.data.list.concat(data.items || []) : data.items || [],
+        nextCursor: data.nextCursor || null,
+        hasMore: !!data.nextCursor,
         loading: false,
+        loadingMore: false,
         stale: false,
         errorText: '',
         errorKind: '',
-      });
+      };
+      // 追加只扩展参与列表，头部信息不重复覆盖
+      if (!append) {
+        patch.topic = topic;
+        patch.canPost = !!data.canPost;
+      }
+      this.setData(patch);
     } catch (err) {
+      if (append) {
+        // 追加失败不破坏已有列表
+        this.setData({ loadingMore: false });
+        wx.showToast({ title: '加载更多失败', icon: 'none' });
+        return;
+      }
       this.setData({
         loading: false,
         stale: !!this.data.topic || this.data.list.length > 0,

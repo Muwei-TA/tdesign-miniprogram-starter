@@ -9,6 +9,7 @@ import {
   deleteComment,
   shrinkVisibility,
   deletePost,
+  submitReport,
 } from '~/services/posts';
 import { previewPostImage } from '~/services/image-preview';
 import { createIdempotencyKey } from '~/utils/idempotency';
@@ -393,10 +394,23 @@ Page({
     this.setData({ moreVisible: false });
     wx.showModal({
       title: '举报这条内容',
+      editable: true,
+      placeholderText: '请填写举报原因（必填）',
       content: '提交后运营者会核查。举报不等于认定违规，处理结果会通过站内消息告知，且不会向对方透露举报人。',
       confirmText: '提交举报',
-      success: (res) => {
-        if (res.confirm) wx.showToast({ title: '已收到，等待核查', icon: 'none' });
+      success: async (res) => {
+        if (!res.confirm) return;
+        const reason = String(res.content || '').trim();
+        if (!reason) {
+          wx.showToast({ title: '请填写举报原因', icon: 'none' });
+          return;
+        }
+        try {
+          await submitReport({ targetType: 'post', targetId: this.data.id, reason });
+          wx.showToast({ title: '已收到，等待核查', icon: 'none' });
+        } catch (err) {
+          wx.showToast({ title: err.message || '提交失败，请稍后重试', icon: 'none' });
+        }
       },
     });
   },

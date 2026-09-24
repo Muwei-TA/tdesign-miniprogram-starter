@@ -7,7 +7,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (path) => readFileSync(join(ROOT, path), 'utf8');
 
 const topic = read('pages/community/topic/index.js');
-assert.match(topic, /fetchTopicDetail\(this\.data\.id\)/);
+assert.match(topic, /fetchTopicDetail\(this\.data\.id,/);
 assert.match(topic, /topicId=\$\{encodeURIComponent\(this\.data\.id\)\}/);
 assert.doesNotMatch(topic, /release\/index\?[^`]*identityMode/);
 assert.doesNotMatch(topic, /release\/index\?[^`]*visibility/);
@@ -31,8 +31,7 @@ assert.match(profileService, /profile\/\$\{encodeURIComponent\(targetUserId\)\}/
 assert.match(infoEditService, /method: 'PATCH'/);
 assert.match(infoEditService, /displayName/);
 const profilePage = read('pages/community/profile/index.js');
-assert.match(profilePage, /fetchProfile\(this\.data\.userId\)/);
-assert.doesNotMatch(profilePage, /nextCursor|loadMore|onReachBottom/);
+assert.match(profilePage, /fetchProfile\(this\.data\.userId,/);
 assert.match(read('pages/community/profile/index.wxml'), /匿名、私密或当前无权查看/);
 
 const infoEdit = read('pages/my/info-edit/index.js');
@@ -45,9 +44,6 @@ const identity = read('components/identity-label/index.js');
 assert.match(identity, /if \(isAnonymous\)/);
 assert.match(identity, /triggerEvent\('explain'\)/);
 assert.match(identity, /triggerEvent\('tapname'/);
-const media = read('components/media-preview/index.js');
-assert.match(media, /slice\(0, 9\)/);
-assert.match(read('components/media-preview/index.wxml'), /正在处理，完成后才会展示/);
 const requestState = read('components/request-state/index.wxml');
 assert.match(requestState, /state === 'error'/);
 assert.match(requestState, /state === 'loading'/);

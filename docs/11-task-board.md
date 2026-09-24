@@ -32,6 +32,7 @@
 |---|---|---|
 | 2026-09-25 | `components/comment-list/*` | 评论区回应新增共鸣与删除操作：组件只抛 `react`/`delete` 事件并渲染 `counters/viewer`；墓碑态（`deleted`）隐藏头像与操作。涉及 P05 页面与 `services/posts.js`（对应后端契约 B9a/B9b、后端 T-B14） |
 | 2026-09-25 | `pages/message/*` | 「全部已读」从 `hg-nav` 右槽位下移至分段控件同一行（右侧被小程序胶囊按钮遮挡） |
+| 2026-09-25 | `app.json`、`components/media-preview/`（删除） | T-F09 用户侧列表分页与热路径修复：`app.json` 增加 `lazyCodeLoading` 与 `preloadRule`（home 预载 community 分包）；删除零引用的 `media-preview` 组件（未接入任何 `usingComponents`/wxml） |
 
 ## 待领取任务（原任务清单，当前状态见审计报告）
 

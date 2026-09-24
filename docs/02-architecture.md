@@ -42,7 +42,6 @@ components/
   post-card/              # 内容卡（碎片/文章/视频/活动）
   visibility-badge/       # 范围标识
   identity-label/         # 署名/树洞身份标签（含匿名说明入口）
-  media-preview/          # 图片组 / 视频占位
   topic-card/             # 话题卡
   collection-cover/       # 书脊式文集封面
   comment-list/           # 评论 + 定向回复

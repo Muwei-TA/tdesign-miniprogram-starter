@@ -67,6 +67,13 @@
       ]
     }
   ],
+  "lazyCodeLoading": "requiredComponents",
+  "preloadRule": {
+    "pages/home/index": {
+      "network": "all",
+      "packages": ["community"]
+    }
+  },
   "window": {
     "backgroundTextStyle": "dark",
     "backgroundColor": "#F8F6F0",

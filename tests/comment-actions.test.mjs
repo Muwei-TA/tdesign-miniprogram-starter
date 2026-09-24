@@ -11,7 +11,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const postSource = readFileSync(join(ROOT, 'pages/community/post/index.js'), 'utf8')
   .replace(
     /import \{[\s\S]*?\} from '~\/services\/posts';/,
-    'const { fetchPostDetail, fetchComments, submitComment, COMMENT_LIMIT, toggleReaction, toggleBookmark, toggleCommentReaction, deleteComment, shrinkVisibility, deletePost } = __posts;',
+    'const { fetchPostDetail, fetchComments, submitComment, COMMENT_LIMIT, toggleReaction, toggleBookmark, toggleCommentReaction, deleteComment, shrinkVisibility, deletePost, submitReport } = __posts;',
   )
   .replace("import { previewPostImage } from '~/services/image-preview';", 'const { previewPostImage } = __helpers;')
   .replace(

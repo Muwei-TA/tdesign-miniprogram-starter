@@ -30,6 +30,9 @@ Page({
     unavailable: [],
     drafts: [],
     topics: [],
+    nextCursor: null,
+    hasMore: false,
+    loadingMore: false,
   },
 
   onLoad(options) {
@@ -48,6 +51,11 @@ Page({
     if (this.data.sessionReady && !this.data.isGuest) this.loadTab({ silent: true });
   },
 
+  onReachBottom() {
+    if (!this.data.hasMore || this.data.loadingMore || this.data.tab === 'draft') return;
+    this.loadTab({ append: true });
+  },
+
   applySession(session) {
     if (!session) return;
     const isGuest = !session.user;
@@ -55,19 +63,21 @@ Page({
     this.tabRequestId = (this.tabRequestId || 0) + 1;
     this.setData({ session, sessionReady: true, isGuest }, () => {
       if (isGuest) {
-        this.setData({ loading: false, list: [], unavailable: [], drafts: [], topics: [] });
+        this.setData({ loading: false, list: [], unavailable: [], drafts: [], topics: [], nextCursor: null, hasMore: false });
         return;
       }
       this.loadTab();
     });
   },
 
-  async loadTab({ silent = false } = {}) {
+  async loadTab({ silent = false, append = false } = {}) {
     if (!this.data.sessionReady || this.data.isGuest) return;
+    if (append && (this.data.loadingMore || !this.data.hasMore || this.data.tab === 'draft')) return;
     const requestedTab = this.data.tab;
     const requestId = (this.tabRequestId || 0) + 1;
     this.tabRequestId = requestId;
-    if (!silent) this.setData({ loading: true, errorText: '' });
+    if (append) this.setData({ loadingMore: true });
+    else if (!silent) this.setData({ loading: true, errorText: '' });
 
     if (requestedTab === 'draft') {
       this.setData({
@@ -82,27 +92,51 @@ Page({
         list: [],
         unavailable: [],
         topics: [],
+        nextCursor: null,
+        hasMore: false,
       });
       return;
     }
 
     try {
-      const result = await fetchMyContents({ tab: requestedTab });
+      const result = await fetchMyContents({ tab: requestedTab, cursor: append ? this.data.nextCursor : '' });
       if (requestId !== this.tabRequestId || requestedTab !== this.data.tab) return;
       const items = result.items || [];
-      this.setData({
+      const patch = {
         loading: false,
+        loadingMore: false,
         stale: false,
         errorText: '',
-        list: requestedTab === 'topics' ? [] : items.filter((item) => !item.unavailable),
-        unavailable: requestedTab === 'bookmark' ? items.filter((item) => item.unavailable) : [],
-        topics: requestedTab === 'topics' ? items : [],
-        drafts: [],
-      });
+        nextCursor: result.nextCursor || null,
+        hasMore: !!result.nextCursor,
+      };
+      if (append) {
+        // 追加只拼接当前 tab 对应的集合，另一侧保持不动
+        if (requestedTab === 'topics') patch.topics = this.data.topics.concat(items);
+        else {
+          if (requestedTab === 'bookmark') {
+            patch.unavailable = this.data.unavailable.concat(items.filter((item) => item.unavailable));
+          }
+          patch.list = this.data.list.concat(items.filter((item) => !item.unavailable));
+        }
+      } else {
+        patch.list = requestedTab === 'topics' ? [] : items.filter((item) => !item.unavailable);
+        patch.unavailable = requestedTab === 'bookmark' ? items.filter((item) => item.unavailable) : [];
+        patch.topics = requestedTab === 'topics' ? items : [];
+        patch.drafts = [];
+      }
+      this.setData(patch);
     } catch (err) {
       if (requestId !== this.tabRequestId || requestedTab !== this.data.tab) return;
+      if (append) {
+        // 追加失败不破坏已有列表
+        this.setData({ loadingMore: false });
+        wx.showToast({ title: '加载更多失败', icon: 'none' });
+        return;
+      }
       this.setData({
         loading: false,
+        loadingMore: false,
         stale: this.data.list.length > 0 || this.data.unavailable.length > 0 || this.data.topics.length > 0,
         errorText: err.message || '列表暂时没有更新',
       });
@@ -112,7 +146,9 @@ Page({
   onTabTap(e) {
     const tab = e.currentTarget.dataset.value;
     if (!VALID_TABS.has(tab) || tab === this.data.tab) return;
-    this.setData({ tab, list: [], unavailable: [], drafts: [], topics: [] }, () => this.loadTab());
+    this.setData({ tab, list: [], unavailable: [], drafts: [], topics: [], nextCursor: null, hasMore: false }, () =>
+      this.loadTab(),
+    );
   },
 
   onRetry() {

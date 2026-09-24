@@ -7,6 +7,9 @@ Page({
     categories: TOPIC_CATEGORIES,
     category: 'all',
     list: [],
+    nextCursor: null,
+    hasMore: false,
+    loadingMore: false,
     loading: true,
     stale: false,
     errorText: '',
@@ -34,14 +37,41 @@ Page({
     this.loadTopics().then(() => wx.stopPullDownRefresh());
   },
 
-  async loadTopics() {
-    this.setData({ loading: true, stale: false, errorText: '' });
+  onReachBottom() {
+    if (!this.data.hasMore || this.data.loadingMore) return;
+    this.loadTopics({ append: true });
+  },
+
+  async loadTopics({ append = false } = {}) {
+    if (append && (this.data.loadingMore || !this.data.hasMore)) return;
+    const requestId = (this.listRequestId || 0) + 1;
+    this.listRequestId = requestId;
+    const { category } = this.data;
+    this.setData(append ? { loadingMore: true } : { loading: true, stale: false, errorText: '' });
     try {
-      const data = await fetchTopics({ category: this.data.category });
-      this.setData({ list: data.items || [], loading: false, stale: false, errorText: '' });
+      const data = await fetchTopics({ category, cursor: append ? this.data.nextCursor : '' });
+      // 快速切换分类时，旧响应不得覆盖当前分类
+      if (requestId !== this.listRequestId) return;
+      this.setData({
+        list: append ? this.data.list.concat(data.items || []) : data.items || [],
+        nextCursor: data.nextCursor || null,
+        hasMore: !!data.nextCursor,
+        loading: false,
+        loadingMore: false,
+        stale: false,
+        errorText: '',
+      });
     } catch (err) {
+      if (requestId !== this.listRequestId) return;
+      if (append) {
+        // 追加失败不破坏已有列表
+        this.setData({ loadingMore: false });
+        wx.showToast({ title: '加载更多失败', icon: 'none' });
+        return;
+      }
       this.setData({
         loading: false,
+        loadingMore: false,
         stale: this.data.list.length > 0,
         errorText: err.message || '加载失败',
       });
@@ -51,7 +81,10 @@ Page({
   onCategoryTap(e) {
     const { value } = e.currentTarget.dataset;
     if (value === this.data.category) return;
-    this.setData({ category: value, list: [], stale: false, errorText: '' }, () => this.loadTopics());
+    this.setData(
+      { category: value, list: [], nextCursor: null, hasMore: false, stale: false, errorText: '' },
+      () => this.loadTopics(),
+    );
   },
 
   onTopicTap(e) {

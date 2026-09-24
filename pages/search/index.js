@@ -18,6 +18,9 @@ Page({
     keyword: '',
     suggestions: [],
     results: [],
+    nextCursor: null,
+    hasMore: false,
+    loadingMore: false,
     searched: false,
     loading: false,
     stale: false,
@@ -35,6 +38,11 @@ Page({
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
   },
 
+  onReachBottom() {
+    if (!this.data.hasMore || this.data.loadingMore) return;
+    this.runSearch({ append: true });
+  },
+
   async loadSuggestions() {
     try {
       const data = await fetchSuggestions();
@@ -50,8 +58,8 @@ Page({
     this.setData({ keyword });
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     if (!keyword.trim()) {
-      // 清空恢复推荐词
-      this.setData({ results: [], searched: false, loading: false, stale: false, errorText: '' });
+      // 清空恢复推荐词，并重置分页游标
+      this.setData({ results: [], nextCursor: null, hasMore: false, searched: false, loading: false, stale: false, errorText: '' });
       return;
     }
     this.setData({ loading: false, stale: false, errorText: '' });
@@ -66,7 +74,7 @@ Page({
     const { value } = e.currentTarget.dataset;
     if (value === this.data.scope) return;
     this.searchRequestId = (this.searchRequestId || 0) + 1;
-    this.setData({ scope: value, results: [], loading: false, stale: false, errorText: '' }, () => {
+    this.setData({ scope: value, results: [], nextCursor: null, hasMore: false, loading: false, stale: false, errorText: '' }, () => {
       if (this.data.keyword.trim()) this.runSearch();
     });
   },
@@ -76,32 +84,50 @@ Page({
     this.setData({ keyword: word }, () => this.runSearch());
   },
 
-  async runSearch() {
+  async runSearch({ append = false } = {}) {
     const keyword = this.data.keyword.trim();
     if (!keyword) return;
+    if (append && (this.data.loadingMore || !this.data.hasMore)) return;
     const requestId = (this.searchRequestId || 0) + 1;
     this.searchRequestId = requestId;
     const { scope } = this.data;
-    this.setData({ loading: true, stale: false, errorText: '' });
+    this.setData(append ? { loadingMore: true } : { loading: true, stale: false, errorText: '' });
     try {
-      const data = await search({ q: keyword, scope });
+      const data = await search({ q: keyword, scope, cursor: append ? this.data.nextCursor : '' });
       if (requestId !== this.searchRequestId) return;
       // 慢响应不覆盖新查询
       if (data.stale) {
         this.setData({
           loading: false,
+          loadingMore: false,
           searched: true,
           stale: this.data.results.length > 0,
           errorText: '这次搜索结果已过期，请重试',
         });
         return;
       }
-      this.setData({ results: data.items || [], searched: true, loading: false, stale: false, errorText: '' });
+      this.setData({
+        results: append ? this.data.results.concat(data.items || []) : data.items || [],
+        nextCursor: data.nextCursor || null,
+        hasMore: !!data.nextCursor,
+        searched: true,
+        loading: false,
+        loadingMore: false,
+        stale: false,
+        errorText: '',
+      });
     } catch (err) {
       if (requestId !== this.searchRequestId) return;
+      if (append) {
+        // 追加失败不破坏已有列表
+        this.setData({ loadingMore: false });
+        wx.showToast({ title: '加载更多失败', icon: 'none' });
+        return;
+      }
       // 失败重试不清空输入
       this.setData({
         loading: false,
+        loadingMore: false,
         searched: true,
         stale: this.data.results.length > 0,
         errorText: err.message || '查询失败',
