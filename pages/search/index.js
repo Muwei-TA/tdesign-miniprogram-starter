@@ -1,11 +1,7 @@
 import { search, fetchSuggestions } from './search';
 import { navigateTo } from '~/utils/navigate';
 
-/**
- * P11 站内搜索（基线版本，完整验收项见 docs/08 P11 与任务 T-10）。
- * 前端职责：防抖、丢弃过期响应、失败重试不清空输入。
- * 权限过滤由服务端完成：私密内容与匿名帖的真实作者名都不参与检索。
- */
+/** 搜索会话绑定关键词和范围；新首页完成前禁止使用旧游标追加。 */
 const SCOPES = [
   { value: 'post', label: '内容' },
   { value: 'topic', label: '话题' },
@@ -29,18 +25,22 @@ Page({
 
   onLoad(options) {
     this.loadSuggestions();
-    if (options.keyword) {
-      this.setData({ keyword: options.keyword }, () => this.runSearch());
-    }
+    if (options.keyword) this.setData({ keyword: options.keyword }, () => this.runSearch());
+  },
+
+  clearSearchTimer() {
+    if (this.debounceTimer) clearTimeout(this.debounceTimer);
+    this.debounceTimer = null;
   },
 
   onUnload() {
-    if (this.debounceTimer) clearTimeout(this.debounceTimer);
+    this.clearSearchTimer();
+    this.searchRequestId = (this.searchRequestId || 0) + 1;
   },
 
   onReachBottom() {
-    if (!this.data.hasMore || this.data.loadingMore) return;
-    this.runSearch({ append: true });
+    if (this.data.loading || this.debounceTimer || !this.data.hasMore || this.data.loadingMore) return;
+    return this.runSearch({ append: true });
   },
 
   async loadSuggestions() {
@@ -48,64 +48,68 @@ Page({
       const data = await fetchSuggestions();
       this.setData({ suggestions: data.items || [] });
     } catch (err) {
-      // 推荐词失败不影响搜索
+      // 推荐词失败不影响搜索。
     }
+  },
+
+  resetQuery(patch = {}) {
+    this.clearSearchTimer();
+    this.searchRequestId = (this.searchRequestId || 0) + 1;
+    this.searchQueryKey = null;
+    this.setData({
+      ...patch, results: [], nextCursor: null, hasMore: false, loadingMore: false,
+      searched: false, loading: false, stale: false, errorText: '',
+    });
   },
 
   onInput(e) {
     const keyword = e.detail.value;
-    this.searchRequestId = (this.searchRequestId || 0) + 1;
-    this.setData({ keyword });
-    if (this.debounceTimer) clearTimeout(this.debounceTimer);
-    if (!keyword.trim()) {
-      // 清空恢复推荐词，并重置分页游标
-      this.setData({ results: [], nextCursor: null, hasMore: false, searched: false, loading: false, stale: false, errorText: '' });
-      return;
-    }
-    this.setData({ loading: false, stale: false, errorText: '' });
-    this.debounceTimer = setTimeout(() => this.runSearch(), 300);
+    this.resetQuery({ keyword });
+    if (!keyword.trim()) return;
+    this.debounceTimer = setTimeout(() => {
+      this.debounceTimer = null;
+      this.runSearch();
+    }, 300);
   },
 
   onSubmit() {
-    this.runSearch();
+    this.clearSearchTimer();
+    return this.runSearch();
   },
 
   onScopeTap(e) {
     const { value } = e.currentTarget.dataset;
     if (value === this.data.scope) return;
-    this.searchRequestId = (this.searchRequestId || 0) + 1;
-    this.setData({ scope: value, results: [], nextCursor: null, hasMore: false, loading: false, stale: false, errorText: '' }, () => {
-      if (this.data.keyword.trim()) this.runSearch();
-    });
+    this.resetQuery({ scope: value });
+    if (this.data.keyword.trim()) return this.runSearch();
   },
 
   onSuggestionTap(e) {
-    const { word } = e.currentTarget.dataset;
-    this.setData({ keyword: word }, () => this.runSearch());
+    this.resetQuery({ keyword: e.currentTarget.dataset.word });
+    return this.runSearch();
   },
 
   async runSearch({ append = false } = {}) {
     const keyword = this.data.keyword.trim();
     if (!keyword) return;
-    if (append && (this.data.loadingMore || !this.data.hasMore)) return;
+    const { scope } = this.data;
+    const queryKey = JSON.stringify([scope, keyword]);
+    if (append && (this.data.loading || this.debounceTimer || this.data.loadingMore
+      || !this.data.hasMore || this.searchQueryKey !== queryKey)) return;
+    const cursor = append ? this.data.nextCursor : '';
     const requestId = (this.searchRequestId || 0) + 1;
     this.searchRequestId = requestId;
-    const { scope } = this.data;
-    this.setData(append ? { loadingMore: true } : { loading: true, stale: false, errorText: '' });
+    if (append) {
+      this.setData({ loadingMore: true });
+    } else {
+      this.clearSearchTimer();
+      this.searchQueryKey = queryKey;
+      this.setData({ loading: true, loadingMore: false, nextCursor: null, hasMore: false, stale: false, errorText: '' });
+    }
     try {
-      const data = await search({ q: keyword, scope, cursor: append ? this.data.nextCursor : '' });
-      if (requestId !== this.searchRequestId) return;
-      // 慢响应不覆盖新查询
-      if (data.stale) {
-        this.setData({
-          loading: false,
-          loadingMore: false,
-          searched: true,
-          stale: this.data.results.length > 0,
-          errorText: '这次搜索结果已过期，请重试',
-        });
-        return;
-      }
+      const data = await search({ q: keyword, scope, cursor });
+      if (requestId !== this.searchRequestId || this.searchQueryKey !== queryKey) return;
+      if (data.stale) throw new Error('这次搜索结果已过期，请重试');
       this.setData({
         results: append ? this.data.results.concat(data.items || []) : data.items || [],
         nextCursor: data.nextCursor || null,
@@ -119,18 +123,13 @@ Page({
     } catch (err) {
       if (requestId !== this.searchRequestId) return;
       if (append) {
-        // 追加失败不破坏已有列表
         this.setData({ loadingMore: false });
         wx.showToast({ title: '加载更多失败', icon: 'none' });
         return;
       }
-      // 失败重试不清空输入
       this.setData({
-        loading: false,
-        loadingMore: false,
-        searched: true,
-        stale: this.data.results.length > 0,
-        errorText: err.message || '查询失败',
+        loading: false, loadingMore: false, searched: true,
+        stale: this.data.results.length > 0, errorText: err.message || '查询失败',
       });
     }
   },

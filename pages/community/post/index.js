@@ -20,6 +20,18 @@ const app = getApp();
 
 const FONT_SIZES = [30, 34, 38]; // rpx：对应 15 / 17 / 19 px
 
+/** 分页回复可能重复携带父级：按 ID 合并，保留已经加载的回复。 */
+function mergeCommentPages(previous, incoming) {
+  const byId = new Map(previous.map((item) => [item.id, item]));
+  incoming.forEach((item) => {
+    const old = byId.get(item.id);
+    const replies = new Map(((old && old.replies) || []).map((reply) => [reply.id, reply]));
+    (item.replies || []).forEach((reply) => replies.set(reply.id, reply));
+    byId.set(item.id, { ...item, replies: [...replies.values()] });
+  });
+  return [...byId.values()];
+}
+
 Page({
   data: {
     id: '',
@@ -29,6 +41,9 @@ Page({
     commentsLoading: false,
     commentsError: '',
     commentsStale: false,
+    commentsCursor: null,
+    commentsHasMore: false,
+    commentsLoadingMore: false,
     commentSubmitting: false,
     commentResetKey: 0,
     commentFingerprint: '',
@@ -79,15 +94,41 @@ Page({
     }
   },
 
-  async loadComments() {
-    this.setData({ commentsLoading: true, commentsError: '' });
+  onReachBottom() {
+    if (this.data.commentsHasMore) this.loadComments({ append: true });
+  },
+
+  markCommentSnapshots(items) {
+    this.commentEpochs = this.commentEpochs || {};
+    items.forEach((item) => {
+      this.commentEpochs[item.id] = (this.commentEpochs[item.id] || 0) + 1;
+      this.markCommentSnapshots(item.replies || []);
+    });
+  },
+
+  async loadComments({ append = false } = {}) {
+    if (append && (this.data.commentsLoading || this.data.commentsLoadingMore || !this.data.commentsHasMore)) return;
+    const requestId = (this.commentsRequestId || 0) + 1;
+    this.commentsRequestId = requestId;
+    const cursor = append ? this.data.commentsCursor : '';
+    this.setData(append ? { commentsLoadingMore: true } : {
+      commentsLoading: true, commentsLoadingMore: false, commentsError: '', commentsHasMore: false,
+    });
     try {
-      const data = await fetchComments(this.data.id);
-      this.setData({ comments: data.items || [], commentsLoading: false, commentsStale: false });
+      const data = await fetchComments(this.data.id, cursor);
+      if (requestId !== this.commentsRequestId) return;
+      const items = data.items || [];
+      this.markCommentSnapshots(items);
+      this.setData({
+        comments: append ? mergeCommentPages(this.data.comments, items) : items,
+        commentsLoading: false, commentsLoadingMore: false, commentsStale: false,
+        commentsCursor: data.nextCursor || null, commentsHasMore: !!data.nextCursor, commentsError: '',
+      });
     } catch (err) {
+      if (requestId !== this.commentsRequestId) return;
       // 评论加载失败不影响正文阅读，也不丢弃已经展示的回应。
       this.setData({
-        commentsLoading: false,
+        commentsLoading: false, commentsLoadingMore: false,
         commentsStale: this.data.comments.length > 0,
         commentsError: err.message || '回应暂时没有更新',
       });
@@ -195,18 +236,42 @@ Page({
       commentsError: '',
     });
 
-    if (!retrying) this.insertPendingComment({ body, replyToId });
+    if (!retrying) this.pendingCommentId = this.insertPendingComment({ body, replyToId });
+    const localId = this.pendingCommentId;
 
-    submitComment(this.data.id, { body, replyToId, identityMode: this.data.commentIdentityMode }, idempotencyKey)
+    return submitComment(this.data.id, { body, replyToId, identityMode: this.data.commentIdentityMode }, idempotencyKey)
       .then((result) => {
-        if (!result || !['pending', 'published', 'rejected'].includes(result.state)) throw new Error('回应状态暂时无法确认');
+        if (!result || !['pending', 'published', 'rejected', 'deleted'].includes(result.state)) throw new Error('回应状态暂时无法确认');
+        // 新后端返回审核后的 DTO；旧响应缺少当前版本时只重新读取，不开放占位删除。
+        const saved = result.comment;
+        if (saved && saved.id === result.id && Number.isInteger(saved.version) && saved.version > 0) {
+          this.commentsRequestId = (this.commentsRequestId || 0) + 1;
+          this.setData({ commentsLoading: false, commentsLoadingMore: false });
+          this.removeCommentLocally(localId);
+          if (result.state === 'pending' || result.state === 'published') {
+            this.markCommentSnapshots([saved]);
+            if (replyToId) {
+              const parent = this.findCommentPath(replyToId);
+              if (parent) {
+                this.setData({ comments: mergeCommentPages(this.data.comments, [{ ...parent.item, replies: [saved] }]) });
+              } else {
+                this.loadComments();
+              }
+            } else {
+              this.setData({ comments: mergeCommentPages(this.data.comments, [saved]) });
+            }
+          }
+        } else {
+          this.loadComments();
+        }
+        this.pendingCommentId = '';
         this.setData({
           commentSubmitting: false,
           commentResetKey: this.data.commentResetKey + 1,
           commentFingerprint: '',
           commentIdempotencyKey: '',
         });
-        const title = { published: '回应已发布', rejected: '回应未通过安全检查', pending: '已收到，等待审核' }[result.state];
+        const title = { published: '回应已发布', rejected: '回应未通过安全检查', pending: '已收到，等待审核', deleted: '这条回应已删除' }[result.state];
         wx.showToast({ title, icon: 'none' });
         app.eventBus.emit('post-changed', { id: this.data.id, action: 'comment' });
       })
@@ -237,18 +302,19 @@ Page({
       status: 'pending',
       version: 1,
       counters: { reactions: 0 },
-      viewer: { reacted: false, canDelete: true },
+      viewer: { reacted: false, canDelete: false },
       replies: [],
     };
     if (!replyToId) {
       this.setData({ comments: this.data.comments.concat(comment) });
-      return;
+      return comment.id;
     }
     const comments = this.data.comments.map((item) => {
       if (item.id !== replyToId) return item;
       return { ...item, replies: (item.replies || []).concat(comment) };
     });
     this.setData({ comments });
+    return comment.id;
   },
 
   // ---------- 回应共鸣与删除 ----------
@@ -270,7 +336,7 @@ Page({
   async onCommentReact(e) {
     const { id } = e.detail;
     const located = this.findCommentPath(id);
-    if (!located || located.item.deleted || located.item.status === 'pending') return;
+    if (!located || located.item.deleted || located.item.status !== 'published') return;
 
     this.commentReactBusy = this.commentReactBusy || {};
     if (this.commentReactBusy[id]) return;
@@ -278,17 +344,27 @@ Page({
 
     const next = !located.item.viewer.reacted;
     const prevCount = located.item.counters.reactions;
+    const epoch = (this.commentEpochs && this.commentEpochs[id]) || 0;
     this.setData({
       [`${located.path}.viewer.reacted`]: next,
       [`${located.path}.counters.reactions`]: Math.max(0, prevCount + (next ? 1 : -1)),
     });
     try {
-      await toggleCommentReaction(this.data.id, id, next);
+      const result = await toggleCommentReaction(this.data.id, id, next);
+      const current = this.findCommentPath(id);
+      if (current && !current.item.deleted && ((this.commentEpochs && this.commentEpochs[id]) || 0) === epoch
+        && result && Number.isFinite(result.count)) {
+        this.setData({ [`${current.path}.counters.reactions`]: result.count });
+      }
     } catch (err) {
-      this.setData({
-        [`${located.path}.viewer.reacted`]: !next,
-        [`${located.path}.counters.reactions`]: prevCount,
-      });
+      // await 期间可能删除前项、目标或刷新列表，旧数组下标不能作为身份。
+      const current = this.findCommentPath(id);
+      if (current && !current.item.deleted && ((this.commentEpochs && this.commentEpochs[id]) || 0) === epoch) {
+        this.setData({
+          [`${current.path}.viewer.reacted`]: !next,
+          [`${current.path}.counters.reactions`]: prevCount,
+        });
+      }
       wx.showToast({ title: err.message || '操作未完成', icon: 'none' });
     } finally {
       this.commentReactBusy[id] = false;
@@ -298,7 +374,12 @@ Page({
   onCommentDelete(e) {
     const { id } = e.detail;
     const located = this.findCommentPath(id);
-    if (!located || !located.item.viewer.canDelete) return;
+    if (!located) return;
+    if (String(id).indexOf('local-comment-') === 0) {
+      wx.showToast({ title: '提交结果尚未确认，请先重试或刷新', icon: 'none' });
+      return;
+    }
+    if (!located.item.viewer.canDelete) return;
     const isReply = !!located.parent;
 
     wx.showModal({
@@ -310,13 +391,10 @@ Page({
       confirmColor: '#A85648',
       success: async (res) => {
         if (!res.confirm) return;
-        // 本地占位（服务端尚未返回真实 id）直接移除
-        if (String(id).indexOf('local-comment-') === 0) {
-          this.removeCommentLocally(id);
-          return;
-        }
         try {
           await deleteComment(this.data.id, id, located.item.version);
+          this.commentsRequestId = (this.commentsRequestId || 0) + 1;
+          this.setData({ commentsLoading: false, commentsLoadingMore: false });
           if (located.item.status !== 'pending' && this.data.post) {
             const prev = (this.data.post.counters && this.data.post.counters.comments) || 0;
             this.setData({ 'post.counters.comments': Math.max(0, prev - 1) });
