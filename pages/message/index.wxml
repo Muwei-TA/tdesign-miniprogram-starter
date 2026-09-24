@@ -1,19 +1,21 @@
 <view class="hg-page hg-message">
-  <hg-nav title="消息">
-    <view slot="right" class="hg-message__readall" bindtap="onReadAll" aria-role="button">全部已读</view>
-  </hg-nav>
+  <hg-nav title="消息" />
 
-  <view class="hg-message__segmented">
-    <view
-      wx:for="{{ tabs }}"
-      wx:key="value"
-      class="hg-message__seg {{ tab === item.value ? 'hg-message__seg--on' : '' }}"
-      data-value="{{ item.value }}"
-      bindtap="onTabTap"
-      aria-role="button"
-    >
-      {{ item.label }}
+  <!-- 全部已读放在导航栏下方：导航右侧被小程序胶囊按钮占据 -->
+  <view class="hg-message__toolbar">
+    <view class="hg-message__segmented">
+      <view
+        wx:for="{{ tabs }}"
+        wx:key="value"
+        class="hg-message__seg {{ tab === item.value ? 'hg-message__seg--on' : '' }}"
+        data-value="{{ item.value }}"
+        bindtap="onTabTap"
+        aria-role="button"
+      >
+        {{ item.label }}
+      </view>
     </view>
+    <view class="hg-message__readall" bindtap="onReadAll" aria-role="button">全部已读</view>
   </view>
 
   <view wx:if="{{ stale }}" class="hg-message__stale">

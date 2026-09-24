@@ -41,6 +41,19 @@ Component({
       this.setData({ replyToId: id, replyLabel: label || '这条回应' });
     },
 
+    /** 回应共鸣与删除只抛事件，请求与状态更新由页面完成 */
+    onReact(e) {
+      const { id } = e.currentTarget.dataset;
+      if (!id) return;
+      this.triggerEvent('react', { id });
+    },
+
+    onDelete(e) {
+      const { id } = e.currentTarget.dataset;
+      if (!id) return;
+      this.triggerEvent('delete', { id });
+    },
+
     onCancelReply() {
       this.setData({ replyToId: '', replyLabel: '' });
     },

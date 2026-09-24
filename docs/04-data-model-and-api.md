@@ -11,8 +11,8 @@
 | `Post` | `id`、`clubId`、`ownerId`、`kind`、`title`、`body`、`visibility`、`identityMode`、`status`、`version`、`topicId`、`assetIds`、`commentsEnabled`、`createdAt` | `ownerId` 由会话决定；匿名帖响应不带 `ownerId` |
 | `AnonymousIdentity` | `threadId`、`userId`、`alias` | 受限存储；线程内稳定，跨帖不可串联 |
 | `Asset` | `id`、`ownerId`、`storageKey`、`mediaType`、`size`、`duration`、`status`、`postVersion` | 私有桶；只能绑定本人已校验附件 |
-| `Comment` | `id`、`postId`、`ownerId`、`replyToId`、`body`、`identityMode`、`status`、`version` | 继承帖子访问边界；`replyTo` 必须同帖 |
-| `Reaction` / `Bookmark` | `userId`、`postId`、`type` | 唯一键防重；收藏不赋予永久读取权 |
+| `Comment` | `id`、`postId`、`ownerId`、`replyToId`、`body`、`identityMode`、`status`、`version`、`reactionCount` | 继承帖子访问边界；`replyTo` 必须同帖 |
+| `Reaction` / `Bookmark` | `userId`、`postId`、`commentId?`、`type` | 唯一键防重；收藏不赋予永久读取权；`commentId` 存在时为回应级共鸣 |
 | `Topic` | `id`、`clubId`、`title`、`description`、`category`、`status` | 首版均为社内；`pending/active/archived` |
 | `Collection` / `Entry` | `id`、`title`、`visibility`、`editorId`；`postId`、`consentId`、`order` | 不做正文快照；访问取交集 |
 | `Consent` | `postId`、`version`、`purpose`、`scope`、`grantedAt`、`revokedAt` | 与用途/版本绑定 |
@@ -93,6 +93,28 @@ notifyType:    comment | reply | reaction_digest | system_review | system_report
 - 长文 `paragraphs` 由服务端按空行切分，前端只渲染，不做富文本解析（首版无 HTML）。
 - 视频 `ready = false` 时前端显示"正在处理，完成后才会展示"，不给播放按钮。
 
+### CommentDTO（评论区用）
+
+```jsonc
+{
+  "id": "c1",
+  "author": { "userId": "u_a", "displayName": "南枝", "isAnonymous": false, "alias": null, "isAuthor": false },
+  "body": "回应正文",
+  "createdAtText": "刚刚",
+  "status": "published",
+  "version": 1,
+  "counters": { "reactions": 2 },
+  "viewer": { "reacted": false, "canDelete": false },
+  "replies": []
+}
+```
+
+**约束**
+
+1. 匿名回应同样只返回 `alias`，`author.userId` 为 `null`。
+2. `viewer.canDelete` 由服务端按文档归属计算，前端不得用昵称/别名推断；仅评论者本人为 `true`（`pending` 与 `published` 都可删）。
+3. 已删除的一级回应若有可见回复，返回墓碑（`deleted: true`、`body` 为固定文案「这条回应已被删除。」、无作者信息）；已删除的定向回复不再返回。
+
 ## 4.4 接口清单
 
 | # | 接口 | 方法 | 入参要点 | 返回/规则 |
@@ -111,6 +133,8 @@ notifyType:    comment | reply | reaction_digest | system_review | system_report
 | B7 | `/posts/{id}/bookmark` | PUT/DELETE | — | 幂等 |
 | B8 | `/posts/{id}/comments` | GET | `cursor` | 一级评论 + `replies` |
 | B9 | `/posts/{id}/comments` | POST | `body`、`replyToId`、`identityMode`、`Idempotency-Key` | `pending`，审核通过后展示 |
+| B9a | `/posts/{id}/comments/{commentId}/reaction` | PUT/DELETE | — | 回应共鸣：幂等开关；仅 `published` 回应 |
+| B9b | `/posts/{id}/comments/{commentId}` | DELETE | `expectedVersion` | 评论者删除自己的回应；软删除，详见 CommentDTO 约束 3 |
 | C1 | `/topics` | GET | `category`、`cursor` | 话题卡；访客不返回社内计数与摘要 |
 | C2 | `/topics/{id}` | GET | — | 详情 + 是否关注 |
 | C3 | `/topics` | POST | `title`、`description`、`category` | `pending`；同名引导参与 |

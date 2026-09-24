@@ -198,10 +198,10 @@ Page({
     this.scheduleAutoSave();
   },
 
-  /** 输入停止 1.5s 自动存草稿 */
+  /** 输入停止 5s 自动存草稿 */
   scheduleAutoSave() {
     if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
-    this.autoSaveTimer = setTimeout(() => this.persistDraft({ silent: true }), 1500);
+    this.autoSaveTimer = setTimeout(() => this.persistDraft({ silent: true }), 5000);
   },
 
   onChooseImage() {

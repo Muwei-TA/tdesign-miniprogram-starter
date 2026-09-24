@@ -21,6 +21,9 @@ Page({
     memberStatusText: '',
     visibleCount: 0,
     list: [],
+    nextCursor: null,
+    hasMore: false,
+    loadingMore: false,
     loading: true,
     stale: false,
     errorText: '',
@@ -43,27 +46,46 @@ Page({
     this.loadProfile().then(() => wx.stopPullDownRefresh());
   },
 
-  async loadProfile() {
+  onReachBottom() {
+    if (!this.data.hasMore || this.data.loadingMore) return;
+    this.loadProfile({ append: true });
+  },
+
+  async loadProfile({ append = false } = {}) {
     if (!this.data.userId) return;
-    this.setData({ loading: true, errorText: '', errorKind: '' });
+    if (append && (this.data.loadingMore || !this.data.hasMore)) return;
+    this.setData(append ? { loadingMore: true } : { loading: true, errorText: '', errorKind: '' });
     try {
-      const data = (await fetchProfile(this.data.userId)) || {};
+      const data = (await fetchProfile(this.data.userId, append ? this.data.nextCursor : '')) || {};
       if (!data.user) {
         const err = new Error('当前主页不可访问');
         err.kind = 'not_accessible';
         throw err;
       }
-      this.setData({
-        user: data.user || null,
-        memberStatusText: data.memberStatusText || '',
-        visibleCount: Number(data.visibleCount) || 0,
-        list: data.items || [],
+      const patch = {
+        list: append ? this.data.list.concat(data.items || []) : data.items || [],
+        nextCursor: data.nextCursor || null,
+        hasMore: !!data.nextCursor,
         loading: false,
+        loadingMore: false,
         stale: false,
         errorText: '',
         errorKind: '',
-      });
+      };
+      // 头部信息与可见计数只在首屏读取时更新
+      if (!append) {
+        patch.user = data.user || null;
+        patch.memberStatusText = data.memberStatusText || '';
+        patch.visibleCount = Number(data.visibleCount) || 0;
+      }
+      this.setData(patch);
     } catch (err) {
+      if (append) {
+        // 追加失败不破坏已有列表
+        this.setData({ loadingMore: false });
+        wx.showToast({ title: '加载更多失败', icon: 'none' });
+        return;
+      }
       this.setData({
         loading: false,
         stale: !!this.data.user || this.data.list.length > 0,

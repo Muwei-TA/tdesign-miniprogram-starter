@@ -345,8 +345,9 @@ async function uploadOne(items, index, options) {
   items[index] = { ...item, status: IMAGE_STATUS.PREPARING, error: '' };
   emitItems(items, index, onItemChange);
 
+  let encoded = null;
   if (!item.assetId) {
-    const encoded = await readValidatedImage(item.filePath || item.localPath, item.mimeType);
+    encoded = await readValidatedImage(item.filePath || item.localPath, item.mimeType);
     item = {
       ...items[index],
       size: encoded.size,
@@ -370,7 +371,8 @@ async function uploadOne(items, index, options) {
   }
 
   if (![IMAGE_STATUS.UPLOADED, IMAGE_STATUS.VERIFYING].includes(item.status)) {
-    const encoded = await readValidatedImage(item.filePath || item.localPath, item.mimeType);
+    // 同一 pass 内复用已读取并校验的字节，避免重复读文件与二次 base64 校验
+    if (!encoded) encoded = await readValidatedImage(item.filePath || item.localPath, item.mimeType);
     item = { ...items[index], status: IMAGE_STATUS.UPLOADING, error: '' };
     items[index] = item;
     emitItems(items, index, onItemChange);

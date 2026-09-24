@@ -15,6 +15,9 @@ Page({
     tabs: TABS,
     tab: 'reply',
     list: [],
+    nextCursor: null,
+    hasMore: false,
+    loadingMore: false,
     loading: true,
     stale: false,
     errorText: '',
@@ -39,19 +42,40 @@ Page({
     this.loadList().then(() => wx.stopPullDownRefresh());
   },
 
-  async loadList() {
+  onReachBottom() {
+    if (!this.data.hasMore || this.data.loadingMore) return;
+    this.loadList({ append: true });
+  },
+
+  async loadList({ append = false } = {}) {
+    if (append && (this.data.loadingMore || !this.data.hasMore)) return;
     const requestId = (this.listRequestId || 0) + 1;
     this.listRequestId = requestId;
     const { tab } = this.data;
-    this.setData({ loading: true, stale: false, errorText: '' });
+    this.setData(append ? { loadingMore: true } : { loading: true, stale: false, errorText: '' });
     try {
-      const data = await fetchNotifications({ tab });
-      if (requestId !== this.listRequestId) return;
-      this.setData({ list: data.items || [], loading: false, stale: false, errorText: '' });
-    } catch (err) {
+      const data = await fetchNotifications({ tab, cursor: append ? this.data.nextCursor : '' });
       if (requestId !== this.listRequestId) return;
       this.setData({
+        list: append ? this.data.list.concat(data.items || []) : data.items || [],
+        nextCursor: data.nextCursor || null,
+        hasMore: !!data.nextCursor,
         loading: false,
+        loadingMore: false,
+        stale: false,
+        errorText: '',
+      });
+    } catch (err) {
+      if (requestId !== this.listRequestId) return;
+      if (append) {
+        // 追加失败不破坏已有列表
+        this.setData({ loadingMore: false });
+        wx.showToast({ title: '加载更多失败', icon: 'none' });
+        return;
+      }
+      this.setData({
+        loading: false,
+        loadingMore: false,
         stale: this.data.list.length > 0,
         errorText: err.message || '加载失败',
       });
@@ -61,7 +85,9 @@ Page({
   onTabTap(e) {
     const { value } = e.currentTarget.dataset;
     if (value === this.data.tab) return;
-    this.setData({ tab: value, list: [], stale: false, errorText: '' }, () => this.loadList());
+    this.setData({ tab: value, list: [], nextCursor: null, hasMore: false, stale: false, errorText: '' }, () =>
+      this.loadList(),
+    );
   },
 
   onItemTap(e) {

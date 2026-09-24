@@ -2,19 +2,28 @@
 @import '/styles/mixins.less';
 
 .hg-message {
-  &__readall {
-    padding: 0 @hg-sp-2;
-    min-height: 76rpx;
+  // 分段控件与「全部已读」同一行：胶囊按钮占据导航右侧，操作入口下移
+  &__toolbar {
     display: flex;
     align-items: center;
+    gap: @hg-sp-2;
+    margin: @hg-sp-2 @hg-page-x @hg-sp-3;
+  }
+
+  &__readall {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    min-height: @hg-touch-min;
+    padding: 0 @hg-sp-1;
     font-size: @hg-fs-xs;
     color: @hg-green;
   }
 
   &__segmented {
+    flex: 1;
     display: flex;
     gap: @hg-sp-1;
-    margin: @hg-sp-2 @hg-page-x @hg-sp-3;
     padding: 8rpx;
     background: @hg-surface-sunk;
     border-radius: 18rpx;

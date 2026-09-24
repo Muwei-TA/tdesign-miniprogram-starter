@@ -78,12 +78,32 @@
     .hg-prewrap();
   }
 
-  &__reply-action {
-    display: inline-flex;
-    min-height: 52rpx;
+  &__body--deleted {
+    color: @hg-ink-4;
+  }
+
+  &__actions {
+    display: flex;
     align-items: center;
-    color: @hg-green;
+    gap: @hg-sp-3;
+    margin-top: @hg-sp-1;
+  }
+
+  &__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6rpx;
+    min-height: 52rpx;
+    color: @hg-ink-3;
     font-size: @hg-fs-2xs;
+
+    &--on {
+      color: @hg-clay;
+    }
+
+    &--danger {
+      color: @hg-ink-4;
+    }
   }
 
   &__reply {

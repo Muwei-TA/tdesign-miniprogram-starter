@@ -17,6 +17,9 @@ Page({
     filters: FEED_FILTERS,
     filter: 'all',
     list: [],
+    nextCursor: null,
+    hasMore: false,
+    loadingMore: false,
     weekPrompt: null,
     club: null,
     loading: true,
@@ -68,6 +71,11 @@ Page({
     this.loadFeed().then(() => wx.stopPullDownRefresh());
   },
 
+  onReachBottom() {
+    if (!this.data.hasMore || this.data.loadingMore) return;
+    this.loadFeed({ append: true });
+  },
+
   syncSession(session) {
     if (!session) return;
     this.setData({
@@ -80,23 +88,42 @@ Page({
     this.setData({ unread: count });
   },
 
-  async loadFeed({ silent = false } = {}) {
-    if (!silent) this.setData({ loading: true, errorText: '' });
+  async loadFeed({ silent = false, append = false } = {}) {
+    if (append && (this.data.loadingMore || !this.data.hasMore)) return;
+    const requestId = (this.feedRequestId || 0) + 1;
+    this.feedRequestId = requestId;
+    const { filter } = this.data;
+    if (!silent || append) {
+      this.setData(append ? { loadingMore: true } : { loading: true, errorText: '' });
+    }
     try {
-      const data = await fetchFeed({ filter: this.data.filter });
+      const data = await fetchFeed({ filter, cursor: append ? this.data.nextCursor : '' });
+      // 快速切换筛选时，旧响应不得覆盖新筛选
+      if (requestId !== this.feedRequestId) return;
       this.setData({
-        list: data.items || [],
+        list: append ? this.data.list.concat(data.items || []) : data.items || [],
         weekPrompt: data.weekPrompt || null,
         club: data.club || null,
+        nextCursor: data.nextCursor || null,
+        hasMore: !!data.nextCursor,
         loading: false,
+        loadingMore: false,
         stale: false,
         errorText: '',
       });
       this.setUnread(app.globalData.unreadCount || 0);
     } catch (err) {
+      if (requestId !== this.feedRequestId) return;
+      if (append) {
+        // 追加失败不破坏已有列表
+        this.setData({ loadingMore: false });
+        wx.showToast({ title: '加载更多失败', icon: 'none' });
+        return;
+      }
       // 失败时保留已加载数据，只提示未更新（docs/08 P01）
       this.setData({
         loading: false,
+        loadingMore: false,
         stale: this.data.list.length > 0,
         errorText: err.message || '加载失败',
       });
@@ -107,7 +134,7 @@ Page({
     const { value } = e.currentTarget.dataset;
     if (value === this.data.filter) return;
     // 切换筛选重置游标
-    this.setData({ filter: value, list: [] }, () => this.loadFeed());
+    this.setData({ filter: value, list: [], nextCursor: null, hasMore: false }, () => this.loadFeed());
   },
 
   onRetry() {

@@ -60,6 +60,24 @@ const ROUTES = [
     action: 'posts/comments/create',
   },
   {
+    method: 'PUT',
+    pattern: '/posts/:id/comments/:commentId/reaction',
+    action: 'posts/comments/reaction',
+    map: ({ params }) => ({ id: params.id, commentId: params.commentId, next: true }),
+  },
+  {
+    method: 'DELETE',
+    pattern: '/posts/:id/comments/:commentId/reaction',
+    action: 'posts/comments/reaction',
+    map: ({ params }) => ({ id: params.id, commentId: params.commentId, next: false }),
+  },
+  {
+    method: 'DELETE',
+    pattern: '/posts/:id/comments/:commentId',
+    action: 'posts/comments/delete',
+    map: ({ params, payload }) => ({ id: params.id, commentId: params.commentId, expectedVersion: payload.expectedVersion }),
+  },
+  {
     method: 'GET',
     pattern: '/me/contents',
     action: ({ payload }) => (payload.tab === 'topics' ? 'me/topics' : 'me/contents'),

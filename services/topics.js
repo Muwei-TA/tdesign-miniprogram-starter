@@ -15,8 +15,8 @@ export function fetchTopics({ category = 'all', cursor = '' } = {}) {
   return request(withQuery(endpoints.topics, { category: category === 'all' ? '' : category, cursor }));
 }
 
-export function fetchTopicDetail(id) {
-  return request(withPath(endpoints.topicDetail, { id }));
+export function fetchTopicDetail(id, cursor = '') {
+  return request(withQuery(withPath(endpoints.topicDetail, { id }), { cursor }));
 }
 
 /** 社员提交话题 → pending；同名话题由服务端引导参与，不创建重复项 */

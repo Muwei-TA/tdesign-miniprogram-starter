@@ -52,7 +52,7 @@
 
 - P03 话题详情、P07 文集目录、P10 我的内容列表、P12 加入文学社、P14 社团名片、
   P15 管理台、P16 社区约定、P18 社员主页
-- 补齐组件：`identity-label`、`media-preview`、`request-state`、`comment-list`、`moderation-item`
+- 补齐组件：`identity-label`、`request-state`、`comment-list`、`moderation-item`
 - 上传链路（T-15）、评论提交闭环（T-06）、真实网络联调（T-17）
 
 **已清理的模板遗留**：`pages/chat`、`pages/login`、`pages/loginCode`、`pages/dataCenter`、
