@@ -48,14 +48,19 @@ Page({
   },
 
   async loadList({ append = false } = {}) {
-    if (append && (this.data.loadingMore || !this.data.hasMore)) return;
+    if (append && (this.data.loading || this.messageFirstPageLoading || this.data.loadingMore || !this.data.hasMore)) return;
     const requestId = (this.listRequestId || 0) + 1;
     this.listRequestId = requestId;
     const { tab } = this.data;
-    this.setData(append ? { loadingMore: true } : { loading: true, stale: false, errorText: '' });
+    if (append) this.setData({ loadingMore: true });
+    else {
+      this.messageFirstPageLoading = true;
+      this.setData({ loading: true, loadingMore: false, stale: false, errorText: '' });
+    }
     try {
       const data = await fetchNotifications({ tab, cursor: append ? this.data.nextCursor : '' });
       if (requestId !== this.listRequestId) return;
+      if (!append) this.messageFirstPageLoading = false;
       this.setData({
         list: append ? this.data.list.concat(data.items || []) : data.items || [],
         nextCursor: data.nextCursor || null,
@@ -67,6 +72,7 @@ Page({
       });
     } catch (err) {
       if (requestId !== this.listRequestId) return;
+      if (!append) this.messageFirstPageLoading = false;
       if (append) {
         // 追加失败不破坏已有列表
         this.setData({ loadingMore: false });

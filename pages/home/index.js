@@ -89,17 +89,21 @@ Page({
   },
 
   async loadFeed({ silent = false, append = false } = {}) {
-    if (append && (this.data.loadingMore || !this.data.hasMore)) return;
+    if (append && (this.data.loading || this.feedFirstPageLoading || this.data.loadingMore || !this.data.hasMore)) return;
     const requestId = (this.feedRequestId || 0) + 1;
     this.feedRequestId = requestId;
     const { filter } = this.data;
-    if (!silent || append) {
-      this.setData(append ? { loadingMore: true } : { loading: true, errorText: '' });
+    if (append) {
+      this.setData({ loadingMore: true });
+    } else {
+      this.feedFirstPageLoading = true;
+      this.setData(silent ? { loadingMore: false } : { loading: true, loadingMore: false, errorText: '' });
     }
     try {
       const data = await fetchFeed({ filter, cursor: append ? this.data.nextCursor : '' });
       // 快速切换筛选时，旧响应不得覆盖新筛选
       if (requestId !== this.feedRequestId) return;
+      if (!append) this.feedFirstPageLoading = false;
       this.setData({
         list: append ? this.data.list.concat(data.items || []) : data.items || [],
         weekPrompt: data.weekPrompt || null,
@@ -114,6 +118,7 @@ Page({
       this.setUnread(app.globalData.unreadCount || 0);
     } catch (err) {
       if (requestId !== this.feedRequestId) return;
+      if (!append) this.feedFirstPageLoading = false;
       if (append) {
         // 追加失败不破坏已有列表
         this.setData({ loadingMore: false });

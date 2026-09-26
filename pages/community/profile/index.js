@@ -53,10 +53,18 @@ Page({
 
   async loadProfile({ append = false } = {}) {
     if (!this.data.userId) return;
-    if (append && (this.data.loadingMore || !this.data.hasMore)) return;
-    this.setData(append ? { loadingMore: true } : { loading: true, errorText: '', errorKind: '' });
+    if (append && (this.data.loading || this.profileFirstPageLoading || this.data.loadingMore || !this.data.hasMore)) return;
+    const requestId = (this.profileRequestId || 0) + 1;
+    this.profileRequestId = requestId;
+    if (append) this.setData({ loadingMore: true });
+    else {
+      this.profileFirstPageLoading = true;
+      this.setData({ loading: true, loadingMore: false, errorText: '', errorKind: '' });
+    }
     try {
       const data = (await fetchProfile(this.data.userId, append ? this.data.nextCursor : '')) || {};
+      if (requestId !== this.profileRequestId) return;
+      if (!append) this.profileFirstPageLoading = false;
       if (!data.user) {
         const err = new Error('当前主页不可访问');
         err.kind = 'not_accessible';
@@ -80,6 +88,8 @@ Page({
       }
       this.setData(patch);
     } catch (err) {
+      if (requestId !== this.profileRequestId) return;
+      if (!append) this.profileFirstPageLoading = false;
       if (append) {
         // 追加失败不破坏已有列表
         this.setData({ loadingMore: false });

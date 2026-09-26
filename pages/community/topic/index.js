@@ -62,10 +62,18 @@ Page({
 
   async loadDetail({ append = false } = {}) {
     if (!this.data.id) return;
-    if (append && (this.data.loadingMore || !this.data.hasMore)) return;
-    this.setData(append ? { loadingMore: true } : { loading: true, errorText: '', errorKind: '' });
+    if (append && (this.data.loading || this.topicFirstPageLoading || this.data.loadingMore || !this.data.hasMore)) return;
+    const requestId = (this.topicRequestId || 0) + 1;
+    this.topicRequestId = requestId;
+    if (append) this.setData({ loadingMore: true });
+    else {
+      this.topicFirstPageLoading = true;
+      this.setData({ loading: true, loadingMore: false, errorText: '', errorKind: '' });
+    }
     try {
       const data = (await fetchTopicDetail(this.data.id, append ? this.data.nextCursor : '')) || {};
+      if (requestId !== this.topicRequestId) return;
+      if (!append) this.topicFirstPageLoading = false;
       const topic = data.topic || null;
       if (!topic) {
         const err = new Error('当前话题不可访问');
@@ -89,6 +97,8 @@ Page({
       }
       this.setData(patch);
     } catch (err) {
+      if (requestId !== this.topicRequestId) return;
+      if (!append) this.topicFirstPageLoading = false;
       if (append) {
         // 追加失败不破坏已有列表
         this.setData({ loadingMore: false });

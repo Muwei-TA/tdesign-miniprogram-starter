@@ -63,6 +63,7 @@ Page({
     this.tabRequestId = (this.tabRequestId || 0) + 1;
     this.setData({ session, sessionReady: true, isGuest }, () => {
       if (isGuest) {
+        this.tabFirstPageLoading = false;
         this.setData({ loading: false, list: [], unavailable: [], drafts: [], topics: [], nextCursor: null, hasMore: false });
         return;
       }
@@ -72,14 +73,16 @@ Page({
 
   async loadTab({ silent = false, append = false } = {}) {
     if (!this.data.sessionReady || this.data.isGuest) return;
-    if (append && (this.data.loadingMore || !this.data.hasMore || this.data.tab === 'draft')) return;
+    if (append && (this.data.loading || this.tabFirstPageLoading || this.data.loadingMore || !this.data.hasMore || this.data.tab === 'draft')) return;
     const requestedTab = this.data.tab;
     const requestId = (this.tabRequestId || 0) + 1;
     this.tabRequestId = requestId;
     if (append) this.setData({ loadingMore: true });
-    else if (!silent) this.setData({ loading: true, errorText: '' });
+    else if (!silent) this.setData({ loading: true, loadingMore: false, errorText: '' });
+    else this.setData({ loadingMore: false });
 
     if (requestedTab === 'draft') {
+      this.tabFirstPageLoading = false;
       this.setData({
         loading: false,
         stale: false,
@@ -98,9 +101,11 @@ Page({
       return;
     }
 
+    if (!append) this.tabFirstPageLoading = true;
     try {
       const result = await fetchMyContents({ tab: requestedTab, cursor: append ? this.data.nextCursor : '' });
       if (requestId !== this.tabRequestId || requestedTab !== this.data.tab) return;
+      if (!append) this.tabFirstPageLoading = false;
       const items = result.items || [];
       const patch = {
         loading: false,
@@ -128,6 +133,7 @@ Page({
       this.setData(patch);
     } catch (err) {
       if (requestId !== this.tabRequestId || requestedTab !== this.data.tab) return;
+      if (!append) this.tabFirstPageLoading = false;
       if (append) {
         // 追加失败不破坏已有列表
         this.setData({ loadingMore: false });

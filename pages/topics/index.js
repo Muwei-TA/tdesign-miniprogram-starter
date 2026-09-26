@@ -43,15 +43,20 @@ Page({
   },
 
   async loadTopics({ append = false } = {}) {
-    if (append && (this.data.loadingMore || !this.data.hasMore)) return;
+    if (append && (this.data.loading || this.topicsFirstPageLoading || this.data.loadingMore || !this.data.hasMore)) return;
     const requestId = (this.listRequestId || 0) + 1;
     this.listRequestId = requestId;
     const { category } = this.data;
-    this.setData(append ? { loadingMore: true } : { loading: true, stale: false, errorText: '' });
+    if (append) this.setData({ loadingMore: true });
+    else {
+      this.topicsFirstPageLoading = true;
+      this.setData({ loading: true, loadingMore: false, stale: false, errorText: '' });
+    }
     try {
       const data = await fetchTopics({ category, cursor: append ? this.data.nextCursor : '' });
       // 快速切换分类时，旧响应不得覆盖当前分类
       if (requestId !== this.listRequestId) return;
+      if (!append) this.topicsFirstPageLoading = false;
       this.setData({
         list: append ? this.data.list.concat(data.items || []) : data.items || [],
         nextCursor: data.nextCursor || null,
@@ -63,6 +68,7 @@ Page({
       });
     } catch (err) {
       if (requestId !== this.listRequestId) return;
+      if (!append) this.topicsFirstPageLoading = false;
       if (append) {
         // 追加失败不破坏已有列表
         this.setData({ loadingMore: false });
