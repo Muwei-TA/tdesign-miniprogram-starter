@@ -2,6 +2,8 @@ import { fetchTopics, submitTopic, toggleFollow, TOPIC_CATEGORIES } from '~/serv
 import { getSession } from '~/services/session';
 import { navigateTo } from '~/utils/navigate';
 
+const app = getApp();
+
 Page({
   data: {
     categories: TOPIC_CATEGORIES,
@@ -38,15 +40,27 @@ Page({
     const safeAreaBottom = windowInfo.safeArea ? windowInfo.safeArea.bottom : editorWindowHeight;
     const editorBottomInset = Math.max(editorWindowHeight - safeAreaBottom, 0);
     this.setData({ editorTopInset, editorWindowHeight, editorBottomInset });
-    const session = getSession();
-    this.setData({ isMember: session.memberStatus === 'active' });
+    this.syncSession(getSession());
+    this.onSessionChanged = (session) => this.syncSession(session);
+    app.eventBus.on('session-changed', this.onSessionChanged);
     this.loadTopics();
   },
 
   onShow() {
+    // 会话服务缓存由启动、登录、退出和撤权流程维护；切回 Tab 时只同步缓存。
+    this.syncSession(getSession());
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ value: 'topics' });
     }
+  },
+
+  onUnload() {
+    app.eventBus.off('session-changed', this.onSessionChanged);
+  },
+
+  syncSession(session) {
+    if (!session) return;
+    this.setData({ isMember: session.memberStatus === 'active' });
   },
 
   onPullDownRefresh() {
@@ -127,7 +141,10 @@ Page({
   },
 
   onCreateOpen() {
-    if (!this.data.isMember) {
+    // 点击时重新读服务层缓存，避免冷启动期间页面保留的 guest 占位状态挡住成员。
+    const session = getSession();
+    this.syncSession(session);
+    if (!session || session.memberStatus !== 'active') {
       wx.showModal({
         title: '需要成员资格',
         content: '发起话题需要先加入文学社。',
