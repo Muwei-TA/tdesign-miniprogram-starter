@@ -62,62 +62,115 @@
     <view class="hg-topics__create-note">提交后需要管理员确认，确认前只有你能看到它。</view>
   </view>
 
-  <!-- 发起话题弹层 -->
-  <t-popup visible="{{ createVisible }}" placement="bottom" bind:visible-change="onCreateClose">
-    <view class="hg-sheet">
-      <view class="hg-sheet__head">
-        <view class="hg-sheet__title">发起一个话题</view>
-        <view class="hg-sheet__close" bindtap="onCreateClose" aria-role="button" aria-label="关闭">
-          <t-icon name="close" size="40rpx" />
+  <!-- 发起话题编辑器 -->
+  <t-popup
+    visible="{{ createVisible }}"
+    placement="bottom"
+    closeOnOverlayClick="{{ false }}"
+    bind:visible-change="onCreateClose"
+  >
+    <view
+      class="hg-topic-editor {{ keyboardHeight > 0 ? 'hg-topic-editor--keyboard' : '' }}"
+      style="height: calc({{ editorWindowHeight }}px - {{ keyboardHeight }}px); margin-bottom: {{ keyboardHeight }}px; transform: translateY({{ editorBottomInset }}px); padding-top: {{ editorTopInset }}px;"
+    >
+      <view class="hg-topic-editor__head">
+        <view
+          class="hg-topic-editor__cancel {{ submitting ? 'hg-topic-editor__cancel--disabled' : '' }}"
+          bindtap="onCreateClose"
+          aria-role="button"
+          aria-disabled="{{ submitting }}"
+        >
+          取消
+        </view>
+        <text class="hg-topic-editor__heading">发起一个话题</text>
+        <view
+          class="hg-topic-editor__submit {{ !canSubmit || submitting ? 'hg-topic-editor__submit--disabled' : '' }}"
+          bindtap="onCreateSubmit"
+          aria-role="button"
+          aria-disabled="{{ !canSubmit || submitting }}"
+          aria-busy="{{ submitting }}"
+        >
+          {{ submitting ? '提交中…' : '提交' }}
         </view>
       </view>
 
-      <view class="hg-field">
-        <text class="hg-field__label">话题名称（40 字以内）</text>
-        <input
-          class="hg-field__input"
-          value="{{ form.title }}"
-          maxlength="40"
-          placeholder="例如：最近读到的一句话"
-          data-field="title"
-          bindinput="onFormInput"
-        />
-      </view>
+      <view class="hg-topic-editor__helper">提交后需要管理员确认，确认前只有你能看到它。</view>
 
-      <view class="hg-field">
-        <text class="hg-field__label">一句引导语（200 字以内）</text>
-        <textarea
-          class="hg-field__textarea"
-          value="{{ form.description }}"
-          maxlength="200"
-          placeholder="说明希望大家写什么，越具体越好"
-          data-field="description"
-          bindinput="onFormInput"
-        />
-      </view>
-
-      <view class="hg-field">
-        <text class="hg-field__label">分类</text>
-        <view class="hg-field__chips">
-          <view
-            wx:for="{{ categories }}"
-            wx:key="value"
-            wx:if="{{ item.value !== 'all' }}"
-            class="hg-field__chip {{ form.category === item.value ? 'hg-field__chip--on' : '' }}"
-            data-value="{{ item.value }}"
-            bindtap="onFormCategory"
-            aria-role="button"
-          >
-            {{ item.label }}
+      <scroll-view
+        class="hg-topic-editor__scroll"
+        scroll-y
+        enhanced
+        show-scrollbar="{{ false }}"
+        scroll-into-view="{{ activeFieldId }}"
+      >
+        <view class="hg-topic-editor__content">
+          <view id="topic-title-field" class="hg-topic-editor__field">
+            <view class="hg-topic-editor__label-row">
+              <text class="hg-topic-editor__label">话题名称</text>
+              <text class="hg-topic-editor__counter">{{ form.title.length }} / 40</text>
+            </view>
+            <input
+              class="hg-topic-editor__input"
+              value="{{ form.title }}"
+              maxlength="40"
+              placeholder="例如：最近读到的一句话"
+              data-field="title"
+              disabled="{{ submitting }}"
+              adjust-position="{{ false }}"
+              cursor-spacing="16"
+              bindfocus="onFormFocus"
+              bindkeyboardheightchange="onEditorKeyboardHeightChange"
+              bindinput="onFormInput"
+            />
           </view>
+
+          <view id="topic-description-field" class="hg-topic-editor__field hg-topic-editor__field--description">
+            <view class="hg-topic-editor__label-row">
+              <text class="hg-topic-editor__label">一句引导语</text>
+              <text class="hg-topic-editor__counter">{{ form.description.length }} / 200</text>
+            </view>
+            <textarea
+              class="hg-topic-editor__textarea"
+              value="{{ form.description }}"
+              maxlength="200"
+              placeholder="说明希望大家写什么，越具体越好"
+              data-field="description"
+              disabled="{{ submitting }}"
+              adjust-position="{{ false }}"
+              cursor-spacing="16"
+              show-confirm-bar="{{ false }}"
+              bindfocus="onFormFocus"
+              bindkeyboardheightchange="onEditorKeyboardHeightChange"
+              bindinput="onFormInput"
+            />
+          </view>
+
+          <view class="hg-topic-editor__field hg-topic-editor__field--category">
+            <view class="hg-topic-editor__label-row">
+              <text class="hg-topic-editor__label">分类 · 可选</text>
+              <text class="hg-topic-editor__category-default">默认生活</text>
+            </view>
+            <scroll-view class="hg-topic-editor__categories" scroll-x enhanced show-scrollbar="{{ false }}">
+              <view class="hg-topic-editor__chips">
+                <view
+                  wx:for="{{ categories }}"
+                  wx:key="value"
+                  wx:if="{{ item.value !== 'all' }}"
+                  class="hg-topic-editor__chip {{ form.category === item.value ? 'hg-topic-editor__chip--on' : '' }}"
+                  data-value="{{ item.value }}"
+                  bindtap="onFormCategory"
+                  aria-role="button"
+                  aria-pressed="{{ form.category === item.value }}"
+                >
+                  {{ item.label }}
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+
+          <view class="hg-topic-editor__notice">新话题都是社内话题。即使标题被转发，参与内容也不会因此公开。</view>
         </view>
-      </view>
-
-      <view class="hg-sheet__notice">新话题都是社内话题。即使标题被转发，参与内容也不会因此公开。</view>
-
-      <view class="hg-sheet__submit {{ submitting ? 'hg-sheet__submit--disabled' : '' }}" bindtap="onCreateSubmit" aria-role="button">
-        {{ submitting ? '提交中…' : '提交等待确认' }}
-      </view>
+      </scroll-view>
     </view>
   </t-popup>
 </view>

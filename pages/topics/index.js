@@ -18,10 +18,26 @@ Page({
     // 发起话题弹层
     createVisible: false,
     form: { title: '', description: '', category: 'life' },
+    canSubmit: false,
     submitting: false,
+    keyboardHeight: 0,
+    editorTopInset: 0,
+    editorWindowHeight: 0,
+    editorBottomInset: 0,
+    activeFieldId: '',
   },
 
   onLoad() {
+    const windowInfo = typeof wx.getWindowInfo === 'function' ? wx.getWindowInfo() : wx.getSystemInfoSync();
+    const safeAreaTop = windowInfo.safeArea ? windowInfo.safeArea.top : windowInfo.statusBarHeight || 0;
+    const menuButton = typeof wx.getMenuButtonBoundingClientRect === 'function' ? wx.getMenuButtonBoundingClientRect() : null;
+    const editorTopInset = menuButton && menuButton.bottom
+      ? menuButton.bottom + 8
+      : safeAreaTop + (windowInfo.statusBarHeight || 0) + 8;
+    const editorWindowHeight = windowInfo.windowHeight || 0;
+    const safeAreaBottom = windowInfo.safeArea ? windowInfo.safeArea.bottom : editorWindowHeight;
+    const editorBottomInset = Math.max(editorWindowHeight - safeAreaBottom, 0);
+    this.setData({ editorTopInset, editorWindowHeight, editorBottomInset });
     const session = getSession();
     this.setData({ isMember: session.memberStatus === 'active' });
     this.loadTopics();
@@ -122,28 +138,56 @@ Page({
       });
       return;
     }
-    this.setData({ createVisible: true });
+    this.setData({ createVisible: true, keyboardHeight: 0, activeFieldId: '' });
   },
 
-  onCreateClose() {
-    this.setData({ createVisible: false });
+  hideEditorKeyboard() {
+    if (typeof wx.hideKeyboard === 'function') wx.hideKeyboard();
+  },
+
+  onCreateClose(e) {
+    const { detail } = e || {};
+    if (detail && detail.visible === true) return;
+    if (this.submittingRequest || this.data.submitting) return;
+    this.hideEditorKeyboard();
+    // 关闭只收起编辑器，保留用户输入供再次打开时继续编辑。
+    this.setData({ createVisible: false, keyboardHeight: 0, activeFieldId: '' });
+  },
+
+  onFormFocus(e) {
+    const { currentTarget: { dataset: { field } } } = e;
+    const activeFieldId = field === 'title' ? 'topic-title-field' : 'topic-description-field';
+    this.setData({ activeFieldId });
+  },
+
+  onEditorKeyboardHeightChange(e) {
+    const { detail } = e || {};
+    const { height } = detail || {};
+    const keyboardHeight = Number(height) > 0 ? Number(height) : 0;
+    this.setData({ keyboardHeight });
   },
 
   onFormInput(e) {
-    const { field } = e.currentTarget.dataset;
-    this.setData({ [`form.${field}`]: e.detail.value });
+    if (this.data.submitting) return;
+    const { currentTarget: { dataset: { field } }, detail: { value } } = e;
+    const patch = { [`form.${field}`]: value };
+    if (field === 'title') patch.canSubmit = !!value.trim();
+    this.setData(patch);
   },
 
   onFormCategory(e) {
+    if (this.data.submitting) return;
     this.setData({ 'form.category': e.currentTarget.dataset.value });
   },
 
   async onCreateSubmit() {
+    if (this.submittingRequest || this.data.submitting) return;
     const { title, description, category } = this.data.form;
     if (!title.trim()) {
       wx.showToast({ title: '请填写话题名称', icon: 'none' });
       return;
     }
+    this.hideEditorKeyboard();
     // 同名话题由服务端引导参与，不创建重复项
     const duplicated = this.data.list.find((item) => item.title === title.trim());
     if (duplicated) {
@@ -161,19 +205,25 @@ Page({
       return;
     }
 
-    this.setData({ submitting: true });
+    this.submittingRequest = true;
+    this.setData({ submitting: true, canSubmit: false, keyboardHeight: 0, activeFieldId: '' });
     try {
       await submitTopic({ title: title.trim(), description: description.trim(), category });
       this.setData({
         submitting: false,
+        canSubmit: false,
         createVisible: false,
+        keyboardHeight: 0,
+        activeFieldId: '',
         form: { title: '', description: '', category: 'life' },
       });
       wx.showToast({ title: '已提交，等待管理员确认', icon: 'none' });
       this.loadTopics();
     } catch (err) {
-      this.setData({ submitting: false });
+      this.setData({ submitting: false, canSubmit: !!title.trim() });
       wx.showToast({ title: err.message || '提交未完成', icon: 'none' });
+    } finally {
+      this.submittingRequest = false;
     }
   },
 
