@@ -30,12 +30,22 @@ Page({
   },
 
   onLoad() {
-    this.syncSession(getSession());
     this.onSessionChanged = (session) => {
+      // A published session is newer than any page refresh still in flight.
+      this.sessionRefreshId = (this.sessionRefreshId || 0) + 1;
       this.syncSession(session);
+      this.setData({ sessionLoading: false, sessionError: false });
       this.loadProfile();
     };
     app.eventBus.on('session-changed', this.onSessionChanged);
+
+    // initSession() runs asynchronously at launch. Until it publishes, the
+    // service's default guest value is only a placeholder, not a final state.
+    const session = app.globalData && app.globalData.session;
+    if (session) {
+      this.syncSession(session);
+      this.setData({ sessionLoading: false, sessionError: false });
+    }
     this.loadProfile();
   },
 
@@ -48,7 +58,6 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ value: 'my' });
     }
-    return this.refreshSession();
   },
 
   async refreshSession() {
@@ -71,6 +80,14 @@ Page({
 
   onSessionRetry() {
     return this.refreshSession();
+  },
+
+  async onPullDownRefresh() {
+    try {
+      await this.refreshSession();
+    } finally {
+      wx.stopPullDownRefresh();
+    }
   },
 
   syncSession(session) {

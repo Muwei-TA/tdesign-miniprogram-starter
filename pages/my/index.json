@@ -1,6 +1,7 @@
 {
   "navigationStyle": "custom",
   "backgroundTextStyle": "dark",
+  "enablePullDownRefresh": true,
   "usingComponents": {
     "t-icon": "tdesign-miniprogram/icon/icon",
     "hg-nav": "/components/hg-nav/index",
