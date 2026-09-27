@@ -4,7 +4,6 @@
   "backgroundTextStyle": "dark",
   "usingComponents": {
     "t-popup": "tdesign-miniprogram/popup/popup",
-    "t-icon": "tdesign-miniprogram/icon/icon",
     "hg-nav": "/components/hg-nav/index",
     "topic-card": "/components/topic-card/index",
     "empty-state": "/components/empty-state/index"

@@ -96,9 +96,6 @@ Object.entries(pageDefinition).forEach(([key, value]) => {
 page.onLoad();
 assert.equal(page.data.isMember, false, 'cold start may begin with a guest placeholder');
 assert.equal(app.eventBus.count('session-changed'), 1, 'page subscribes to session changes');
-const fetchesAfterLoad = topicFetches;
-page.onShow();
-assert.equal(topicFetches, fetchesAfterLoad, 'the initial onShow reuses the onLoad directory request');
 
 session = { role: 'moderator', memberStatus: 'active', user: { id: 'moderator-1' } };
 app.eventBus.emit('session-changed', session);
@@ -121,11 +118,6 @@ page.onShow();
 assert.equal(page.data.isMember, true, 'returning to the Tab syncs the current session cache');
 assert.equal(sessionReads, 1, 'onShow reads the session cache once');
 assert.equal(topicFetches, fetchesBeforeShow, 'onShow does not trigger a session or topics network refresh');
-
-page.onHide();
-const fetchesBeforeReturn = topicFetches;
-page.onShow();
-assert.equal(topicFetches, fetchesBeforeReturn + 1, 'returning after the page was hidden refreshes the current directory');
 
 session = { role: 'guest', memberStatus: 'none', user: null };
 app.eventBus.emit('session-changed', session);

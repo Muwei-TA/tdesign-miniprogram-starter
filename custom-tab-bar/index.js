@@ -1,10 +1,10 @@
-// 四主入口：树洞 / 板块 / 文集 / 我的
+// 四主入口：树洞 / 话题 / 文集 / 我的
 // 消息不占 Tab，从树洞首页顶部进入（见 docs/03-routing-and-navigation.md）
 const TAB_LIST = [
   { value: 'home', label: '树洞', icon: 'home', iconActive: 'home-filled', path: '/pages/home/index' },
   {
     value: 'topics',
-    label: '板块',
+    label: '话题',
     icon: 'chat-bubble-1',
     iconActive: 'chat-bubble-1-filled',
     path: '/pages/topics/index',

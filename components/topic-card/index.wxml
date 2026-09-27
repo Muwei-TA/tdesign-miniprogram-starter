@@ -17,7 +17,7 @@
     class="hg-topic__follow {{ topic.followed ? 'hg-topic__follow--on' : '' }}"
     catchtap="onFollow"
     aria-role="button"
-    aria-label="{{ topic.followed ? '取消关注' : '关注板块' }}"
+    aria-label="{{ topic.followed ? '取消关注' : '关注话题' }}"
   >
     {{ topic.followed ? '已关注' : '关注' }}
   </view>
