@@ -358,11 +358,15 @@ Page({
   confirmAction(item, key, reason) {
     const action = (item.actions || []).find((entry) => entry.key === key);
     const boardConfirmText = key === 'approve' ? ACTION_CONFIRM_TEXT.approveBoard : ACTION_CONFIRM_TEXT.rejectBoard;
-    const content = reason
-      ? (item.queue === 'board'
+    let content;
+    if (reason) {
+      content = item.queue === 'board'
         ? '提交后会记录处理理由。确认继续？'
-        : '提交后会记录处理理由，并通知相关用户。确认继续？')
-      : (item.queue === 'board' ? boardConfirmText : ACTION_CONFIRM_TEXT[key]) || '确认提交这个处理决定？';
+        : '提交后会记录处理理由，并通知相关用户。确认继续？';
+    } else {
+      content = (item.queue === 'board' ? boardConfirmText : ACTION_CONFIRM_TEXT[key])
+        || '确认提交这个处理决定？';
+    }
     wx.showModal({
       title: action ? action.label : '处理决定',
       content,

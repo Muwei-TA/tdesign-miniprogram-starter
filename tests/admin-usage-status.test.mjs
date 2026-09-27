@@ -35,6 +35,7 @@ function loadAdminPage(fetchUsageStatus, { mediaFetcher, wxApi } = {}) {
       /import \{[\s\S]*?\} from '\.\/moderation';/,
       'const { QUEUES, fetchQueue, fetchAssetReviewStatuses, submitDecision, decideComment, decideTopic, decideMembership, decideReport, decideCollection } = __moderation;',
     )
+    .replace("import { fetchPendingBoards, decideBoard } from '~/services/boards';", 'const { fetchPendingBoards, decideBoard } = __boards;')
     .replace("import { fetchUsageStatus } from './usage';", 'const { fetchUsageStatus } = __usage;')
     .replace("import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;');
 
@@ -56,6 +57,7 @@ function loadAdminPage(fetchUsageStatus, { mediaFetcher, wxApi } = {}) {
       decideCollection() {},
     },
     __usage: { fetchUsageStatus },
+    __boards: { fetchPendingBoards: async () => ({ items: [], nextCursor: null }), decideBoard() {} },
     __navigation: { navigateTo() {} },
     wx: wxApi,
   });
