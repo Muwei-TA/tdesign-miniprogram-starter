@@ -11,7 +11,7 @@ const TABS = [
   { value: 'draft', label: '草稿' },
   { value: 'private', label: '私密手记' },
   { value: 'bookmark', label: '收藏' },
-  { value: 'topics', label: '关注的话题' },
+  { value: 'topics', label: '关注的板块' },
 ];
 
 const VALID_TABS = new Set(TABS.map((item) => item.value));

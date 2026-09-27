@@ -122,7 +122,7 @@ Page({
     this.editorInitialized = true;
     const patch = { capabilities: this.data.capabilities };
     if (options.mode === 'article') patch.mode = 'article';
-    if (options.topicId) patch.topic = { id: options.topicId, title: options.topicTitle || '已选择的话题' };
+    if (options.topicId) patch.topic = { id: options.topicId, title: options.topicTitle || '已选择的板块' };
     if (options.collectionId) patch.collectionId = options.collectionId;
 
     if (options.draftId) {
@@ -169,7 +169,7 @@ Page({
     const scopeText = {
       public: '公开可见：任何打开本小程序的人都可能看到',
       club: '仅社内可见：只有当前有效成员能看到',
-      private: '只有自己可见：不进入社区流、话题、搜索与互动',
+      private: '只有自己可见：不进入社区流、板块、搜索与互动',
     }[visibility];
     const tail = visibility === 'private' ? '保存后只留给自己。' : '提交后会先进入审核。';
     this.setData({ previewText: `你将以「${identityText}」发布，${scopeText}。${tail}` });

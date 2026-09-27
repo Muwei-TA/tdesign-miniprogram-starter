@@ -9,7 +9,7 @@ import endpoints from '~/api/endpoints';
 export const QUEUES = [
   { value: 'content', label: '内容' },
   { value: 'comment', label: '回应' },
-  { value: 'topic', label: '话题' },
+  { value: 'topic', label: '板块' },
   { value: 'member', label: '入社' },
   { value: 'report', label: '举报' },
   { value: 'collection', label: '文集' },
@@ -33,9 +33,9 @@ export const ACTIONS_BY_QUEUE = {
     { key: 'hide', label: '隐藏回应', theme: 'danger', requiresReason: true },
   ],
   topic: [
-    { key: 'approve', label: '通过话题', theme: 'primary', requiresReason: false },
+    { key: 'approve', label: '通过板块', theme: 'primary', requiresReason: false },
     { key: 'archive', label: '归档', theme: 'secondary', requiresReason: true },
-    { key: 'reject', label: '退回话题', theme: 'danger', requiresReason: true },
+    { key: 'reject', label: '退回板块', theme: 'danger', requiresReason: true },
   ],
   member: [
     { key: 'approve', label: '批准加入 / 恢复资格', theme: 'primary', requiresReason: false },

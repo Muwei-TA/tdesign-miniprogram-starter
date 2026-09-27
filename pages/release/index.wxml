@@ -175,7 +175,7 @@
       <view wx:if="{{ topic }}" class="hg-compose__row">
         <t-icon name="bulletpoint" size="36rpx" />
         <view class="hg-compose__row-main">
-          <view class="hg-compose__row-title">关联话题</view>
+          <view class="hg-compose__row-title">关联板块</view>
           <view class="hg-compose__row-sub">{{ topic.title }}</view>
         </view>
         <view class="hg-compose__row-clear" catchtap="onClearTopic" aria-role="button">移除</view>

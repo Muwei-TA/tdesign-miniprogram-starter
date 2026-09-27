@@ -39,7 +39,7 @@ Page({
     app.eventBus.on('session-changed', this.onSessionChanged);
 
     if (this.data.id) this.loadDetail();
-    else this.setData({ loading: false, errorText: '当前话题不可访问', errorKind: 'not_accessible' });
+    else this.setData({ loading: false, errorText: '当前板块不可访问', errorKind: 'not_accessible' });
   },
 
   onUnload() {
@@ -76,7 +76,7 @@ Page({
       if (!append) this.topicFirstPageLoading = false;
       const topic = data.topic || null;
       if (!topic) {
-        const err = new Error('当前话题不可访问');
+        const err = new Error('当前板块不可访问');
         err.kind = 'not_accessible';
         throw err;
       }
@@ -136,7 +136,7 @@ Page({
   askJoin() {
     wx.showModal({
       title: '需要成员资格',
-      content: '关注话题和参与共写需要先加入文学社。',
+      content: '关注板块和参与共写需要先加入文学社。',
       confirmText: '去了解',
       success: (res) => {
         if (res.confirm) navigateTo('/pages/community/join/index?from=topic');
@@ -153,13 +153,13 @@ Page({
     }
     if (topic.status !== 'active') {
       wx.showToast({
-        title: topic.status === 'archived' ? '话题已归档，暂不能新增内容' : '话题尚未开放参与',
+        title: topic.status === 'archived' ? '板块已归档，暂不能新增内容' : '板块尚未开放参与',
         icon: 'none',
       });
       return;
     }
     if (!this.data.canPost) {
-      wx.showToast({ title: '当前不能参与这个话题', icon: 'none' });
+      wx.showToast({ title: '当前不能参与这个板块', icon: 'none' });
       return;
     }
     // 只传 topicId；身份和可见范围由发布页交给作者选择。
