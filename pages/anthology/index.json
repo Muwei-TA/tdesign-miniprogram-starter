@@ -4,7 +4,9 @@
   "backgroundTextStyle": "dark",
   "usingComponents": {
     "hg-nav": "/components/hg-nav/index",
-    "collection-cover": "/components/collection-cover/index",
-    "empty-state": "/components/empty-state/index"
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "post-card": "/components/post-card/index",
+    "empty-state": "/components/empty-state/index",
+    "scope-picker": "/components/scope-picker/index"
   }
 }

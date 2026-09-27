@@ -1,5 +1,5 @@
 <view class="hg-page hg-compose">
-  <hg-nav title="写一笔">
+  <hg-nav title="{{ mode === 'article' ? '写文稿' : '写一笔' }}">
     <view
       wx:if="{{ canPublish }}"
       slot="right"
@@ -37,7 +37,7 @@
   />
 
   <block wx:else>
-    <!-- 碎片 / 文章 -->
+    <!-- 碎片 / 文稿 -->
     <view class="hg-compose__segmented">
       <view
         class="hg-compose__seg {{ mode === 'fragment' ? 'hg-compose__seg--on' : '' }}"
@@ -53,7 +53,7 @@
         bindtap="onModeTap"
         aria-role="button"
       >
-        文章
+        文稿
       </view>
     </view>
 
@@ -63,7 +63,7 @@
         class="hg-compose__title"
         value="{{ title }}"
         maxlength="{{ titleLimit }}"
-        placeholder="给这篇文章一个标题"
+        placeholder="给这篇文稿一个标题"
         disabled="{{ submitting }}"
         bindinput="onTitleInput"
       />

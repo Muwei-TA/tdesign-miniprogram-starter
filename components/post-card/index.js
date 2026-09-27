@@ -18,23 +18,27 @@ Component({
 
   properties: {
     post: { type: Object, value: null },
-    /** feed | compact | mine */
+    /** feed | article | compact | mine */
     mode: { type: String, value: 'feed' },
     showActions: { type: Boolean, value: true },
+    /** 可读文章的回应入口可展示给访客；共鸣与收藏仅对有效成员启用。 */
+    canInteract: { type: Boolean, value: true },
   },
 
   data: {
     avatarText: '',
     authorText: '',
     showInteractions: false,
+    showMemberActions: true,
+    showComments: true,
     showMoreActions: false,
     isGrid: false,
     durationText: '',
   },
 
   observers: {
-    'post, showActions': function observePost() {
-      const { post, showActions } = this.data;
+    'post, showActions, mode, canInteract': function observePost() {
+      const { post, showActions, mode, canInteract } = this.data;
       if (!post) return;
 
       const author = post.author || {};
@@ -48,6 +52,9 @@ Component({
         avatarText: name.slice(0, 1),
         // private 不参与社区互动；非 published 状态只显示状态标签
         showInteractions: showActions && post.visibility !== 'private' && post.status === 'published',
+        showMemberActions: !!canInteract,
+        // 不可发表评论的读者仍能通过已有回应数进入详情阅读。
+        showComments: mode !== 'article' || !!viewer.canComment || !!(post.counters && post.counters.comments > 0),
         // 管理入口只由服务端返回的本人权限决定，不跟随互动区显隐。
         showMoreActions: showActions && viewer.isOwner && (viewer.canDelete || viewer.canShrinkVisibility),
         isGrid: media.type === 'image' && (media.images || []).length > 1,

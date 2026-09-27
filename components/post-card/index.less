@@ -11,6 +11,62 @@
     padding: 24rpx;
   }
 
+  &--article {
+    overflow: hidden;
+    margin: @hg-sp-4 @hg-page-x;
+    padding: 0;
+    border-radius: @hg-radius-lg;
+    background: @hg-surface;
+    box-shadow: @hg-shadow-card;
+
+    .hg-post__head {
+      padding: @hg-sp-3 @hg-sp-3 @hg-sp-2;
+    }
+
+    .hg-post__content--feed {
+      .hg-post__images {
+        margin-top: 0;
+      }
+
+      .hg-post__body {
+        padding: @hg-sp-3 @hg-sp-3 @hg-sp-2;
+      }
+    }
+
+    .hg-post__image {
+      height: 360rpx;
+      border-radius: 0;
+    }
+
+    .hg-post__title {
+      margin-bottom: @hg-sp-2;
+      line-height: @hg-lh-tight;
+    }
+
+    .hg-post__text {
+      line-height: @hg-lh-base;
+    }
+
+    .hg-post__topic {
+      margin-left: @hg-sp-3;
+      margin-right: @hg-sp-3;
+    }
+
+    .hg-post__actions {
+      margin: @hg-sp-1 @hg-sp-3 0;
+      padding: @hg-sp-1 0 @hg-sp-2;
+      border-top-color: @hg-line;
+    }
+
+    .hg-post__action {
+      min-height: 76rpx;
+      padding: 0 @hg-sp-2;
+      border-radius: 0;
+      background: transparent;
+      font-size: @hg-fs-xs;
+    }
+  }
+
   &__head {
     display: flex;
     align-items: center;

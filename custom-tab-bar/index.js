@@ -1,4 +1,4 @@
-// 四主入口：树洞 / 话题 / 文集 / 我的
+// 四主入口：树洞 / 话题 / 文稿 / 我的
 // 消息不占 Tab，从树洞首页顶部进入（见 docs/03-routing-and-navigation.md）
 const TAB_LIST = [
   { value: 'home', label: '树洞', icon: 'home', iconActive: 'home-filled', path: '/pages/home/index' },
@@ -11,7 +11,7 @@ const TAB_LIST = [
   },
   {
     value: 'anthology',
-    label: '文集',
+    label: '文稿',
     icon: 'book-open',
     iconActive: 'book-open-filled',
     path: '/pages/anthology/index',
