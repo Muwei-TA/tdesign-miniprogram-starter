@@ -2,7 +2,7 @@ import request, { withPath, withQuery } from '~/api/request';
 import endpoints from '~/api/endpoints';
 
 /**
- * 管理台六队列。注意：分包与前端隐藏都不是安全边界，接口必须由服务端按角色鉴权。
+ * 管理台队列。注意：分包与前端隐藏都不是安全边界，接口必须由服务端按角色鉴权。
  * 普通管理员不可读私密手记与匿名映射；举报记录不暴露举报人。
  */
 
@@ -10,6 +10,7 @@ export const QUEUES = [
   { value: 'content', label: '内容' },
   { value: 'comment', label: '回应' },
   { value: 'topic', label: '话题' },
+  { value: 'board', label: '板块' },
   { value: 'member', label: '入社' },
   { value: 'report', label: '举报' },
   { value: 'collection', label: '文集' },
@@ -36,6 +37,10 @@ export const ACTIONS_BY_QUEUE = {
     { key: 'approve', label: '通过话题', theme: 'primary', requiresReason: false },
     { key: 'archive', label: '归档', theme: 'secondary', requiresReason: true },
     { key: 'reject', label: '退回话题', theme: 'danger', requiresReason: true },
+  ],
+  board: [
+    { key: 'approve', label: '通过板块', theme: 'primary', requiresReason: false },
+    { key: 'reject', label: '退回板块', theme: 'danger', requiresReason: true },
   ],
   member: [
     { key: 'approve', label: '批准加入 / 恢复资格', theme: 'primary', requiresReason: false },
@@ -75,7 +80,7 @@ export function normalizeQueueItem(item = {}, queue = item.queue || 'content') {
     title: item.title || '',
     summary: item.summary || '',
     submittedAtText: item.submittedAtText || '',
-    statusText: item.statusText || '',
+    statusText: item.statusText || (queue === 'board' && item.status === 'pending' ? '等待审核' : ''),
     version: Number.isInteger(item.version) ? item.version : null,
     actions: getQueueActions(queue),
     // 组件只显示"树洞身份"标记，不接收任何身份映射字段。
