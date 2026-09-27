@@ -8,12 +8,13 @@
 |---|---|---|
 | `User` | `id`、`wxOpenIdRef`、`displayName`、`avatar`、`status` | 微信标识不入公开资料；昵称自选 |
 | `Membership` | `userId`、`clubId`、`role`、`status`、`joinedAt` | `userId+clubId` 唯一；撤销即时影响鉴权 |
-| `Post` | `id`、`clubId`、`ownerId`、`kind`、`title`、`body`、`visibility`、`identityMode`、`status`、`version`、`topicId`、`assetIds`、`commentsEnabled`、`createdAt` | `ownerId` 由会话决定；匿名帖响应不带 `ownerId` |
+| `Post` | `id`、`clubId`、`ownerId`、`kind`、`title`、`body`、`visibility`、`identityMode`、`status`、`version`、`topicId?`、`boardId?`、`assetIds`、`commentsEnabled`、`createdAt` | `ownerId` 由会话决定；匿名帖响应不带 `ownerId`；板块与话题可并存 |
 | `AnonymousIdentity` | `threadId`、`userId`、`alias` | 受限存储；线程内稳定，跨帖不可串联 |
 | `Asset` | `id`、`ownerId`、`storageKey`、`mediaType`、`size`、`duration`、`status`、`postVersion` | 私有桶；只能绑定本人已校验附件 |
 | `Comment` | `id`、`postId`、`ownerId`、`replyToId`、`body`、`identityMode`、`status`、`version`、`reactionCount` | 继承帖子访问边界；`replyTo` 必须同帖 |
 | `Reaction` / `Bookmark` | `userId`、`postId`、`commentId?`、`type` | 唯一键防重；收藏不赋予永久读取权；`commentId` 存在时为回应级共鸣 |
 | `Topic` | `id`、`clubId`、`title`、`description`、`category`、`status` | 首版均为社内；`pending/active/archived` |
+| `Board` | `id`、`clubId`、`ownerId`、`title`、`description`、`status`、`version` | 独立于话题的帖子分流；不预置板块；成员提交待审，管理员可直接创建 |
 | `Collection` / `Entry` | `id`、`title`、`visibility`、`editorId`；`postId`、`consentId`、`order` | 不做正文快照；访问取交集 |
 | `Consent` | `postId`、`version`、`purpose`、`scope`、`grantedAt`、`revokedAt` | 与用途/版本绑定 |
 | `Notification` | `recipientId`、`eventType`、`targetId`、`readAt` | 中性文案；渲染时复核权限 |
@@ -28,6 +29,7 @@ visibility:    public | club | private
 identityMode:  named | anonymous
 postStatus:    draft | uploading | pending | published | rejected | hidden | deleted | superseded
 topicStatus:   pending | active | archived
+boardStatus:   pending | active | rejected
 role:          guest | member | admin | moderator
 memberStatus:  none | pending | active | rejected | removed
 notifyType:    comment | reply | reaction_digest | system_review | system_report
@@ -59,6 +61,7 @@ notifyType:    comment | reply | reaction_digest | system_review | system_report
   "identityMode": "named",
   "author": { "userId": "u_a", "displayName": "南枝", "avatar": "", "isAnonymous": false, "alias": null },
   "topic": { "id": "t1", "title": "把今天的晚霞留在这里" },
+  "board": { "id": "b1", "title": "一个独立板块" },
   "media": { "type": "image", "images": ["..."], "count": 2, "video": null },
   "counters": { "reactions": 12, "comments": 3 },
   "viewer": { "reacted": false, "bookmarked": false, "canComment": true, "isOwner": false, "canManage": false },
@@ -73,6 +76,7 @@ notifyType:    comment | reply | reaction_digest | system_review | system_report
 2. `viewer.*` 由服务端按当前会话计算，前端**不得**自行推断（例如不得用 `ownerId === myId`）。
 3. 不可访问内容不出现在列表中，也不出现在 `counters` 统计中。
 4. `statusText` 仅在本人可见的 `pending/rejected` 场景下返回（如"等待审核"/"需要修改：原因…"）。
+5. `board` 与 `topic` 是两个独立字段，均可为 `null`；无权读取板块时不得暴露板块信息。
 
 ### PostDetailDTO（详情用）
 
@@ -123,9 +127,9 @@ notifyType:    comment | reply | reaction_digest | system_review | system_report
 | A2 | `/session/me` | GET | — | 同上（用于冷启动恢复） |
 | A3 | `/membership/applications` | POST | `inviteCode`、`displayName`、`rulesVersion` | `pending`；邀请码服务端校验、限频 |
 | A4 | `/membership/applications/mine` | GET | — | 当前申请状态与理由 |
-| B1 | `/posts` | GET | `cursor`、`type`、`topicId`、`filter=awaiting_reply` | `PostCardDTO` 列表；仅返回允许展示 |
+| B1 | `/posts` | GET | `cursor`、`type`、`topicId`、`boardId`、`filter=awaiting_reply` | `PostCardDTO` 列表；仅返回允许展示；板块过滤在分页前鉴权 |
 | B2 | `/posts/{id}` | GET | — | `PostDetailDTO`；无权统一 `not_accessible` |
-| B3 | `/posts` | POST | 正文、`assetIds`、`visibility`、`identityMode`、`topicId`、`commentsEnabled`、`Idempotency-Key` | `{ id, version, state }`，`state ∈ pending/private_saved` |
+| B3 | `/posts` | POST | 正文、`assetIds`、`visibility`、`identityMode`、`topicId?`、`boardId?`、`commentsEnabled`、`Idempotency-Key` | `{ id, version, state }`，`state ∈ pending/private_saved`；私密帖不能关联板块 |
 | B3a | `/posts/{id}/resubmit` | PATCH | `title`、`body`、`expectedVersion`、`Idempotency-Key` | 仅有效成员本人对 `rejected` 原帖重提；保留原附件/身份/可见范围，原子增加版本并新建审核任务；返回 `{ id, version, state }` |
 | B4 | `/posts/{id}/visibility` | PATCH | `visibility`、`expectedVersion` | 首版只允许缩小；同步失效权限版本 |
 | B5 | `/posts/{id}` | DELETE | `expectedVersion` | 停止展示 + 媒体权限回收 + 异步清理 |
@@ -139,6 +143,9 @@ notifyType:    comment | reply | reaction_digest | system_review | system_report
 | C2 | `/topics/{id}` | GET | — | 详情 + 是否关注 |
 | C3 | `/topics` | POST | `title`、`description`、`category` | `pending`；同名引导参与 |
 | C4 | `/topics/{id}/follow` | PUT/DELETE | — | 关注仅保存到"我的话题" |
+| C5 | `/boards` | GET | `q?`、`status=active?`、`cursor?` | 独立板块目录，只返回已开放板块；访客为空 |
+| C6 | `/boards/{id}` | GET | `cursor?` | `{ board, items, nextCursor, canPost }`；待审/退回仅创建者和管理员可读 |
+| C7 | `/boards` | POST | `title`、`description` | `{ duplicated, id, status }`；成员待审，管理员直接开放 |
 | D1 | `/collections` | GET | — | 文集列表（含 `visibility`） |
 | D2 | `/collections/{id}` | GET | — | 导语 + 目录（实时读取文章状态） |
 | D3 | `/collections/{id}/submissions` | POST | `postId`、`consentVersion` | 申请，不自动收录、不扩范围 |
@@ -154,6 +161,8 @@ notifyType:    comment | reply | reaction_digest | system_review | system_report
 | I1 | `/admin/queues/{queue}` | GET | `cursor` | 五队列；后端角色鉴权 |
 | I2 | `/admin/reviews/{id}/decision` | POST | `decision`、`reason`、`expectedVersion` | 事务 + 审计 + 通知 |
 | I3 | `/admin/members/applications/{id}` | POST | `decision`、`reason` | 批准/拒绝 |
+| I4 | `/admin/queues/board` | GET | `cursor?` | 独立板块待审队列；只返回授权的必要字段 |
+| I5 | `/admin/boards/{id}/decision` | POST | `decision=approve/reject`、`reason?`、`expectedVersion` | 状态、版本与审计同事务；退回必填理由 |
 | J1 | `/me/exports` | POST | — | 异步任务；需二次确认身份 |
 | J2 | `/me/account` | DELETE | 确认串 | 风险告知 → 清理/依法保留 → 结果通知 |
 | J3 | `/me/contents` | GET | `tab`、`cursor` | 发布/待审/私密/收藏/关注话题 |
