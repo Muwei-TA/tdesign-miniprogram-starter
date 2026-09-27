@@ -1,5 +1,5 @@
 <view class="hg-page hg-topic-detail">
-  <hg-nav title="板块详情" />
+  <hg-nav title="话题详情" />
 
   <request-state wx:if="{{ loading && !topic }}" state="loading" />
   <request-state wx:elif="{{ !topic && errorText }}" state="error" error-kind="{{ errorKind }}" bind:retry="onRetry" />
@@ -18,7 +18,7 @@
         bindtap="onFollow"
         aria-role="button"
       >
-        {{ topic.followed ? '已关注' : '关注板块' }}
+        {{ topic.followed ? '已关注' : '关注话题' }}
       </view>
     </view>
 
@@ -52,9 +52,9 @@
         bindtap="onWrite"
         aria-role="button"
       >
-        {{ topic.status === 'archived' ? '板块已归档' : (canPost ? '我也写一笔' : '加入后参与共写') }}
+        {{ topic.status === 'archived' ? '话题已归档' : (canPost ? '我也写一笔' : '加入后参与共写') }}
       </view>
-      <view class="hg-topic-detail__note">每条内容只关联一个板块，发布时由你决定身份与可见范围。</view>
+      <view class="hg-topic-detail__note">每条内容只关联一个主话题，发布时由你决定身份与可见范围。</view>
     </view>
   </block>
 </view>

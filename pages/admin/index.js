@@ -17,7 +17,7 @@ const app = getApp();
 const QUEUE_HINTS = {
   content: '只处理公开或社内、正在等待审核的内容。',
   comment: '只处理已提交、正在等待审核的回应。',
-  topic: '确认待审板块是否可以进入社内目录。',
+  topic: '确认社内话题是否可以进入话题广场。',
   member: '处理历史待确认申请及被移除成员的恢复申请；新用户凭有效邀请码直接加入。',
   report: '举报不等于违规事实，处理决定需要留下理由。',
   collection: '按作者授权与范围交集处理文集收录申请。',
@@ -25,7 +25,7 @@ const QUEUE_HINTS = {
 
 const ACTION_CONFIRM_TEXT = {
   approve: '确认通过这条申请？',
-  archive: '确认归档这个板块？',
+  archive: '确认归档这个话题？',
   include: '确认将这篇文章收录进文集？',
   keep: '确认保留当前内容？',
 };

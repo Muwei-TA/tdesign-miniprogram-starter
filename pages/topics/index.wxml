@@ -1,45 +1,13 @@
 <view class="hg-page hg-page--tab hg-topics">
-  <hg-nav title="板块" show-back="{{ false }}" />
+  <hg-nav title="话题" show-back="{{ false }}" />
 
   <view class="hg-topics__intro">
-    <view class="hg-topics__heading">
-      <view class="hg-topics__title">
-        <view>从一个具体问题开始，</view>
-        <view>找到一起聊的人。</view>
-      </view>
-      <view class="hg-topics__create" bindtap="onCreateOpen" aria-role="button" hover-class="hg-topics__create--pressed">
-        <t-icon name="add" size="30rpx" />
-        <text>创建板块</text>
-      </view>
+    <view class="hg-topics__title">
+      <view>不知道写什么的时候，</view>
+      <view>从一个具体的问题开始。</view>
     </view>
-    <view class="hg-topics__desc">按兴趣浏览社内板块，找到合适的讨论入口。</view>
-    <view class="hg-topics__policy">
-      <t-icon name="info-circle" size="28rpx" />
-      <text>活跃社员与管理员均可提交；新板块需管理员审核后开放。</text>
-    </view>
-    <view wx:if="{{ canReviewTopics }}" class="hg-topics__review-link" bindtap="onReviewQueueTap" aria-role="button" hover-class="hg-topics__review-link--pressed">
-      <text>管理中心 · 板块待审队列</text>
-      <t-icon name="chevron-right" size="28rpx" />
-    </view>
-    <view wx:else class="hg-topics__review-note">管理员在管理中心的「板块」待审队列处理。</view>
+    <view class="hg-topics__desc">每条内容最多关联一个主话题。新话题一律先在社内使用。</view>
   </view>
-
-  <view class="hg-topics__search">
-    <t-icon name="search" size="34rpx" />
-    <input
-      class="hg-topics__search-input"
-      value="{{ searchQuery }}"
-      placeholder="搜索板块名称"
-      maxlength="50"
-      confirm-type="search"
-      bindinput="onSearchInput"
-      bindconfirm="onSearchSubmit"
-    />
-    <view wx:if="{{ searchQuery }}" class="hg-topics__search-clear" bindtap="onSearchClear" aria-role="button" aria-label="清除搜索">
-      <t-icon name="close" size="34rpx" />
-    </view>
-  </view>
-  <view class="hg-topics__search-note">搜索结果按目录分页，可继续加载后续板块。</view>
 
   <scroll-view class="hg-topics__cats" scroll-x enhanced show-scrollbar="{{ false }}">
     <view
@@ -49,7 +17,6 @@
       data-value="{{ item.value }}"
       bindtap="onCategoryTap"
       aria-role="button"
-      aria-pressed="{{ category === item.value }}"
     >
       {{ item.label }}
     </view>
@@ -57,13 +24,8 @@
 
   <view class="hg-topics__list">
     <view wx:if="{{ stale }}" class="hg-topics__stale">
-      <text>板块目录未更新：{{ errorText }}</text>
+      <text>话题未更新：{{ errorText }}</text>
       <text class="hg-topics__retry" bindtap="onRetry" aria-role="button">重试</text>
-    </view>
-
-    <view wx:if="{{ pendingCount > 0 }}" class="hg-topics__pending-note">
-      <t-icon name="time" size="30rpx" />
-      <text>列表中有 {{ pendingCount }} 个待审核板块；审核通过后会进入社内目录。</text>
     </view>
 
     <block wx:if="{{ list.length > 0 }}">
@@ -79,38 +41,28 @@
     <empty-state
       wx:elif="{{ errorText && !stale }}"
       icon="error-circle"
-      title="没能读到板块"
+      title="没能读到话题"
       desc="{{ errorText }}"
       action="再试一次"
       bind:action="onRetry"
     />
 
-    <view wx:elif="{{ loading }}" class="hg-topics__loading">正在查找板块…</view>
-
-    <empty-state
-      wx:elif="{{ searchQuery }}"
-      icon="search"
-      title="没有找到匹配的板块"
-      desc="试试更短的关键词，或切换分类。"
-      action="清除搜索"
-      bind:action="onSearchEmptyAction"
-    />
-
     <empty-state
       wx:elif="{{ !loading }}"
       icon="chat-bubble-1"
-      title="还没有可显示的板块"
-      desc="{{ isMember ? '创建一个具体的讨论入口，提交后等待管理员审核。' : '加入文学社后即可查看社内板块，也可以提交加入申请。' }}"
-      action="{{ isMember ? '创建板块' : '了解社团' }}"
+      title="还没有话题"
+      desc="{{ isMember ? '发起一个具体的问题，比讨论宏大议题更容易开始。' : '先了解一下这个社团，或者申请加入。' }}"
+      action="{{ isMember ? '发起一个话题' : '了解社团' }}"
       bind:action="onEmptyAction"
     />
-
-    <view wx:if="{{ hasMore }}" class="hg-topics__load-more" bindtap="onLoadMoreTap" aria-role="button" aria-busy="{{ loadingMore }}">
-      {{ loadingMore ? '正在加载…' : '加载更多板块' }}
-    </view>
   </view>
 
-  <!-- 创建板块编辑器 -->
+  <view wx:if="{{ list.length > 0 }}" class="hg-topics__create-wrap">
+    <view class="hg-topics__create" bindtap="onCreateOpen" aria-role="button">发起一个话题</view>
+    <view class="hg-topics__create-note">提交后需要管理员确认，确认前只有你能看到它。</view>
+  </view>
+
+  <!-- 发起话题编辑器 -->
   <t-popup
     visible="{{ createVisible }}"
     placement="bottom"
@@ -130,7 +82,7 @@
         >
           取消
         </view>
-        <text class="hg-topic-editor__heading">创建板块</text>
+        <text class="hg-topic-editor__heading">发起一个话题</text>
         <view
           class="hg-topic-editor__submit {{ !canSubmit || submitting ? 'hg-topic-editor__submit--disabled' : '' }}"
           bindtap="onCreateSubmit"
@@ -142,7 +94,7 @@
         </view>
       </view>
 
-      <view class="hg-topic-editor__helper">提交后进入管理员待审队列；审核通过后才会对社员开放。</view>
+      <view class="hg-topic-editor__helper">提交后需要管理员确认，确认前只有你能看到它。</view>
 
       <scroll-view
         class="hg-topic-editor__scroll"
@@ -154,7 +106,7 @@
         <view class="hg-topic-editor__content">
           <view id="topic-title-field" class="hg-topic-editor__field">
             <view class="hg-topic-editor__label-row">
-              <text class="hg-topic-editor__label">板块名称</text>
+              <text class="hg-topic-editor__label">话题名称</text>
               <text class="hg-topic-editor__counter">{{ form.title.length }} / 40</text>
             </view>
             <input
@@ -216,7 +168,7 @@
             </scroll-view>
           </view>
 
-          <view class="hg-topic-editor__notice">新板块用于社内讨论；分享板块标题不会公开其中的社内内容。</view>
+          <view class="hg-topic-editor__notice">新话题都是社内话题。即使标题被转发，参与内容也不会因此公开。</view>
         </view>
       </scroll-view>
     </view>
