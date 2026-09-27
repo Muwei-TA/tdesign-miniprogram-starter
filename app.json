@@ -18,6 +18,8 @@
         "my-content/index",
         "resubmit/index",
         "topic/index",
+        "boards/index",
+        "board/index",
         "collection/index",
         "profile/index",
         "appeals/index"

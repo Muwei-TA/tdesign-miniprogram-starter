@@ -1,4 +1,5 @@
 import { submitPost } from '~/services/posts';
+import { fetchBoards } from '~/services/boards';
 import { saveDraft, getDraft, removeDraft } from './drafts';
 import { bootstrapSession } from '~/services/session';
 import {
@@ -34,10 +35,16 @@ Page({
     identityMode: 'named',
     commentsEnabled: true,
     topic: null,
+    board: null,
     collectionId: '',
     consentGranted: false,
 
     scopeVisible: false,
+    boardPickerVisible: false,
+    boards: [],
+    boardNextCursor: null,
+    boardsLoading: false,
+    boardsErrorText: '',
     previewVisible: false,
     submitting: false,
     uploadPhase: '',
@@ -65,6 +72,7 @@ Page({
 
   onUnload() {
     if (this.uploadControl) this.uploadControl.canceled = true;
+    this.boardRequestId = (this.boardRequestId || 0) + 1;
     app.eventBus.off('session-changed', this.onSessionChanged);
     if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
     this.persistDraft({ silent: true });
@@ -122,7 +130,8 @@ Page({
     this.editorInitialized = true;
     const patch = { capabilities: this.data.capabilities };
     if (options.mode === 'article') patch.mode = 'article';
-    if (options.topicId) patch.topic = { id: options.topicId, title: options.topicTitle || '已选择的板块' };
+    if (options.topicId) patch.topic = { id: options.topicId, title: options.topicTitle || '已选择的话题' };
+    if (options.boardId) patch.board = { id: options.boardId, title: options.boardTitle || '已选择的板块' };
     if (options.collectionId) patch.collectionId = options.collectionId;
 
     if (options.draftId) {
@@ -139,6 +148,7 @@ Page({
           identityMode: draft.identityMode || 'named',
           commentsEnabled: draft.commentsEnabled !== false,
           topic: draft.topic || null,
+          board: draft.board || patch.board || null,
           collectionId: draft.collectionId || options.collectionId || '',
           consentGranted: !!draft.consentGranted,
           video: draft.video || null,
@@ -169,7 +179,7 @@ Page({
     const scopeText = {
       public: '公开可见：任何打开本小程序的人都可能看到',
       club: '仅社内可见：只有当前有效成员能看到',
-      private: '只有自己可见：不进入社区流、板块、搜索与互动',
+      private: '只有自己可见：不进入社区流、板块、话题、搜索与互动',
     }[visibility];
     const tail = visibility === 'private' ? '保存后只留给自己。' : '提交后会先进入审核。';
     this.setData({ previewText: `你将以「${identityText}」发布，${scopeText}。${tail}` });
@@ -333,9 +343,10 @@ Page({
   onScopeChange(e) {
     const { value } = e.detail;
     const patch = { visibility: value, scopeVisible: false };
-    // 仅自己会取消公共话题关联与社区互动
+    // 仅自己不会进入公共板块或话题目录，也不接受社区互动。
     if (value === 'private') {
       patch.topic = null;
+      patch.board = null;
       patch.commentsEnabled = false;
     }
     this.setData(patch, () => this.refreshPreviewText());
@@ -361,6 +372,71 @@ Page({
 
   onClearTopic() {
     this.setData({ topic: null });
+  },
+
+  onBoardPickerOpen() {
+    this.setData({ boardPickerVisible: true, boardsErrorText: '' });
+    if (!this.boardChoicesLoaded) this.loadBoardChoices();
+  },
+
+  onBoardPickerClose() {
+    this.setData({ boardPickerVisible: false });
+  },
+
+  onBoardPickerVisibleChange(e) {
+    const detail = e && e.detail;
+    const visible = typeof detail === 'boolean' ? detail : !!(detail && detail.visible);
+    this.setData({ boardPickerVisible: visible });
+  },
+
+  async loadBoardChoices({ append = false } = {}) {
+    if (this.data.boardsLoading) return;
+    const cursor = append ? this.data.boardNextCursor : '';
+    if (append && !cursor) return;
+    const requestId = (this.boardRequestId || 0) + 1;
+    this.boardRequestId = requestId;
+    this.setData({
+      boardsLoading: true,
+      boardsErrorText: '',
+      ...(append ? {} : { boardNextCursor: null }),
+    });
+    try {
+      const data = await fetchBoards({ cursor, status: 'active' });
+      if (requestId !== this.boardRequestId) return;
+      const boards = append ? this.data.boards.concat(data.items || []) : data.items || [];
+      this.boardChoicesLoaded = true;
+      this.setData({
+        boards,
+        boardNextCursor: data.nextCursor || null,
+        boardsLoading: false,
+        boardsErrorText: '',
+      });
+    } catch (err) {
+      if (requestId !== this.boardRequestId) return;
+      this.setData({
+        boardsLoading: false,
+        boardsErrorText: err.message || '板块列表暂时无法读取',
+      });
+    }
+  },
+
+  onBoardRetryTap() {
+    this.boardChoicesLoaded = false;
+    return this.loadBoardChoices();
+  },
+
+  onBoardLoadMoreTap() {
+    return this.loadBoardChoices({ append: true });
+  },
+
+  onBoardSelect(e) {
+    const { id, title } = e.currentTarget.dataset;
+    if (!id || !title) return;
+    this.setData({ board: { id, title }, boardPickerVisible: false }, () => this.persistDraft({ silent: true }));
+  },
+
+  onBoardClear() {
+    this.setData({ board: null }, () => this.persistDraft({ silent: true }));
   },
 
   onConsentChange(e) {
@@ -407,6 +483,7 @@ Page({
       identityMode,
       commentsEnabled,
       topic,
+      board,
       collectionId,
       consentGranted,
       video,
@@ -425,6 +502,7 @@ Page({
       identityMode,
       commentsEnabled,
       topic,
+      board,
       collectionId,
       consentGranted,
       video,
@@ -478,6 +556,7 @@ Page({
         visibility: this.data.visibility,
         identityMode: this.data.identityMode,
         topicId: this.data.topic ? this.data.topic.id : '',
+        boardId: this.data.visibility === 'private' || !this.data.board ? '' : this.data.board.id,
         commentsEnabled: this.data.commentsEnabled,
         collectionId: this.data.collectionId,
         consentGranted: this.data.consentGranted,

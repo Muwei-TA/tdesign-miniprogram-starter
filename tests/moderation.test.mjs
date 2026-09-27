@@ -70,10 +70,15 @@ vm.runInNewContext(
 
 const moderation = module.exports;
 
-assert.deepEqual(plain(moderation.QUEUES.map((queue) => queue.value)), ['content', 'comment', 'topic', 'member', 'report', 'collection']);
+assert.deepEqual(plain(moderation.QUEUES.map((queue) => queue.value)), ['content', 'comment', 'topic', 'board', 'member', 'report', 'collection']);
 assert.equal(moderation.ACTIONS_BY_QUEUE.report.find((action) => action.key === 'keep').requiresReason, true);
 assert.equal(moderation.ACTIONS_BY_QUEUE.content.find((action) => action.key === 'approve').requiresReason, false);
 assert.equal(moderation.ACTIONS_BY_QUEUE.comment.find((action) => action.key === 'reject').requiresReason, true);
+assert.deepEqual(
+  plain(moderation.ACTIONS_BY_QUEUE.board.map((action) => [action.key, action.requiresReason])),
+  [['approve', false], ['reject', true]],
+  'board review actions are independent from the topic archive workflow',
+);
 assert.equal(moderation.ACTIONS_BY_QUEUE.collection.some((action) => action.key === 'reveal'), false);
 
 const item = moderation.normalizeQueueItem({
@@ -133,6 +138,20 @@ assert.deepEqual(plain(commentItem), {
 assert.equal(Object.prototype.hasOwnProperty.call(commentItem, 'ownerId'), false);
 assert.equal(Object.prototype.hasOwnProperty.call(commentItem, 'mappings'), false);
 
+const boardItem = moderation.normalizeQueueItem({
+  id: 'b-1',
+  title: '山茶读书会',
+  summary: '每周共读与交流',
+  status: 'pending',
+  version: 4,
+  ownerId: 'must-not-render',
+}, 'board');
+assert.equal(boardItem.queue, 'board');
+assert.equal(boardItem.queueLabel, '板块');
+assert.equal(boardItem.version, 4);
+assert.deepEqual(plain(boardItem.actions.map((action) => action.key)), ['approve', 'reject']);
+assert.equal(Object.prototype.hasOwnProperty.call(boardItem, 'ownerId'), false);
+
 const queue = await moderation.fetchQueue({ queue: 'content', cursor: 'cursor-1' });
 assert.equal(calls[0].url, '/admin/queues/content?cursor=cursor-1');
 assert.equal(queue.items[0].isAnonymous, true);
@@ -171,8 +190,10 @@ vm.runInNewContext(
 );
 const adminRoutes = [
   ['GET', '/admin/queues/content', {}, 'admin/queue', { queue: 'content' }],
+  ['GET', '/admin/queues/board', {}, 'admin/queue', { queue: 'board' }],
   ['POST', '/admin/reviews/p-1/decision', { decision: 'reject', reason: '补充来源', expectedVersion: 3 }, 'admin/content/decide', { id: 'p-1', decision: 'reject', reason: '补充来源', expectedVersion: 3 }],
   ['POST', '/admin/topics/t-1/decision', { decision: 'archive', reason: '已过期' }, 'admin/topic/decide', { id: 't-1', decision: 'archive', reason: '已过期' }],
+  ['POST', '/admin/boards/b-1/decision', { decision: 'reject', reason: '名称需要调整', expectedVersion: 4 }, 'admin/board/decide', { id: 'b-1', decision: 'reject', reason: '名称需要调整', expectedVersion: 4 }],
   ['POST', '/admin/members/applications/m-1', { decision: 'approve', reason: '' }, 'admin/membership/decide', { id: 'm-1', decision: 'approve', reason: '' }],
   ['POST', '/admin/reports/r-1/decision', { decision: 'hide', reason: '待核查' }, 'admin/report/decide', { id: 'r-1', decision: 'hide', reason: '待核查' }],
   ['POST', '/admin/collections/c-1/decision', { decision: 'skip', reason: '本期已满' }, 'admin/collection/decide', { id: 'c-1', decision: 'skip', reason: '本期已满' }],
@@ -188,6 +209,8 @@ const componentSource = readFileSync(join(ROOT, 'components/moderation-item/inde
 assert.match(pageSource, /expectedVersion: item\.version/);
 assert.match(pageSource, /item\.queue === 'comment'/);
 assert.match(pageSource, /decideComment/);
+assert.match(pageSource, /fetchPendingBoards/);
+assert.match(pageSource, /decideBoard\(item\.id, \{ decision: key, reason, expectedVersion: item\.version \}\)/);
 assert.match(pageSource, /pages\/community\/post\/index\?id=\$\{encodeURIComponent\(item\.id\)\}/);
 assert.match(pageSource, /请填写处理理由/);
 assert.match(pageSource, /session\.role === 'admin'|session\.role === 'moderator'/);
@@ -196,5 +219,51 @@ assert.match(componentSource, /树洞身份/);
 assert.match(componentSource, /item\.queue === 'content'/);
 assert.match(componentSource, /查看内容/);
 assert.match(componentSource, /查看摘要/);
+
+let adminPageDefinition;
+const boardQueueCalls = [];
+const boardDecisionCalls = [];
+const adminPageSource = pageSource
+  .replace(
+    "import {\n  QUEUES,\n  fetchQueue,\n  normalizeQueueItem,\n  fetchAssetReviewStatuses,\n  submitDecision,\n  decideComment,\n  decideTopic,\n  decideMembership,\n  decideReport,\n  decideCollection,\n} from './moderation';",
+    'const { QUEUES, fetchQueue, normalizeQueueItem, fetchAssetReviewStatuses, submitDecision, decideComment, decideTopic, decideMembership, decideReport, decideCollection } = __moderation;',
+  )
+  .replace("import { fetchPendingBoards, decideBoard } from '~/services/boards';", 'const { fetchPendingBoards, decideBoard } = __boards;')
+  .replace("import { fetchUsageStatus } from './usage';", 'const { fetchUsageStatus } = __usage;')
+  .replace("import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;');
+vm.runInNewContext(adminPageSource, {
+  Page(definition) { adminPageDefinition = definition; },
+  getApp: () => ({ eventBus: { on() {}, off() {} }, globalData: {} }),
+  wx: { showToast() {}, showModal() {}, stopPullDownRefresh() {} },
+  __moderation: moderation,
+  __boards: {
+    async fetchPendingBoards(options) {
+      boardQueueCalls.push(options);
+      return { items: [{ id: 'b-1', title: '山茶读书会', summary: '每周共读', status: 'pending', version: 4 }], nextCursor: null };
+    },
+    async decideBoard(id, payload) {
+      boardDecisionCalls.push({ id, payload });
+      return { state: 'approved' };
+    },
+  },
+  __usage: { fetchUsageStatus: async () => null },
+  __navigation: { navigateTo() {} },
+});
+const adminPage = Object.assign(Object.create(adminPageDefinition), {
+  data: { ...adminPageDefinition.data, accessState: 'allowed', activeQueue: 'board', items: [] },
+  setData(patch, callback) {
+    Object.assign(this.data, patch);
+    if (callback) callback();
+  },
+});
+const topicQueueServiceCallsBeforeBoardLoad = calls.length;
+await adminPage.loadQueue();
+assert.deepEqual(plain(boardQueueCalls), [{ cursor: '' }]);
+assert.equal(calls.length, topicQueueServiceCallsBeforeBoardLoad, 'the board queue does not call the topic queue service');
+assert.equal(adminPage.data.items[0].queue, 'board');
+assert.deepEqual(plain(adminPage.data.items[0].actions.map((action) => action.key)), ['approve', 'reject']);
+await adminPage.executeAction(adminPage.data.items[0], 'approve', '');
+assert.deepEqual(plain(boardDecisionCalls), [{ id: 'b-1', payload: { decision: 'approve', reason: '', expectedVersion: 4 } }]);
+assert.equal(adminPage.data.items.length, 0, 'a successful board decision removes the item from the board queue');
 
 console.log('OK: moderation queue DTO whitelist, action reasons, expectedVersion, and decision routes passed');

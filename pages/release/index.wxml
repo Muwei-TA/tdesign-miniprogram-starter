@@ -172,10 +172,20 @@
         <t-switch value="{{ commentsEnabled }}" bind:change="onCommentsChange" />
       </view>
 
+      <view wx:if="{{ visibility !== 'private' }}" class="hg-compose__row hg-compose__row--interactive" bindtap="onBoardPickerOpen" aria-role="button">
+        <t-icon name="bulletpoint" size="36rpx" />
+        <view class="hg-compose__row-main">
+          <view class="hg-compose__row-title">关联板块（可选）</view>
+          <view class="hg-compose__row-sub">{{ board ? board.title : '选择后会显示在对应板块中' }}</view>
+        </view>
+        <view wx:if="{{ board }}" class="hg-compose__row-clear" catchtap="onBoardClear" aria-role="button">移除</view>
+        <t-icon class="hg-compose__row-arrow" name="chevron-right" size="32rpx" />
+      </view>
+
       <view wx:if="{{ topic }}" class="hg-compose__row">
         <t-icon name="bulletpoint" size="36rpx" />
         <view class="hg-compose__row-main">
-          <view class="hg-compose__row-title">关联板块</view>
+          <view class="hg-compose__row-title">关联话题</view>
           <view class="hg-compose__row-sub">{{ topic.title }}</view>
         </view>
         <view class="hg-compose__row-clear" catchtap="onClearTopic" aria-role="button">移除</view>
@@ -218,6 +228,53 @@
       bind:close="onScopeClose"
     />
 
+    <t-popup visible="{{ boardPickerVisible }}" placement="bottom" bind:visible-change="onBoardPickerVisibleChange">
+      <view class="hg-sheet hg-compose__board-picker">
+        <view class="hg-sheet__head">
+          <view class="hg-sheet__title">选择板块</view>
+          <view class="hg-sheet__close" bindtap="onBoardPickerClose" aria-role="button" aria-label="关闭">
+            <t-icon name="close" size="40rpx" />
+          </view>
+        </view>
+
+        <view wx:if="{{ boardsLoading && !boards.length }}" class="hg-compose__board-state">正在读取板块…</view>
+        <view wx:elif="{{ boardsErrorText && !boards.length }}" class="hg-compose__board-state hg-compose__board-state--error">
+          <text>{{ boardsErrorText }}</text>
+          <text class="hg-compose__board-retry" bindtap="onBoardRetryTap" aria-role="button">重试</text>
+        </view>
+        <scroll-view wx:else class="hg-compose__board-list" scroll-y="true">
+          <view wx:if="{{ boardsErrorText }}" class="hg-compose__board-state hg-compose__board-state--error">
+            <text>{{ boardsErrorText }}</text>
+            <text class="hg-compose__board-retry" bindtap="onBoardRetryTap" aria-role="button">重试</text>
+          </view>
+          <view
+            wx:for="{{ boards }}"
+            wx:key="id"
+            class="hg-compose__board-option {{ board && board.id === item.id ? 'hg-compose__board-option--selected' : '' }}"
+            data-id="{{ item.id }}"
+            data-title="{{ item.title }}"
+            bindtap="onBoardSelect"
+            aria-role="button"
+            aria-pressed="{{ board && board.id === item.id }}"
+          >
+            <view class="hg-compose__board-option-main">
+              <view class="hg-compose__board-option-title">{{ item.title }}</view>
+              <view wx:if="{{ item.description }}" class="hg-compose__board-option-desc">{{ item.description }}</view>
+            </view>
+            <text wx:if="{{ board && board.id === item.id }}" class="hg-compose__board-selected">已选择</text>
+          </view>
+
+          <view wx:if="{{ boardsLoading && boards.length }}" class="hg-compose__board-state">正在加载更多…</view>
+          <view wx:elif="{{ boardNextCursor }}" class="hg-compose__board-more" bindtap="onBoardLoadMoreTap" aria-role="button">
+            加载更多板块
+          </view>
+          <view wx:elif="{{ !boards.length }}" class="hg-compose__board-state">
+            当前还没有已通过审核的板块，之后可以再来选择。
+          </view>
+        </scroll-view>
+      </view>
+    </t-popup>
+
     <!-- 发布前确认：再次展示身份与受众 -->
     <t-popup visible="{{ previewVisible }}" placement="bottom" bind:visible-change="onPreviewClose">
       <view class="hg-sheet">
@@ -231,6 +288,8 @@
         <view wx:if="{{ title }}" class="hg-compose__pv-title">{{ title }}</view>
         <view class="hg-sheet__text">{{ body }}</view>
         <view wx:if="{{ images.length > 0 }}" class="hg-compose__pv-media">附带 {{ images.length }} 张图片</view>
+        <view wx:if="{{ board }}" class="hg-compose__pv-media">关联板块：{{ board.title }}</view>
+        <view wx:if="{{ topic }}" class="hg-compose__pv-media">关联话题：{{ topic.title }}</view>
 
         <view class="hg-sheet__notice">{{ previewText }}</view>
         <view wx:if="{{ identityMode === 'anonymous' }}" class="hg-sheet__notice">

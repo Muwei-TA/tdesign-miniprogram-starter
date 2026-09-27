@@ -32,6 +32,7 @@ function draftFingerprint(draft) {
     identityMode: draft.identityMode || 'named',
     commentsEnabled: draft.commentsEnabled !== false,
     topic: draft.topic || null,
+    board: draft.board || null,
     collectionId: draft.collectionId || '',
     consentGranted: !!draft.consentGranted,
   });
