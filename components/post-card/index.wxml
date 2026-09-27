@@ -62,8 +62,8 @@
     <view class="hg-post__event-note">这只是意向，不需要报名，也可以随时取消。</view>
   </view>
 
-  <!-- 板块 -->
-  <view wx:if="{{ post.topic }}" class="hg-post__topic" hover-class="hg-post__topic--hover" catchtap="onTapTopic" aria-role="button" aria-label="板块 {{ post.topic.title }}">
+  <!-- 话题 -->
+  <view wx:if="{{ post.topic }}" class="hg-post__topic" hover-class="hg-post__topic--hover" catchtap="onTapTopic" aria-role="button" aria-label="话题 {{ post.topic.title }}">
     <t-icon name="chat-bubble-1" size="22rpx" />
     <text class="hg-post__topic-text">{{ post.topic.title }}</text>
   </view>
