@@ -223,6 +223,7 @@ assert.match(componentSource, /查看摘要/);
 let adminPageDefinition;
 const boardQueueCalls = [];
 const boardDecisionCalls = [];
+const adminModals = [];
 const adminPageSource = pageSource
   .replace(
     "import {\n  QUEUES,\n  fetchQueue,\n  normalizeQueueItem,\n  fetchAssetReviewStatuses,\n  submitDecision,\n  decideComment,\n  decideTopic,\n  decideMembership,\n  decideReport,\n  decideCollection,\n} from './moderation';",
@@ -234,7 +235,7 @@ const adminPageSource = pageSource
 vm.runInNewContext(adminPageSource, {
   Page(definition) { adminPageDefinition = definition; },
   getApp: () => ({ eventBus: { on() {}, off() {} }, globalData: {} }),
-  wx: { showToast() {}, showModal() {}, stopPullDownRefresh() {} },
+  wx: { showToast() {}, showModal(options) { adminModals.push(options); }, stopPullDownRefresh() {} },
   __moderation: moderation,
   __boards: {
     async fetchPendingBoards(options) {
@@ -262,6 +263,10 @@ assert.deepEqual(plain(boardQueueCalls), [{ cursor: '' }]);
 assert.equal(calls.length, topicQueueServiceCallsBeforeBoardLoad, 'the board queue does not call the topic queue service');
 assert.equal(adminPage.data.items[0].queue, 'board');
 assert.deepEqual(plain(adminPage.data.items[0].actions.map((action) => action.key)), ['approve', 'reject']);
+adminPage.confirmAction(adminPage.data.items[0], 'reject', '名称需要调整');
+assert.equal(adminModals.at(-1).content, '提交后会记录处理理由。确认继续？');
+adminPage.confirmAction(moderation.normalizeQueueItem({ id: 't-1' }, 'topic'), 'archive', '已过活动期');
+assert.match(adminModals.at(-1).content, /并通知相关用户/);
 await adminPage.executeAction(adminPage.data.items[0], 'approve', '');
 assert.deepEqual(plain(boardDecisionCalls), [{ id: 'b-1', payload: { decision: 'approve', reason: '', expectedVersion: 4 } }]);
 assert.equal(adminPage.data.items.length, 0, 'a successful board decision removes the item from the board queue');
