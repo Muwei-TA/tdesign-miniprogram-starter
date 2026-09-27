@@ -72,6 +72,11 @@ Component({
       if (topic) this.triggerEvent('taptopic', { topicId: topic.id });
     },
 
+    onTapBoard() {
+      const { board } = this.data.post;
+      if (board) this.triggerEvent('tapboard', { boardId: board.id });
+    },
+
     onTapAuthor() {
       const author = this.data.post.author || {};
       // 匿名作者不返回 userId，页面据此弹匿名说明而不跳主页
