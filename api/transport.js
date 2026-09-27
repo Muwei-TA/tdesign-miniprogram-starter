@@ -103,6 +103,11 @@ const ROUTES = [
   },
   { method: 'GET', pattern: '/me/topics', action: 'me/topics' },
 
+  // 板块；与话题是独立资源和独立 action。
+  { method: 'GET', pattern: '/boards', action: 'boards/list' },
+  { method: 'POST', pattern: '/boards', action: 'boards/create' },
+  { method: 'GET', pattern: '/boards/:id', action: 'boards/detail', map: ({ params, payload }) => ({ id: params.id, cursor: payload.cursor }) },
+
   // 文集与授权。
   { method: 'GET', pattern: '/collections', action: 'collections/list' },
   { method: 'GET', pattern: '/collections/:id', action: 'collections/detail', map: ({ params }) => ({ id: params.id }) },
@@ -140,6 +145,7 @@ const ROUTES = [
   { method: 'POST', pattern: '/admin/reviews/:id/decision', action: 'admin/content/decide' },
   { method: 'POST', pattern: '/admin/comments/:id/decision', action: 'admin/comment/decide' },
   { method: 'POST', pattern: '/admin/topics/:id/decision', action: 'admin/topic/decide' },
+  { method: 'POST', pattern: '/admin/boards/:id/decision', action: 'admin/board/decide' },
   { method: 'POST', pattern: '/admin/members/applications/:id', action: 'admin/membership/decide' },
   { method: 'POST', pattern: '/admin/reports/:id/decision', action: 'admin/report/decide' },
   { method: 'POST', pattern: '/admin/collections/:id/decision', action: 'admin/collection/decide' },

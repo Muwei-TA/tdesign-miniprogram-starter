@@ -1,0 +1,75 @@
+<view class="hg-page hg-board-detail">
+  <hg-nav title="板块详情" />
+
+  <empty-state
+    wx:if="{{ !isMember }}"
+    icon="usergroup"
+    title="加入后浏览板块"
+    desc="社内板块只向有效成员开放。"
+    action="了解加入方式"
+    bind:action="onJoinTap"
+  />
+  <request-state wx:elif="{{ loading && !board }}" state="loading" />
+  <request-state
+    wx:elif="{{ !board && errorText }}"
+    state="error"
+    error-kind="{{ errorKind }}"
+    bind:retry="onRetry"
+  />
+
+  <block wx:if="{{ isMember && board }}">
+    <view class="hg-board-detail__hero">
+      <view class="hg-board-detail__title">{{ board.title }}</view>
+      <view class="hg-board-detail__description">{{ board.description || '这处空间还没有介绍。' }}</view>
+      <view wx:if="{{ board.status === 'pending' }}" class="hg-board-detail__status hg-board-detail__status--pending">等待审核</view>
+      <view wx:elif="{{ board.status === 'rejected' }}" class="hg-board-detail__status hg-board-detail__status--rejected">需要调整</view>
+      <view wx:elif="{{ board.status === 'archived' }}" class="hg-board-detail__status">已归档</view>
+    </view>
+
+    <request-state wx:if="{{ stale }}" stale="{{ true }}" bind:retry="onRetry" />
+
+    <view wx:if="{{ board.status === 'pending' }}" class="hg-board-detail__review-note">
+      已收到这个板块建议，审核通过后才会向成员开放浏览和发帖。
+    </view>
+    <view wx:elif="{{ board.status === 'rejected' }}" class="hg-board-detail__review-note">
+      这个板块暂未开放。你可以联系管理员了解审核意见。
+    </view>
+    <view wx:if="{{ board.rejectReason }}" class="hg-board-detail__review-note">审核意见：{{ board.rejectReason }}</view>
+
+    <view wx:if="{{ board.status === 'active' }}" class="hg-board-detail__section-title">板块帖子</view>
+    <view wx:if="{{ board.status === 'active' }}" class="hg-board-detail__list">
+      <block wx:if="{{ list.length > 0 }}">
+        <post-card
+          wx:for="{{ list }}"
+          wx:key="id"
+          mode="compact"
+          show-actions="{{ false }}"
+          post="{{ item }}"
+          bind:tapbody="onTapBody"
+          bind:tapmedia="onTapMedia"
+          bind:taptopic="onTapTopic"
+          bind:tapboard="onTapBoard"
+          bind:tapauthor="onTapAuthor"
+        />
+        <view wx:if="{{ loadingMore }}" class="hg-board-detail__loading-more">正在加载更多…</view>
+      </block>
+      <empty-state
+        wx:elif="{{ !loading && !stale }}"
+        icon="pen"
+        title="这里还很安静"
+        desc="愿意的话，可以从一句话或一张照片开始。"
+      />
+    </view>
+
+    <view class="hg-board-detail__footer">
+      <view
+        class="hg-board-detail__write {{ !canPost ? 'hg-board-detail__write--disabled' : '' }}"
+        bindtap="onWrite"
+        aria-role="button"
+      >
+        {{ board.status === 'pending' ? '等待审核' : (board.status === 'archived' ? '板块已归档' : (canPost ? '在此写一笔' : '当前不能发帖')) }}
+      </view>
+      <view class="hg-board-detail__note">发帖仍由你决定身份与可见范围；板块审核与帖子审核彼此独立。</view>
+    </view>
+  </block>
+</view>

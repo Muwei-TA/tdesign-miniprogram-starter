@@ -6,7 +6,7 @@ import {
   deletePost,
   FEED_FILTERS,
 } from '~/services/posts';
-import { fetchTopics } from '~/services/topics';
+import { fetchBoards } from '~/services/boards';
 import { previewPostImage } from '~/services/image-preview';
 import { getCapabilities, getSession } from '~/services/session';
 import { navigateTo } from '~/utils/navigate';
@@ -109,14 +109,14 @@ Page({
     this.setData({ recommendationCards: [], recommendationState: 'loading' });
 
     try {
-      const data = await fetchTopics({ category: 'all', status: 'active' });
+      const data = await fetchBoards({ status: 'active' });
       if (requestId !== this.recommendationRequestId) return;
-      const topics = (data.items || [])
-        .filter((topic) => topic && topic.status === 'active')
+      const boards = (data.items || [])
+        .filter((board) => board && board.status === 'active')
         .slice(0, 9);
       const recommendationCards = [];
-      for (let start = 0; start < topics.length; start += 3) {
-        const items = topics.slice(start, start + 3);
+      for (let start = 0; start < boards.length; start += 3) {
+        const items = boards.slice(start, start + 3);
         recommendationCards.push({ id: items[0].id, items });
       }
       this.setData({
@@ -196,11 +196,11 @@ Page({
 
   onRecommendationTap(e) {
     const { id } = e.currentTarget.dataset;
-    if (id) navigateTo(`/pages/community/topic/index?id=${id}`);
+    if (id) navigateTo(`/pages/community/board/index?id=${encodeURIComponent(id)}`);
   },
 
   onMoreRecommendations() {
-    wx.switchTab({ url: '/pages/topics/index' });
+    navigateTo('/pages/community/boards/index');
   },
 
   onTapBody(e) {
@@ -219,6 +219,11 @@ Page({
 
   onTapTopic(e) {
     navigateTo(`/pages/community/topic/index?id=${e.detail.topicId}`);
+  },
+
+  onTapBoard(e) {
+    const id = e.detail.boardId || e.detail.id;
+    if (id) navigateTo(`/pages/community/board/index?id=${encodeURIComponent(id)}`);
   },
 
   onTapAuthor(e) {

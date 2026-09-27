@@ -1,0 +1,114 @@
+<view class="hg-page hg-board-directory">
+  <hg-nav title="板块" />
+
+  <view class="hg-board-directory__intro">
+    <view class="hg-board-directory__title">按兴趣找到一处落笔的地方</view>
+    <view class="hg-board-directory__hint">板块由社员提出，经审核开放后可浏览和发帖。</view>
+    <view wx:if="{{ isAdmin }}" class="hg-board-directory__admin-link" bindtap="onAdminQueueTap" aria-role="button">板块待审</view>
+  </view>
+
+  <view wx:if="{{ isMember }}" class="hg-board-directory__search-row">
+    <input
+      class="hg-board-directory__search"
+      maxlength="50"
+      placeholder="搜索板块名称"
+      value="{{ keyword }}"
+      confirm-type="search"
+      bindinput="onKeywordInput"
+      bindconfirm="onSearchConfirm"
+    />
+    <view class="hg-board-directory__search-button" bindtap="onSearch" aria-role="button">搜索</view>
+    <view wx:if="{{ keyword || query }}" class="hg-board-directory__clear" bindtap="onSearchClear" aria-role="button">清除</view>
+  </view>
+
+  <view wx:if="{{ createdBoardId }}" class="hg-board-directory__feedback">
+    <view class="hg-board-directory__feedback-title">
+      {{ createdDuplicate ? (createdStatus === 'active' ? '已有同名板块' : '这个板块已在审核中') : (createdStatus === 'active' ? '板块已开放' : '已收到，等待审核') }}
+    </view>
+    <view class="hg-board-directory__feedback-text">
+      {{ createdDuplicate ? (createdStatus === 'active' ? '可以直接浏览这个板块。' : '你先前提交的板块仍在审核，待审内容不会出现在目录中。') : (createdStatus === 'active' ? '成员现在可以浏览这个板块。' : '审核通过后，成员可以在板块目录中浏览。') }}
+    </view>
+    <view class="hg-board-directory__feedback-actions">
+      <view class="hg-board-directory__feedback-link" bindtap="onViewCreatedBoard" aria-role="button">{{ createdStatus === 'active' ? '进入板块' : '查看审核状态' }}</view>
+      <view class="hg-board-directory__feedback-close" bindtap="onCreatedFeedbackClose" aria-role="button">关闭</view>
+    </view>
+  </view>
+
+  <view wx:if="{{ isMember && stale }}" class="hg-board-directory__stale">
+    <text>目录未更新：{{ errorText }}</text>
+    <text class="hg-board-directory__retry" bindtap="onRetry" aria-role="button">重试</text>
+  </view>
+
+  <empty-state
+    wx:if="{{ !isMember }}"
+    icon="usergroup"
+    title="加入后浏览社内板块"
+    desc="板块目录只向有效成员开放。"
+    action="了解加入方式"
+    bind:action="onJoinTap"
+  />
+  <request-state wx:elif="{{ loading && list.length === 0 }}" state="loading" />
+  <request-state
+    wx:elif="{{ list.length === 0 && errorText }}"
+    state="error"
+    error-kind="server"
+    bind:retry="onRetry"
+  />
+
+  <view wx:elif="{{ list.length > 0 }}" class="hg-board-directory__list">
+    <view
+      wx:for="{{ list }}"
+      wx:key="id"
+      class="hg-board-directory__card"
+      data-id="{{ item.id }}"
+      bindtap="onBoardTap"
+      hover-class="hg-board-directory__card--hover"
+      aria-role="button"
+    >
+      <view class="hg-board-directory__card-main">
+        <view class="hg-board-directory__card-title">{{ item.title }}</view>
+        <view class="hg-board-directory__card-description">{{ item.description || '还没有板块介绍。' }}</view>
+      </view>
+      <t-icon name="chevron-right" size="34rpx" />
+    </view>
+    <view wx:if="{{ loadingMore }}" class="hg-board-directory__loading-more">正在加载更多…</view>
+    <view wx:elif="{{ hasMore }}" class="hg-board-directory__load-more" bindtap="onReachBottom" aria-role="button">加载更多</view>
+  </view>
+
+  <empty-state
+    wx:elif="{{ isMember && !loading && !errorText }}"
+    icon="chat-bubble-1"
+    title="{{ query ? '没有找到匹配的板块' : '还没有已开放的板块' }}"
+    desc="{{ query ? '试试其他名称，或提出一个新板块。' : '可以先提出一个想法，审核通过后会出现在这里。' }}"
+  />
+
+  <view wx:if="{{ isMember }}" class="hg-board-directory__create" bindtap="onCreateTap" aria-role="button">{{ isAdmin ? '创建板块' : '提出一个板块' }}</view>
+
+  <view wx:if="{{ createVisible }}" class="hg-board-directory__sheet-wrap">
+    <view class="hg-board-directory__mask" catchtap="onCreateClose"></view>
+    <view class="hg-board-directory__sheet" catchtap="onStopPropagation">
+      <view class="hg-board-directory__sheet-head">
+        <view class="hg-board-directory__sheet-title">{{ isAdmin ? '创建一个板块' : '提出一个板块' }}</view>
+        <view class="hg-board-directory__sheet-close" bindtap="onCreateClose" aria-role="button">取消</view>
+      </view>
+      <view class="hg-board-directory__field-label">板块名称 <text>{{ titleCount }}</text></view>
+      <input
+        class="hg-board-directory__title-input"
+        placeholder="给这处空间起个名字"
+        value="{{ title }}"
+        bindinput="onTitleInput"
+      />
+      <view class="hg-board-directory__field-label">简单介绍 <text>{{ descriptionCount }}</text></view>
+      <textarea
+        class="hg-board-directory__description-input"
+        placeholder="希望大家在这里写些什么？"
+        value="{{ description }}"
+        bindinput="onDescriptionInput"
+      />
+      <view class="hg-board-directory__review-note">{{ isAdmin ? '创建后会立即向社内成员开放。' : '提交后进入审核；通过后会向社内成员开放。' }}</view>
+      <view class="hg-board-directory__submit {{ !canSubmit || submitting ? 'hg-board-directory__submit--disabled' : '' }}" bindtap="onCreateSubmit" aria-role="button">
+        {{ submitting ? '正在提交…' : (isAdmin ? '创建并开放' : '提交审核') }}
+      </view>
+    </view>
+  </view>
+</view>

@@ -40,17 +40,17 @@
       >
         <view
           wx:for="{{ item.items }}"
-          wx:for-item="topic"
+          wx:for-item="board"
           wx:key="id"
           class="hg-home__recommend-row"
-          data-id="{{ topic.id }}"
+          data-id="{{ board.id }}"
           hover-class="hg-home__recommend-row--hover"
           bindtap="onRecommendationTap"
           aria-role="button"
-          aria-label="查看板块 {{ topic.title }}"
+          aria-label="查看板块 {{ board.title }}"
         >
-          <t-icon class="hg-home__recommend-icon" name="{{ topic.icon || 'chat-bubble-1' }}" size="28rpx" />
-          <text class="hg-home__recommend-name">{{ topic.title }}</text>
+          <t-icon class="hg-home__recommend-icon" name="{{ board.icon || 'chat-bubble-1' }}" size="28rpx" />
+          <text class="hg-home__recommend-name">{{ board.title }}</text>
           <t-icon class="hg-home__recommend-arrow" name="arrow-right" size="24rpx" />
         </view>
       </view>
@@ -102,6 +102,7 @@
         bind:tapbody="onTapBody"
         bind:tapmedia="onTapMedia"
         bind:taptopic="onTapTopic"
+        bind:tapboard="onTapBoard"
         bind:tapauthor="onTapAuthor"
         bind:more="onMore"
         bind:react="onReact"

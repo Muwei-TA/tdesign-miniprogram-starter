@@ -23,6 +23,10 @@ export default {
   topicDetail: '/topics/:id',
   topicFollow: '/topics/:id/follow',
 
+  boards: '/boards',
+  boardDetail: '/boards/:id',
+  adminBoardDecision: '/admin/boards/:id/decision',
+
   collections: '/collections',
   collectionDetail: '/collections/:id',
   collectionSubmissions: '/collections/:id/submissions',
