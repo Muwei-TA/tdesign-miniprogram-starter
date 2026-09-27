@@ -27,6 +27,10 @@
         <view class="hg-my__avatar">{{ session.user.displayName ? session.user.displayName[0] : '樨' }}</view>
         <view class="hg-my__ident">
           <view class="hg-my__name">{{ session.user.displayName }}</view>
+          <view wx:if="{{ levelSnapshot }}" class="hg-my__rankline">
+            <text class="hg-my__badge hg-my__badge--{{ levelTier }}">Lv.{{ levelSnapshot.level }} {{ levelSnapshot.title }}</text>
+            <text class="hg-my__total-xp">累计 {{ levelSnapshot.totalXp }} XP</text>
+          </view>
           <view class="hg-my__since">{{ profile ? profile.memberSince : '社内成员' }}</view>
         </view>
         <view class="hg-my__edit" bindtap="onEditTap" aria-role="button" aria-label="编辑昵称">
@@ -49,6 +53,41 @@
         </view>
       </view>
       <view class="hg-my__stats-note">这些数字只给你自己看，不会出现在别人的页面上。</view>
+
+      <view wx:if="{{ levelSnapshot }}" class="hg-my__level-panel">
+        <view class="hg-my__level-summary">
+          <text wx:if="{{ isMaxLevel }}" class="hg-my__level-next">已达到当前最高等级</text>
+          <text wx:else class="hg-my__level-next">距 Lv.{{ nextLevelNum }} 还差 {{ levelRemainingXp }} XP</text>
+          <text wx:if="{{ isMaxLevel }}" class="hg-my__level-progress-text">累计 {{ levelSnapshot.totalXp }} XP</text>
+          <text wx:else class="hg-my__level-progress-text">本级 {{ levelSnapshot.progressXp }} / {{ levelSnapshot.progressTargetXp }} XP</text>
+        </view>
+        <view wx:if="{{ showLevelProgress }}" class="hg-my__progress-track" aria-label="当前等级进度">
+          <view class="hg-my__progress-fill hg-my__progress-fill--{{ levelTier }}" style="width: {{ levelProgressPercent }}%;" />
+        </view>
+        <view class="hg-my__level-actions">
+          <view
+            class="hg-my__check-in {{ levelSnapshot.today.checkedIn ? 'hg-my__check-in--done' : '' }}"
+            aria-role="button"
+            aria-disabled="{{ levelSnapshot.today.checkedIn || checkInSubmitting }}"
+            bindtap="onCheckInTap"
+          >
+            <text wx:if="{{ checkInSubmitting }}">正在签到…</text>
+            <text wx:elif="{{ levelSnapshot.today.checkedIn }}">明天再来</text>
+            <text wx:else>今日签到　+5 XP</text>
+          </view>
+          <text class="hg-my__rules-link" bindtap="onLevelRulesTap">等级规则 ›</text>
+        </view>
+        <view class="hg-my__today-xp">今日已发放 {{ levelSnapshot.today.earnedXp || 0 }} / {{ levelSnapshot.today.maxXp || 19 }} XP</view>
+        <view wx:if="{{ levelsError }}" class="hg-my__level-sync-error">
+          <text>网络暂时不可用，显示上次确认的数据。</text>
+          <text class="hg-my__retry" bindtap="onLevelsRetry">重试</text>
+        </view>
+      </view>
+      <view wx:elif="{{ levelsLoading }}" class="hg-my__level-state">正在读取等级进度…</view>
+      <view wx:elif="{{ levelsError }}" class="hg-my__level-state hg-my__level-state--error">
+        <text>等级信息暂时无法加载。</text>
+        <text class="hg-my__retry" bindtap="onLevelsRetry">重试</text>
+      </view>
     </view>
 
     <view class="hg-my__group">
@@ -140,4 +179,48 @@
       </view>
     </view>
   </block>
+
+  <view wx:if="{{ showLevelRules && isMember }}" class="hg-my__rules-scrim" bindtap="onLevelRulesClose">
+    <view class="hg-my__rules-sheet" catchtap="stopLevelRulesTap">
+      <view class="hg-my__rules-header">
+        <view>
+          <view class="hg-my__rules-title">等级与经验规则</view>
+          <view class="hg-my__rules-caption">记录稳定参与，不代表身份或内容质量。</view>
+        </view>
+        <view class="hg-my__rules-close" aria-role="button" aria-label="关闭规则说明" bindtap="onLevelRulesClose">×</view>
+      </view>
+      <scroll-view class="hg-my__rules-body" scroll-y="true">
+        <view class="hg-my__rule-item">
+          <text class="hg-my__rule-title">签到</text>
+          <text class="hg-my__rule-desc">每天 +5 XP，每个账号每天一次。按北京时间每天 00:00 重置，没有连续签到惩罚。</text>
+        </view>
+        <view class="hg-my__rule-item">
+          <text class="hg-my__rule-title">共鸣（点赞）</text>
+          <text class="hg-my__rule-desc">给已发布的帖子或回应点赞，每个不同目标 +1 XP，每天最多 5 个目标；同一目标只奖励一次，取消后重赞不会重复获得经验。给自己的内容点赞不计经验。</text>
+        </view>
+        <view class="hg-my__rule-item">
+          <text class="hg-my__rule-title">回应与回复</text>
+          <text class="hg-my__rule-desc">回应通过审核并保持可见后 +3 XP，每天最多计入 3 个不同帖子；同一天同一帖子只计入首条通过审核的回应。审核未通过的内容不计经验。</text>
+        </view>
+        <view class="hg-my__rule-item">
+          <text class="hg-my__rule-title">经验撤回</text>
+          <text class="hg-my__rule-desc">回应因违规从已发布状态撤下时，会扣回相应经验，但当日获奖名额不会恢复。你自行删除已通过审核的回应时，已获得的参与经验保留。</text>
+        </view>
+        <view class="hg-my__rule-cap">每日最多发放 19 XP</view>
+        <view class="hg-my__rule-item">
+          <text class="hg-my__rule-title">等级进阶</text>
+          <view class="hg-my__tier-list">
+            <view wx:for="{{ levelEntries }}" wx:key="level" class="hg-my__tier-item">
+              <text class="hg-my__badge hg-my__badge--{{ item.level }}">Lv.{{ item.level }} {{ item.title }}</text>
+              <text class="hg-my__tier-threshold">{{ item.thresholdXp }} XP 起</text>
+            </view>
+          </view>
+        </view>
+        <view class="hg-my__rule-item">
+          <text class="hg-my__rule-title">名牌与隐私</text>
+          <text class="hg-my__rule-desc">等级按累计经验提升，不会清零，也不影响发帖权限、内容审核或排序。名牌只在“我的”页面展示；匿名内容不会公开关联等级。</text>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
 </view>

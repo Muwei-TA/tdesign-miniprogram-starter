@@ -12,6 +12,8 @@ const ROUTES = [
   { method: 'POST', pattern: '/membership/applications', action: 'membership/apply' },
   { method: 'GET', pattern: '/membership/applications/mine', action: 'membership/mine' },
   { method: 'GET', pattern: '/me/profile', action: 'me/profile' },
+  { method: 'GET', pattern: '/me/levels', action: 'me/levels' },
+  { method: 'POST', pattern: '/me/check-in', action: 'me/check-in' },
   { method: 'POST', pattern: '/me/profile/update', action: 'me/profile/update' },
   { method: 'PATCH', pattern: '/me/profile', action: 'me/profile/update' },
   { method: 'POST', pattern: '/me/exports', action: 'me/exports' },

@@ -46,7 +46,7 @@ const sessionService = loadSessionService((url) => {
 
 const olderRefresh = sessionService.refreshSessionFromServer();
 const newerRefresh = sessionService.refreshSessionFromServer();
-const activeSession = { role: 'member', memberStatus: 'active', user: { displayName: '成员' } };
+const activeSession = { role: 'member', memberStatus: 'active', user: { id: 'member-1', displayName: '成员' } };
 responses[1].resolve(activeSession);
 await newerRefresh;
 responses[0].resolve({ role: 'guest', memberStatus: 'none', user: null });
@@ -100,6 +100,7 @@ assert.ok(appHarness.events.some(([name, session]) => name === 'session-changed'
 function loadMyPage(app, getSession, { request = async () => ({ stats: { posts: 0, bookmarks: 0, topics: 0 } }), wxOverrides = {} } = {}) {
   const source = read('pages/my/index.js')
     .replace("import request from '~/api/request';", 'const request = __request;')
+    .replace("import { fetchMyLevels, checkInForToday } from '~/services/levels';", 'const { fetchMyLevels, checkInForToday } = __levels;')
     .replace(
       "import { getSession, isAdmin } from '~/services/session';",
       'const { getSession, isAdmin } = __session;',
@@ -119,6 +120,7 @@ function loadMyPage(app, getSession, { request = async () => ({ stats: { posts: 
     Page(value) { definition = value; },
     getApp: () => app,
     __request: request,
+    __levels: { fetchMyLevels: async () => ({}), checkInForToday: async () => ({}) },
     __session: { getSession, isAdmin: () => false },
     __navigation: { navigateTo() {} },
     wx: {
