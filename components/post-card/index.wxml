@@ -17,8 +17,8 @@
     </view>
   </view>
 
-  <view class="hg-post__content {{ mode === 'feed' ? 'hg-post__content--feed' : '' }}">
-    <!-- feed 模式用 column-reverse 先展示媒体；其他模式保持正文在前 -->
+  <view class="hg-post__content {{ mode === 'feed' || mode === 'article' ? 'hg-post__content--feed' : '' }}">
+    <!-- feed 模式先展示媒体；文章卡片沿用同一顺序 -->
     <view class="hg-post__body" bindtap="onTapBody">
       <view wx:if="{{ post.title }}" class="hg-post__title">{{ post.title }}</view>
       <view wx:if="{{ post.excerpt }}" class="hg-post__text">{{ post.excerpt }}</view>
@@ -79,17 +79,17 @@
 
   <!-- 互动区 -->
   <view wx:if="{{ showInteractions }}" class="hg-post__actions">
-    <view class="hg-post__action {{ post.viewer.reacted ? 'hg-post__action--on' : '' }}" hover-class="hg-post__action--hover" catchtap="onReact" aria-role="button" aria-label="{{ post.viewer.reacted ? '取消共鸣' : '共鸣' }}">
+    <view wx:if="{{ showMemberActions }}" class="hg-post__action {{ post.viewer.reacted ? 'hg-post__action--on' : '' }}" hover-class="hg-post__action--hover" catchtap="onReact" aria-role="button" aria-label="{{ post.viewer.reacted ? '取消共鸣' : '共鸣' }}">
       <t-icon name="{{ post.viewer.reacted ? 'heart-filled' : 'heart' }}" size="32rpx" />
       <text>{{ post.viewer.reacted ? '已共鸣' : '共鸣' }}</text>
       <text wx:if="{{ post.counters.reactions > 0 }}" class="hg-post__count">{{ post.counters.reactions }}</text>
     </view>
-    <view class="hg-post__action" hover-class="hg-post__action--hover" catchtap="onComment" aria-role="button" aria-label="回应">
+    <view wx:if="{{ showComments }}" class="hg-post__action" hover-class="hg-post__action--hover" catchtap="onComment" aria-role="button" aria-label="{{ mode === 'article' && !post.viewer.canComment ? '查看回应' : '回应' }}">
       <t-icon name="chat-bubble-1" size="32rpx" />
-      <text>回应</text>
+      <text>{{ mode === 'article' && !post.viewer.canComment ? '查看回应' : '回应' }}</text>
       <text wx:if="{{ post.counters.comments > 0 }}" class="hg-post__count">{{ post.counters.comments }}</text>
     </view>
-    <view class="hg-post__action {{ post.viewer.bookmarked ? 'hg-post__action--on' : '' }}" hover-class="hg-post__action--hover" catchtap="onBookmark" aria-role="button" aria-label="{{ post.viewer.bookmarked ? '取消收藏' : '收藏' }}">
+    <view wx:if="{{ showMemberActions }}" class="hg-post__action {{ post.viewer.bookmarked ? 'hg-post__action--on' : '' }}" hover-class="hg-post__action--hover" catchtap="onBookmark" aria-role="button" aria-label="{{ post.viewer.bookmarked ? '取消收藏' : '收藏' }}">
       <t-icon name="{{ post.viewer.bookmarked ? 'bookmark-filled' : 'bookmark' }}" size="32rpx" />
       <text>{{ post.viewer.bookmarked ? '已收藏' : '收藏' }}</text>
     </view>

@@ -8,7 +8,7 @@
 |---|---|---|---|
 | 树洞 | `pages/home/index` | `leaf` → 回退 `home` | 树洞 |
 | 话题 | `pages/topics/index` | `chat-bubble-1` → 回退 `chat` | 话题 |
-| 文集 | `pages/anthology/index` | `book-open` → 回退 `books` | 文集 |
+| 文稿 | `pages/anthology/index` | `book-open` → 回退 `books` | 长文与知识分享信息流 |
 | 我的 | `pages/my/index` | `user` | 我的 |
 
 > TDesign 图标名需以实际 `miniprogram_npm/tdesign-miniprogram/icon` 支持为准；

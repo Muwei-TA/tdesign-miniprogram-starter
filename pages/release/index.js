@@ -106,9 +106,10 @@ Page({
   promptMembership() {
     if (this.joinPrompted) return;
     this.joinPrompted = true;
+    const isArticle = this.pageOptions && this.pageOptions.mode === 'article';
     wx.showModal({
       title: '需要成员资格',
-      content: '写一笔需要先加入文学社。',
+      content: isArticle ? '写文稿需要先加入文学社。' : '写一笔需要先加入文学社。',
       confirmText: '去了解',
       cancelText: '返回',
       success: (res) => {
@@ -450,10 +451,10 @@ Page({
     if (this.data.video && capabilities.video !== true) return '视频上传暂未开放，请移除视频后重试';
     if (images.length > 0 && capabilities.uploads !== true) return '图片上传暂未开放，请先移除图片或保存草稿';
     if (!body.trim() && images.length === 0 && !this.data.video) return '写一点内容，或者选一张图片';
-    if (mode === 'article' && !title.trim()) return '文章需要一个标题';
+    if (mode === 'article' && !title.trim()) return '文稿需要一个标题';
     if (mode === 'article' && title.length > MAX_TITLE) return `标题请控制在 ${MAX_TITLE} 字内`;
-    if (mode === 'article' && body.length > MAX_ARTICLE) return `文章正文最多 ${MAX_ARTICLE} 字`;
-    if (mode === 'fragment' && body.length > MAX_FRAGMENT) return `碎片最多 ${MAX_FRAGMENT} 字，可以切换到文章`;
+    if (mode === 'article' && body.length > MAX_ARTICLE) return `文稿正文最多 ${MAX_ARTICLE} 字`;
+    if (mode === 'fragment' && body.length > MAX_FRAGMENT) return `碎片最多 ${MAX_FRAGMENT} 字，可以切换到文稿`;
     if (collectionId && !consentGranted) return '向文集投稿需要先勾选授权';
     return '';
   },

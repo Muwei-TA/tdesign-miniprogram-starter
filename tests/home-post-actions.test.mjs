@@ -119,7 +119,7 @@ function createHarness(item, {
   return { context, calls, page, wx };
 }
 
-function runPostCardObserver(value) {
+function runPostCardObserver(value, mode = 'feed', canInteract = true) {
   let definition;
   vm.runInNewContext(postCardSource, {
     Component: (component) => {
@@ -127,10 +127,10 @@ function runPostCardObserver(value) {
     },
   });
   const context = {
-    data: { post: value, showActions: true },
+    data: { post: value, showActions: true, mode, canInteract },
     setData: (patch) => Object.assign(context.data, patch),
   };
-  definition.observers['post, showActions'].call(context);
+  definition.observers['post, showActions, mode, canInteract'].call(context);
   return context.data;
 }
 
@@ -265,6 +265,24 @@ const otherAuthor = runPostCardObserver(
   }),
 );
 assert.equal(otherAuthor.showMoreActions, false);
+
+const articleWithoutComments = runPostCardObserver(
+  post({ viewer: { isOwner: false, canDelete: false, canShrinkVisibility: false, canComment: false } }),
+  'article',
+  false,
+);
+assert.equal(articleWithoutComments.showComments, false);
+assert.equal(articleWithoutComments.showMemberActions, false);
+const articleWithComments = runPostCardObserver(
+  post({
+    viewer: { isOwner: false, canDelete: false, canShrinkVisibility: false, canComment: false },
+    counters: { comments: 3 },
+  }),
+  'article',
+  false,
+);
+assert.equal(articleWithComments.showComments, true);
+assert.equal(articleWithComments.showMemberActions, false);
 
 const privatePost = post({
   visibility: 'private',

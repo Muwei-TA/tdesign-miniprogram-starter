@@ -1,34 +1,64 @@
-<view class="hg-page hg-page--tab hg-anthology">
-  <hg-nav title="文集" show-back="{{ false }}" />
+<view class="hg-page hg-page--tab hg-manuscript">
+  <hg-nav title="文稿" show-back="{{ false }}" />
 
-  <view class="hg-anthology__intro">
-    <view class="hg-anthology__title">
-      <view>愿意被整理的文章，</view>
-      <view>在这里慢一点被读。</view>
+  <view class="hg-manuscript__intro">
+    <view class="hg-manuscript__copy">
+      <view class="hg-manuscript__eyebrow">长文 · 知识分享</view>
+      <view class="hg-manuscript__title">
+        <view>把知道的，</view>
+        <view>认真写下来。</view>
+      </view>
+      <view class="hg-manuscript__desc">读一篇完整的文章，也分享你实践过的经验。</view>
     </view>
-    <view class="hg-anthology__desc"> 收录由人工编辑决定，且需要作者单独授权。作者随时可以撤回，目录会同步移除。 </view>
+    <view
+      wx:if="{{ canPublish }}"
+      class="hg-manuscript__write"
+      hover-class="hg-manuscript__write--hover"
+      bindtap="onWriteArticle"
+      aria-role="button"
+      aria-label="写一篇文稿"
+    >
+      <t-icon name="edit-1" size="28rpx" />
+      <text>写文稿</text>
+    </view>
   </view>
 
-  <empty-state
-    wx:if="{{ unavailable }}"
-    icon="lock-on"
-    title="文集暂未开放"
-    desc="文集收录与投稿功能还在准备中，开放后会在这里显示。"
-  />
-
-  <view wx:elif="{{ stale }}" class="hg-anthology__stale">
+  <view wx:if="{{ stale }}" class="hg-manuscript__stale">
     <text>内容未更新：{{ errorText }}</text>
-    <text class="hg-anthology__retry" bindtap="onRetry">重试</text>
+    <text class="hg-manuscript__retry" bindtap="onRetry" aria-role="button">重试</text>
   </view>
 
-  <view class="hg-anthology__grid" wx:elif="{{ list.length > 0 }}">
-    <collection-cover wx:for="{{ list }}" wx:key="id" collection="{{ item }}" bind:tap="onCollectionTap" />
+  <view wx:if="{{ loading && list.length === 0 }}" class="hg-manuscript__skeleton-list">
+    <view wx:for="{{ [1, 2] }}" wx:key="*this" class="hg-manuscript__skeleton">
+      <view class="hg-manuscript__skeleton-author"></view>
+      <view class="hg-manuscript__skeleton-image"></view>
+      <view class="hg-manuscript__skeleton-title"></view>
+      <view class="hg-manuscript__skeleton-line"></view>
+    </view>
+  </view>
+
+  <view wx:elif="{{ list.length > 0 }}" class="hg-manuscript__feed">
+    <post-card
+      wx:for="{{ list }}"
+      wx:key="id"
+      mode="article"
+      post="{{ item }}"
+      can-interact="{{ isMember }}"
+      bind:tapbody="onTapBody"
+      bind:tapmedia="onTapMedia"
+      bind:taptopic="onTapTopic"
+      bind:tapboard="onTapBoard"
+      bind:tapauthor="onTapAuthor"
+      bind:more="onMore"
+      bind:react="onReact"
+      bind:bookmark="onBookmark"
+    />
   </view>
 
   <empty-state
     wx:elif="{{ errorText }}"
     icon="error-circle"
-    title="没能读到文集"
+    title="没能读到文稿"
     desc="{{ errorText }}"
     action="再试一次"
     bind:action="onRetry"
@@ -37,14 +67,21 @@
   <empty-state
     wx:elif="{{ !loading && !errorText }}"
     icon="book-open"
-    title="还没有文集"
-    desc="等有了愿意被整理的文章，\n这里会出现第一辑。"
+    title="还没有文稿"
+    desc="这里会出现社内发布的长文与知识分享。"
+    action="{{ canPublish ? '写一篇文稿' : '' }}"
+    bind:action="onWriteArticle"
   />
 
-  <view wx:if="{{ isMember && anthologyEnabled }}" class="hg-anthology__cta-wrap">
-    <view class="hg-anthology__cta" bindtap="onWriteArticle" aria-role="button">写一篇文章</view>
-    <view class="hg-anthology__cta-note"> 安全审核通过不等于被文集选中；未入选也不代表作品有问题。 </view>
-  </view>
+  <view wx:if="{{ loadingMore }}" class="hg-manuscript__loading-more">正在加载更多文稿…</view>
+  <view wx:elif="{{ list.length > 0 && !hasMore }}" class="hg-manuscript__end">已经读到这里</view>
 
-  <view class="hg-footnote">封面与辑名为演示内容，收录规则不使用点赞排名。</view>
+  <scope-picker
+    visible="{{ scopeVisible }}"
+    value="{{ scopeValue }}"
+    allow-public="{{ capabilities.publicScope }}"
+    mode="shrink"
+    bind:change="onScopeChange"
+    bind:close="onScopeClose"
+  />
 </view>
