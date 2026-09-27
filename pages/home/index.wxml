@@ -23,12 +23,41 @@
     <text>找回一句话、一张照片</text>
   </view>
 
-  <!-- 本周共写 -->
-  <view wx:if="{{ weekPrompt }}" class="hg-home__week" hover-class="hg-home__week--hover" bindtap="onWeekTap" aria-role="button" aria-label="本周共写">
-    <view class="hg-home__week-eyebrow">{{ weekPrompt.eyebrow }}</view>
-    <view class="hg-home__week-title">{{ weekPrompt.title }}</view>
-    <view class="hg-home__week-desc">{{ weekPrompt.desc }}</view>
-    <t-icon class="hg-home__week-arrow" name="arrow-right" size="34rpx" />
+  <!-- 只展示服务端返回的 active 板块；空状态不填充示例卡 -->
+  <view class="hg-home__recommend">
+    <view class="hg-home__recommend-head">
+      <text class="hg-home__recommend-title">推荐板块</text>
+      <view class="hg-home__recommend-more" hover-class="hg-home__recommend-more--hover" bindtap="onMoreRecommendations" aria-role="button" aria-label="查看更多板块">
+        <text>查看更多</text>
+        <t-icon name="arrow-right" size="28rpx" />
+      </view>
+    </view>
+    <scroll-view wx:if="{{ recommendationCards.length > 0 }}" class="hg-home__recommend-list" scroll-x enhanced show-scrollbar="{{ false }}">
+      <view
+        wx:for="{{ recommendationCards }}"
+        wx:key="id"
+        class="hg-home__recommend-card"
+      >
+        <view
+          wx:for="{{ item.items }}"
+          wx:for-item="topic"
+          wx:key="id"
+          class="hg-home__recommend-row"
+          data-id="{{ topic.id }}"
+          hover-class="hg-home__recommend-row--hover"
+          bindtap="onRecommendationTap"
+          aria-role="button"
+          aria-label="查看板块 {{ topic.title }}"
+        >
+          <t-icon class="hg-home__recommend-icon" name="{{ topic.icon || 'chat-bubble-1' }}" size="28rpx" />
+          <text class="hg-home__recommend-name">{{ topic.title }}</text>
+          <t-icon class="hg-home__recommend-arrow" name="arrow-right" size="24rpx" />
+        </view>
+      </view>
+    </scroll-view>
+    <view wx:elif="{{ recommendationState === 'empty' }}" class="hg-home__recommend-empty">暂时没有已审核的板块</view>
+    <view wx:elif="{{ recommendationState === 'guest' }}" class="hg-home__recommend-empty">加入文学社后，可以查看社内板块</view>
+    <view wx:elif="{{ recommendationState === 'error' }}" class="hg-home__recommend-empty">板块暂时没加载出来，前往板块页重试</view>
   </view>
 
   <!-- 筛选 -->

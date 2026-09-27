@@ -17,40 +17,42 @@
     </view>
   </view>
 
-  <!-- 正文 -->
-  <view class="hg-post__body" bindtap="onTapBody">
-    <view wx:if="{{ post.title }}" class="hg-post__title">{{ post.title }}</view>
-    <view wx:if="{{ post.excerpt }}" class="hg-post__text">{{ post.excerpt }}</view>
-  </view>
-
-  <!-- 媒体 -->
-  <block wx:if="{{ post.media.type === 'image' }}">
-    <view class="hg-post__images {{ isGrid ? 'hg-post__images--grid' : '' }}">
-      <image
-        wx:for="{{ post.media.images }}"
-        wx:key="*this"
-        class="hg-post__image"
-        src="{{ item }}"
-        mode="aspectFill"
-        data-index="{{ index }}"
-        catchtap="onTapMedia"
-        lazy-load
-        aria-label="内容配图"
-      />
+  <view class="hg-post__content {{ mode === 'feed' ? 'hg-post__content--feed' : '' }}">
+    <!-- feed 模式用 column-reverse 先展示媒体；其他模式保持正文在前 -->
+    <view class="hg-post__body" bindtap="onTapBody">
+      <view wx:if="{{ post.title }}" class="hg-post__title">{{ post.title }}</view>
+      <view wx:if="{{ post.excerpt }}" class="hg-post__text">{{ post.excerpt }}</view>
     </view>
-  </block>
 
-  <block wx:elif="{{ post.media.type === 'video' }}">
-    <view class="hg-post__video" catchtap="onTapMedia">
-      <image class="hg-post__image" src="{{ post.media.video.cover }}" mode="aspectFill" aria-label="视频封面" />
-      <!-- ready=false 时不给播放按钮，改为处理中说明（docs/07 7.3） -->
-      <view wx:if="{{ post.media.video.ready }}" class="hg-post__play">
-        <t-icon name="play-circle-filled" size="56rpx" />
+    <!-- 媒体 -->
+    <block wx:if="{{ post.media.type === 'image' }}">
+      <view class="hg-post__images {{ isGrid ? 'hg-post__images--grid' : '' }}">
+        <image
+          wx:for="{{ post.media.images }}"
+          wx:key="*this"
+          class="hg-post__image"
+          src="{{ item }}"
+          mode="aspectFill"
+          data-index="{{ index }}"
+          catchtap="onTapMedia"
+          lazy-load
+          aria-label="内容配图"
+        />
       </view>
-      <view wx:else class="hg-post__processing">正在处理，完成后才会展示</view>
-      <view wx:if="{{ durationText }}" class="hg-post__duration">{{ durationText }}</view>
-    </view>
-  </block>
+    </block>
+
+    <block wx:elif="{{ post.media.type === 'video' }}">
+      <view class="hg-post__video" catchtap="onTapMedia">
+        <image class="hg-post__image" src="{{ post.media.video.cover }}" mode="aspectFill" aria-label="视频封面" />
+        <!-- ready=false 时不给播放按钮，改为处理中说明（docs/07 7.3） -->
+        <view wx:if="{{ post.media.video.ready }}" class="hg-post__play">
+          <t-icon name="play-circle-filled" size="56rpx" />
+        </view>
+        <view wx:else class="hg-post__processing">正在处理，完成后才会展示</view>
+        <view wx:if="{{ durationText }}" class="hg-post__duration">{{ durationText }}</view>
+      </view>
+    </block>
+  </view>
 
   <!-- 活动信息 -->
   <view wx:if="{{ post.event }}" class="hg-post__event">
@@ -60,8 +62,8 @@
     <view class="hg-post__event-note">这只是意向，不需要报名，也可以随时取消。</view>
   </view>
 
-  <!-- 话题 -->
-  <view wx:if="{{ post.topic }}" class="hg-post__topic" hover-class="hg-post__topic--hover" catchtap="onTapTopic" aria-role="button" aria-label="话题 {{ post.topic.title }}">
+  <!-- 板块 -->
+  <view wx:if="{{ post.topic }}" class="hg-post__topic" hover-class="hg-post__topic--hover" catchtap="onTapTopic" aria-role="button" aria-label="板块 {{ post.topic.title }}">
     <t-icon name="chat-bubble-1" size="22rpx" />
     <text class="hg-post__topic-text">{{ post.topic.title }}</text>
   </view>
@@ -71,17 +73,19 @@
 
   <!-- 互动区 -->
   <view wx:if="{{ showInteractions }}" class="hg-post__actions">
-    <view class="hg-post__action {{ post.viewer.reacted ? 'hg-post__action--on' : '' }}" hover-class="hg-post__action--hover" catchtap="onReact" aria-role="button" aria-label="共鸣">
+    <view class="hg-post__action {{ post.viewer.reacted ? 'hg-post__action--on' : '' }}" hover-class="hg-post__action--hover" catchtap="onReact" aria-role="button" aria-label="{{ post.viewer.reacted ? '取消共鸣' : '共鸣' }}">
       <t-icon name="{{ post.viewer.reacted ? 'heart-filled' : 'heart' }}" size="32rpx" />
-      <text>{{ post.counters.reactions ? post.counters.reactions : '共鸣' }}</text>
+      <text>{{ post.viewer.reacted ? '已共鸣' : '共鸣' }}</text>
+      <text wx:if="{{ post.counters.reactions > 0 }}" class="hg-post__count">{{ post.counters.reactions }}</text>
     </view>
     <view class="hg-post__action" hover-class="hg-post__action--hover" catchtap="onComment" aria-role="button" aria-label="回应">
       <t-icon name="chat-bubble-1" size="32rpx" />
-      <text>{{ post.counters.comments ? post.counters.comments : '回应' }}</text>
+      <text>回应</text>
+      <text wx:if="{{ post.counters.comments > 0 }}" class="hg-post__count">{{ post.counters.comments }}</text>
     </view>
-    <view class="hg-post__action {{ post.viewer.bookmarked ? 'hg-post__action--on' : '' }}" hover-class="hg-post__action--hover" catchtap="onBookmark" aria-role="button" aria-label="收藏">
+    <view class="hg-post__action {{ post.viewer.bookmarked ? 'hg-post__action--on' : '' }}" hover-class="hg-post__action--hover" catchtap="onBookmark" aria-role="button" aria-label="{{ post.viewer.bookmarked ? '取消收藏' : '收藏' }}">
       <t-icon name="{{ post.viewer.bookmarked ? 'bookmark-filled' : 'bookmark' }}" size="32rpx" />
-      <text>收藏</text>
+      <text>{{ post.viewer.bookmarked ? '已收藏' : '收藏' }}</text>
     </view>
     <view wx:if="{{ post.categoryText }}" class="hg-post__category">{{ post.categoryText }}</view>
   </view>

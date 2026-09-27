@@ -6,6 +6,9 @@ import vm from 'node:vm';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const homeWxml = readFileSync(join(ROOT, 'pages/home/index.wxml'), 'utf8');
+const postCardWxml = readFileSync(join(ROOT, 'components/post-card/index.wxml'), 'utf8');
+const postCardStyles = readFileSync(join(ROOT, 'components/post-card/index.less'), 'utf8');
+const postServiceSource = readFileSync(join(ROOT, 'services/posts.js'), 'utf8');
 const postCardSource = readFileSync(join(ROOT, 'components/post-card/index.js'), 'utf8');
 const homeSource = readFileSync(join(ROOT, 'pages/home/index.js'), 'utf8')
   .replace(
@@ -13,6 +16,7 @@ const homeSource = readFileSync(join(ROOT, 'pages/home/index.js'), 'utf8')
     /import \{[\s\S]*?FEED_FILTERS,\r?\n\} from '~\/services\/posts';/,
     'const { fetchFeed, toggleReaction, toggleBookmark, shrinkVisibility, deletePost, FEED_FILTERS } = __posts;',
   )
+  .replace("import { fetchTopics } from '~/services/topics';", 'const { fetchTopics } = __topics;')
   .replace("import { previewPostImage } from '~/services/image-preview';", 'const { previewPostImage } = __helpers;')
   .replace(
     "import { getCapabilities, getSession } from '~/services/session';",
@@ -31,8 +35,15 @@ const post = (overrides = {}) => ({
   ...overrides,
 });
 
-function createHarness(item, { deleteResult = Promise.resolve(), shrinkResult = Promise.resolve() } = {}) {
-  const calls = { delete: [], shrink: [], fetch: 0, events: [], modals: [], actionSheets: [], toasts: [] };
+function createHarness(item, {
+  deleteResult = Promise.resolve(),
+  shrinkResult = Promise.resolve(),
+  topicsResult = { items: [] },
+} = {}) {
+  const calls = {
+    delete: [], shrink: [], fetch: 0, topics: [], navigations: [], switchTabs: [],
+    events: [], modals: [], actionSheets: [], toasts: [],
+  };
   const app = {
     eventBus: {
       on() {},
@@ -45,6 +56,7 @@ function createHarness(item, { deleteResult = Promise.resolve(), shrinkResult = 
     showActionSheet: (options) => calls.actionSheets.push(options),
     showModal: (options) => calls.modals.push(options),
     showToast: (options) => calls.toasts.push(options),
+    switchTab: (options) => calls.switchTabs.push(options),
   };
   const posts = {
     FEED_FILTERS: [],
@@ -65,6 +77,12 @@ function createHarness(item, { deleteResult = Promise.resolve(), shrinkResult = 
       return deleteResult;
     },
   };
+  const topics = {
+    fetchTopics: async (options) => {
+      calls.topics.push(options);
+      return topicsResult;
+    },
+  };
   let page;
   vm.runInNewContext(homeSource, {
     Page: (definition) => {
@@ -73,11 +91,12 @@ function createHarness(item, { deleteResult = Promise.resolve(), shrinkResult = 
     getApp: () => app,
     wx,
     __posts: posts,
+    __topics: topics,
     __helpers: {
       previewPostImage() {},
       getCapabilities: () => ({ publicScope: true }),
       getSession: () => ({ memberStatus: 'active' }),
-      navigateTo() {},
+      navigateTo: (url) => calls.navigations.push(url),
     },
   });
   const context = Object.create(page);
@@ -102,6 +121,57 @@ function runPostCardObserver(value) {
 }
 
 assert.match(homeWxml, /bind:more="onMore"/);
+assert.match(homeWxml, /recommendationCards\.length > 0/);
+assert.match(homeWxml, /bindtap="onMoreRecommendations"/);
+assert.match(homeWxml, /推荐板块/);
+assert.match(homeWxml, /查看更多板块/);
+assert.doesNotMatch(homeWxml, /weekPrompt|本周共写/);
+assert.doesNotMatch(postServiceSource, /value: '(?:article|video|awaiting_reply)'/);
+assert.match(postCardWxml, /hg-post__content--feed/);
+assert.match(postCardStyles, /flex-direction:\s*column-reverse/);
+
+const recommendationHarness = createHarness(post(), {
+  topicsResult: {
+    items: [
+      { id: 'topic-1', title: '一', status: 'active' },
+      { id: 'topic-pending', title: '待审', status: 'pending' },
+      { id: 'topic-2', title: '二', status: 'active' },
+      { id: 'topic-archived', title: '归档', status: 'archived' },
+      { id: 'topic-3', title: '三', status: 'active' },
+      { id: 'topic-4', title: '四', status: 'active' },
+      { id: 'topic-5', title: '五', status: 'active' },
+      { id: 'topic-6', title: '六', status: 'active' },
+      { id: 'topic-7', title: '七', status: 'active' },
+      { id: 'topic-8', title: '八', status: 'active' },
+      { id: 'topic-9', title: '九', status: 'active' },
+      { id: 'topic-10', title: '十', status: 'active' },
+    ],
+  },
+});
+await recommendationHarness.context.loadRecommendations();
+assert.equal(recommendationHarness.calls.topics[0].status, 'active');
+assert.deepEqual(
+  Array.from(recommendationHarness.context.data.recommendationCards, (card) => card.items.map((topic) => topic.id)),
+  [
+    ['topic-1', 'topic-2', 'topic-3'],
+    ['topic-4', 'topic-5', 'topic-6'],
+    ['topic-7', 'topic-8', 'topic-9'],
+  ],
+);
+recommendationHarness.context.onRecommendationTap({ currentTarget: { dataset: { id: 'topic-1' } } });
+assert.equal(
+  recommendationHarness.calls.navigations.at(-1),
+  '/pages/community/topic/index?id=topic-1',
+);
+recommendationHarness.context.onMoreRecommendations();
+assert.equal(recommendationHarness.calls.switchTabs.at(-1).url, '/pages/topics/index');
+
+const emptyRecommendationHarness = createHarness(post(), {
+  topicsResult: { items: [{ id: 'topic-pending', status: 'pending' }] },
+});
+await emptyRecommendationHarness.context.loadRecommendations();
+assert.deepEqual(Array.from(emptyRecommendationHarness.context.data.recommendationCards), []);
+assert.equal(emptyRecommendationHarness.context.data.recommendationState, 'empty');
 
 const anonymousOwner = runPostCardObserver(
   post({

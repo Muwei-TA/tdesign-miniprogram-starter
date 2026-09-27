@@ -62,15 +62,33 @@
     }
   }
 
-  &__week {
-    position: relative;
-    min-height: 220rpx;
-    margin: @hg-sp-3 @hg-page-x 0;
-    padding: 28rpx 24rpx;
-    background: @hg-green-mist;
-    border-left: 6rpx solid @hg-clay; // 本周话题：赭色书签线
-    border-radius: @hg-radius-lg;
-    overflow: hidden;
+  &__recommend {
+    margin-top: @hg-sp-2;
+  }
+
+  &__recommend-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 @hg-page-x;
+  }
+
+  &__recommend-title {
+    .hg-serif(@hg-fs-h3);
+
+    color: @hg-ink;
+  }
+
+  &__recommend-more {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4rpx;
+    min-height: @hg-touch-min;
+    margin-right: -@hg-sp-2;
+    padding: 0 @hg-sp-2;
+    color: @hg-ink-3;
+    font-size: @hg-fs-xs;
     transition: opacity @hg-ease;
 
     &--hover {
@@ -78,36 +96,72 @@
     }
   }
 
-  &__week-eyebrow {
-    font-size: @hg-fs-2xs;
-    letter-spacing: 4rpx;
-    color: @hg-clay;
+  &__recommend-list {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0 @hg-page-x;
+    white-space: nowrap;
   }
 
-  &__week-title {
-    .hg-serif(40rpx);
-
-    margin: @hg-sp-2 0 6rpx;
-    line-height: 1.6;
+  &__recommend-card {
+    display: inline-flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    vertical-align: top;
+    width: 440rpx;
+    margin-right: @hg-sp-2;
+    padding: 10rpx 20rpx;
+    background: @hg-surface;
+    border: 1rpx solid @hg-line;
+    border-radius: @hg-radius-lg;
   }
 
-  &__week-desc {
-    font-size: @hg-fs-xs;
-    line-height: @hg-lh-base;
-    color: @hg-green-muted-2;
-    max-width: 78%;
+  &__recommend-row {
+    display: flex;
+    align-items: center;
+    gap: @hg-sp-2;
+    min-height: 58rpx;
+    transition: opacity @hg-ease;
+
+    &--hover {
+      .hg-hover-dim();
+    }
   }
 
-  &__week-arrow {
-    position: absolute;
-    top: 28rpx;
-    right: 28rpx;
+  &__recommend-row + &__recommend-row {
+    border-top: 1rpx solid @hg-line;
+  }
+
+  &__recommend-icon {
+    flex-shrink: 0;
     color: @hg-green-muted;
+  }
+
+  &__recommend-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: @hg-ink;
+    font-size: @hg-fs-sm;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__recommend-arrow {
+    flex-shrink: 0;
+    color: @hg-ink-4;
+  }
+
+  &__recommend-empty {
+    margin: 0 @hg-page-x;
+    padding: 8rpx 0 0;
+    color: @hg-ink-4;
+    font-size: @hg-fs-2xs;
   }
 
   &__filters {
     white-space: nowrap;
-    padding: 34rpx @hg-page-x 20rpx;
+    padding: 18rpx @hg-page-x 20rpx;
   }
 
   &__filter {

@@ -11,9 +11,6 @@ export const FEED_FILTERS = [
   { value: 'all', label: '全部' },
   { value: 'life', label: '生活' },
   { value: 'inspiration', label: '灵感' },
-  { value: 'article', label: '文章' },
-  { value: 'video', label: '视频' },
-  { value: 'awaiting_reply', label: '待回应' },
 ];
 
 export const COMMENT_LIMIT = 1000;

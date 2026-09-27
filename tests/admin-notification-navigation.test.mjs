@@ -288,6 +288,7 @@ const homePage = loadPage(
       /import \{[\s\S]*?\} from '~\/services\/posts';/,
       'const { fetchFeed, toggleReaction, toggleBookmark, shrinkVisibility, deletePost, FEED_FILTERS } = __posts;',
     ],
+    ["import { fetchTopics } from '~/services/topics';", 'const { fetchTopics } = __topics;'],
     ["import { previewPostImage } from '~/services/image-preview';", 'const { previewPostImage } = __imagePreview;'],
     [
       "import { getCapabilities, getSession } from '~/services/session';",
@@ -300,6 +301,7 @@ const homePage = loadPage(
       fetchFeed: async () => ({ items: [] }),
       toggleReaction() {}, toggleBookmark() {}, shrinkVisibility() {}, deletePost() {}, FEED_FILTERS: [],
     },
+    __topics: { fetchTopics: async () => ({ items: [] }) },
     __imagePreview: { previewPostImage() {} },
     __session: { getCapabilities: () => ({}), getSession: () => homeApp.globalData.session },
     __navigation: { navigateTo() {} },

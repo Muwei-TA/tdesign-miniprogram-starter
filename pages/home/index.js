@@ -6,6 +6,7 @@ import {
   deletePost,
   FEED_FILTERS,
 } from '~/services/posts';
+import { fetchTopics } from '~/services/topics';
 import { previewPostImage } from '~/services/image-preview';
 import { getCapabilities, getSession } from '~/services/session';
 import { navigateTo } from '~/utils/navigate';
@@ -20,7 +21,8 @@ Page({
     nextCursor: null,
     hasMore: false,
     loadingMore: false,
-    weekPrompt: null,
+    recommendationCards: [],
+    recommendationState: 'loading',
     club: null,
     loading: true,
     // stale：请求失败但保留了已加载数据，顶部提示"未更新"
@@ -38,7 +40,10 @@ Page({
     this.syncSession(getSession());
     this.loadFeed();
 
-    this.onSessionChanged = (session) => this.syncSession(session);
+    this.onSessionChanged = (session) => {
+      this.syncSession(session);
+      this.loadRecommendations(session);
+    };
     this.onUnreadChanged = (count) => this.setUnread(count);
     this.onPostChanged = () => this.loadFeed({ silent: true });
 
@@ -46,9 +51,11 @@ Page({
     app.eventBus.on('notice-unread-change', this.onUnreadChanged);
     app.eventBus.on('post-changed', this.onPostChanged);
     app.eventBus.on('post-created', this.onPostChanged);
+    this.loadRecommendations(getSession());
   },
 
   onUnload() {
+    this.recommendationRequestId = (this.recommendationRequestId || 0) + 1;
     app.eventBus.off('session-changed', this.onSessionChanged);
     app.eventBus.off('notice-unread-change', this.onUnreadChanged);
     app.eventBus.off('post-changed', this.onPostChanged);
@@ -68,7 +75,7 @@ Page({
   },
 
   onPullDownRefresh() {
-    this.loadFeed().then(() => wx.stopPullDownRefresh());
+    Promise.all([this.loadFeed(), this.loadRecommendations()]).then(() => wx.stopPullDownRefresh());
   },
 
   onReachBottom() {
@@ -86,6 +93,38 @@ Page({
 
   setUnread(count) {
     this.setData({ unread: count });
+  },
+
+  async loadRecommendations(session = getSession()) {
+    const requestId = (this.recommendationRequestId || 0) + 1;
+    this.recommendationRequestId = requestId;
+
+    if (!session || session.memberStatus !== 'active') {
+      this.setData({ recommendationCards: [], recommendationState: 'guest' });
+      return;
+    }
+
+    this.setData({ recommendationCards: [], recommendationState: 'loading' });
+
+    try {
+      const data = await fetchTopics({ category: 'all', status: 'active' });
+      if (requestId !== this.recommendationRequestId) return;
+      const topics = (data.items || [])
+        .filter((topic) => topic && topic.status === 'active')
+        .slice(0, 9);
+      const recommendationCards = [];
+      for (let start = 0; start < topics.length; start += 3) {
+        const items = topics.slice(start, start + 3);
+        recommendationCards.push({ id: items[0].id, items });
+      }
+      this.setData({
+        recommendationCards,
+        recommendationState: recommendationCards.length > 0 ? 'ready' : 'empty',
+      });
+    } catch (_) {
+      if (requestId !== this.recommendationRequestId) return;
+      this.setData({ recommendationCards: [], recommendationState: 'error' });
+    }
   },
 
   async loadFeed({ silent = false, append = false } = {}) {
@@ -106,7 +145,6 @@ Page({
       if (!append) this.feedFirstPageLoading = false;
       this.setData({
         list: append ? this.data.list.concat(data.items || []) : data.items || [],
-        weekPrompt: data.weekPrompt || null,
         club: data.club || null,
         nextCursor: data.nextCursor || null,
         hasMore: !!data.nextCursor,
@@ -154,10 +192,13 @@ Page({
     wx.navigateTo({ url: '/pages/search/index' });
   },
 
-  onWeekTap() {
-    const { weekPrompt } = this.data;
-    if (!weekPrompt) return;
-    navigateTo(`/pages/community/topic/index?id=${weekPrompt.topicId}`);
+  onRecommendationTap(e) {
+    const { id } = e.currentTarget.dataset;
+    if (id) navigateTo(`/pages/community/topic/index?id=${id}`);
+  },
+
+  onMoreRecommendations() {
+    wx.switchTab({ url: '/pages/topics/index' });
   },
 
   onTapBody(e) {
