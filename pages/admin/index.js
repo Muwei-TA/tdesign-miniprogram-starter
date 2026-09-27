@@ -250,7 +250,9 @@ Page({
         : await fetchQueue({ queue, cursor });
       // 切换队列后，旧请求的结果不能覆盖当前队列。
       if (queue !== this.data.activeQueue) return;
-      const queueItems = (data.items || []).map((item) => normalizeQueueItem(item, queue));
+      const queueItems = queue === 'board'
+        ? (data.items || []).map((item) => normalizeQueueItem(item, queue))
+        : data.items || [];
       const items = append ? this.data.items.concat(queueItems) : queueItems;
       this.setData({
         items,
@@ -357,7 +359,9 @@ Page({
     const action = (item.actions || []).find((entry) => entry.key === key);
     const boardConfirmText = key === 'approve' ? ACTION_CONFIRM_TEXT.approveBoard : ACTION_CONFIRM_TEXT.rejectBoard;
     const content = reason
-      ? '提交后会记录处理理由，并通知相关用户。确认继续？'
+      ? (item.queue === 'board'
+        ? '提交后会记录处理理由。确认继续？'
+        : '提交后会记录处理理由，并通知相关用户。确认继续？')
       : (item.queue === 'board' ? boardConfirmText : ACTION_CONFIRM_TEXT[key]) || '确认提交这个处理决定？';
     wx.showModal({
       title: action ? action.label : '处理决定',
