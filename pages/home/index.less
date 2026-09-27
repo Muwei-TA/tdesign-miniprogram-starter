@@ -26,44 +26,8 @@
     border-radius: 50%;
   }
 
-  &__welcome {
-    padding: @hg-sp-1 @hg-page-x 0;
-  }
-
-  &__slogan {
-    .hg-serif(@hg-fs-title);
-
-    line-height: 1.25;
-    letter-spacing: 1rpx;
-  }
-
-  &__sub {
-    margin-top: 4rpx;
-    font-size: @hg-fs-2xs;
-    line-height: 1.45;
-    color: @hg-ink-3;
-  }
-
-  &__search {
-    display: flex;
-    align-items: center;
-    height: @hg-touch-min;
-    margin: @hg-sp-2 @hg-page-x 0;
-    padding: 0 @hg-sp-3;
-    background: @hg-surface-sunk;
-    border: 1rpx solid @hg-line;
-    border-radius: @hg-radius-pill;
-    color: @hg-ink-4;
-    font-size: @hg-fs-sm;
-    transition: opacity @hg-ease;
-
-    &--hover {
-      .hg-hover-dim();
-    }
-  }
-
   &__recommend {
-    margin-top: @hg-sp-1;
+    margin-top: @hg-sp-3;
   }
 
   &__recommend-head {
@@ -71,6 +35,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 @hg-page-x;
+    margin-bottom: @hg-sp-1;
   }
 
   &__recommend-title {
@@ -120,7 +85,10 @@
     display: flex;
     align-items: center;
     gap: @hg-sp-2;
-    min-height: 58rpx;
+    min-height: @hg-touch-min;
+    margin: 0 -12rpx;
+    padding: 0 12rpx;
+    border-radius: @hg-radius-sm;
     transition: opacity @hg-ease;
 
     &--hover {
@@ -130,6 +98,10 @@
 
   &__recommend-row + &__recommend-row {
     border-top: 1rpx solid @hg-line;
+  }
+
+  &__recommend-row--selected {
+    background: @hg-green-soft;
   }
 
   &__recommend-icon {
@@ -142,34 +114,41 @@
     min-width: 0;
     overflow: hidden;
     color: @hg-ink;
-    font-size: @hg-fs-sm;
+    .hg-serif(@hg-fs-sm);
+
+    line-height: 1.4;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   &__recommend-arrow {
+    display: flex;
     flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: @hg-touch-min;
+    height: @hg-touch-min;
+    margin-right: -12rpx;
     color: @hg-ink-4;
   }
 
   &__recommend-empty {
     margin: 0 @hg-page-x;
-    padding: 8rpx 0 0;
+    padding: @hg-sp-1 0 0;
     color: @hg-ink-4;
     font-size: @hg-fs-2xs;
   }
 
   &__filters {
     white-space: nowrap;
-    padding: 8rpx @hg-page-x 16rpx;
+    padding: @hg-sp-2 @hg-page-x @hg-sp-3;
   }
 
   &__feed-heading {
-    margin: @hg-sp-1 @hg-page-x 0;
+    margin: @hg-sp-4 @hg-page-x 0;
     color: @hg-ink;
-    font-size: @hg-fs-h3;
     line-height: 1.35;
-    font-weight: 600;
+    .hg-serif(@hg-fs-h3, 600);
   }
 
   &__filter {

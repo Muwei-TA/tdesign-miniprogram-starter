@@ -16,7 +16,7 @@ const app = getApp();
 Page({
   data: {
     filters: FEED_FILTERS,
-    filter: 'all',
+    selectedBoardId: '',
     list: [],
     nextCursor: null,
     hasMore: false,
@@ -102,30 +102,46 @@ Page({
     this.recommendationRequestId = requestId;
 
     if (!session || session.memberStatus !== 'active') {
-      this.setData({ recommendationCards: [], recommendationState: 'guest' });
+      const patch = {
+        recommendationCards: [],
+        recommendationState: 'guest',
+        filters: FEED_FILTERS,
+      };
+      if (this.data.selectedBoardId) this.resetFeedForBoard('', patch);
+      else this.setData(patch);
       return;
     }
 
-    this.setData({ recommendationCards: [], recommendationState: 'loading' });
+    this.setData({ recommendationState: 'loading' });
 
     try {
-      const data = await fetchBoards({ status: 'active' });
+      const data = (await fetchBoards({ status: 'active' })) || {};
       if (requestId !== this.recommendationRequestId) return;
       const boards = (data.items || [])
-        .filter((board) => board && board.status === 'active')
+        .filter((board) => board && board.status === 'active' && board.id)
         .slice(0, 9);
       const recommendationCards = [];
       for (let start = 0; start < boards.length; start += 3) {
         const items = boards.slice(start, start + 3);
         recommendationCards.push({ id: items[0].id, items });
       }
-      this.setData({
+      const filters = FEED_FILTERS.concat(boards.map((board) => ({
+        value: board.id,
+        label: board.title,
+      })));
+      const selectedBoardId = boards.some((board) => board.id === this.data.selectedBoardId)
+        ? this.data.selectedBoardId
+        : '';
+      const patch = {
         recommendationCards,
         recommendationState: recommendationCards.length > 0 ? 'ready' : 'empty',
-      });
+        filters,
+      };
+      if (selectedBoardId !== this.data.selectedBoardId) this.resetFeedForBoard(selectedBoardId, patch);
+      else this.setData(patch);
     } catch (_) {
       if (requestId !== this.recommendationRequestId) return;
-      this.setData({ recommendationCards: [], recommendationState: 'error' });
+      this.setData({ recommendationState: 'error' });
     }
   },
 
@@ -133,7 +149,7 @@ Page({
     if (append && (this.data.loading || this.feedFirstPageLoading || this.data.loadingMore || !this.data.hasMore)) return;
     const requestId = (this.feedRequestId || 0) + 1;
     this.feedRequestId = requestId;
-    const { filter } = this.data;
+    const { selectedBoardId } = this.data;
     if (append) {
       this.setData({ loadingMore: true });
     } else {
@@ -141,7 +157,7 @@ Page({
       this.setData(silent ? { loadingMore: false } : { loading: true, loadingMore: false, errorText: '' });
     }
     try {
-      const data = await fetchFeed({ filter, cursor: append ? this.data.nextCursor : '' });
+      const data = await fetchFeed({ boardId: selectedBoardId, cursor: append ? this.data.nextCursor : '' });
       // 快速切换筛选时，旧响应不得覆盖新筛选
       if (requestId !== this.feedRequestId) return;
       if (!append) this.feedFirstPageLoading = false;
@@ -177,9 +193,28 @@ Page({
 
   onFilterTap(e) {
     const { value } = e.currentTarget.dataset;
-    if (value === this.data.filter) return;
-    // 切换筛选重置游标
-    this.setData({ filter: value, list: [], nextCursor: null, hasMore: false }, () => this.loadFeed());
+    this.setBoardSelection(value === 'all' ? '' : value);
+  },
+
+  setBoardSelection(boardId) {
+    if (boardId === this.data.selectedBoardId) return;
+    this.resetFeedForBoard(boardId);
+  },
+
+  resetFeedForBoard(boardId, patch = {}) {
+    // 立即作废旧请求，防止旧筛选的首屏或追加结果覆盖当前选择。
+    this.feedRequestId = (this.feedRequestId || 0) + 1;
+    this.feedFirstPageLoading = false;
+    this.setData({
+      ...patch,
+      selectedBoardId: boardId,
+      list: [],
+      nextCursor: null,
+      hasMore: false,
+      loadingMore: false,
+      stale: false,
+      errorText: '',
+    }, () => this.loadFeed());
   },
 
   onRetry() {
@@ -190,11 +225,12 @@ Page({
     wx.navigateTo({ url: '/pages/message/index' });
   },
 
-  onSearchTap() {
-    wx.navigateTo({ url: '/pages/search/index' });
+  onRecommendationTap(e) {
+    const { id } = e.currentTarget.dataset;
+    if (id) this.setBoardSelection(id);
   },
 
-  onRecommendationTap(e) {
+  onRecommendationOpen(e) {
     const { id } = e.currentTarget.dataset;
     if (id) navigateTo(`/pages/community/board/index?id=${encodeURIComponent(id)}`);
   },

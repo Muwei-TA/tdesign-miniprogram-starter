@@ -37,7 +37,8 @@ function loadPage(path, services = {}) {
     deletePost: async () => ({}),
     submitTopic: async () => ({}),
     toggleFollow: async () => ({}),
-    FEED_FILTERS: [],
+    FEED_FILTERS: [{ value: 'all', label: '全部' }],
+    fetchBoards: async () => ({ items: [] }),
     TOPIC_CATEGORIES: [],
     previewPostImage() {},
     navigateTo() {},
@@ -117,6 +118,53 @@ test('silent feed refresh blocks pagination until its first page settles', async
   assert.deepEqual(Array.from(ctx.data.list, (item) => item.id), ['fresh-first']);
   assert.equal(ctx.data.nextCursor, 'fresh-cursor');
   assert.equal(ctx.feedFirstPageLoading, false);
+});
+
+test('board selection invalidates old feed pages and resets the cursor', async () => {
+  const calls = [];
+  const ctx = loadPage('../pages/home/index.js', {
+    fetchFeed: (input) => { const request = deferred(); calls.push({ input, ...request }); return request.promise; },
+  });
+  Object.assign(ctx.data, {
+    loading: false,
+    filters: [
+      { value: 'all', label: '全部' },
+      { value: 'board-1', label: '一' },
+      { value: 'board-2', label: '二' },
+    ],
+  });
+
+  const oldFirstPage = ctx.loadFeed();
+  assert.equal(calls[0].input.boardId, '');
+  assert.equal(calls[0].input.cursor, '');
+  ctx.onRecommendationTap({ currentTarget: { dataset: { id: 'board-1' } } });
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].input.boardId, 'board-1');
+  assert.equal(calls[1].input.cursor, '');
+  calls[1].resolve({ items: [{ id: 'board-1-post' }], nextCursor: 'board-1-next' });
+  await tick();
+  calls[0].resolve({ items: [{ id: 'stale-all-post' }], nextCursor: 'stale-cursor' });
+  await oldFirstPage;
+
+  assert.deepEqual(Array.from(ctx.data.list, (item) => item.id), ['board-1-post']);
+  assert.equal(ctx.data.nextCursor, 'board-1-next');
+
+  const oldAppend = ctx.loadFeed({ append: true });
+  assert.equal(calls[2].input.boardId, 'board-1');
+  assert.equal(calls[2].input.cursor, 'board-1-next');
+  ctx.onFilterTap({ currentTarget: { dataset: { value: 'board-2' } } });
+  assert.equal(calls.length, 4);
+  assert.equal(calls[3].input.boardId, 'board-2');
+  assert.equal(calls[3].input.cursor, '');
+  calls[3].resolve({ items: [{ id: 'board-2-post' }], nextCursor: 'board-2-next' });
+  await tick();
+  calls[2].resolve({ items: [{ id: 'stale-board-1-post' }], nextCursor: 'stale-board-1-next' });
+  await oldAppend;
+
+  assert.equal(ctx.data.selectedBoardId, 'board-2');
+  assert.deepEqual(Array.from(ctx.data.list, (item) => item.id), ['board-2-post']);
+  assert.equal(ctx.data.nextCursor, 'board-2-next');
+  assert.equal(ctx.data.loadingMore, false);
 });
 
 test('silent My Content refresh blocks pagination until its first page settles', async () => {

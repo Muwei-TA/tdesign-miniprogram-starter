@@ -41,7 +41,7 @@ function createHarness(item, {
   boardsResult = { items: [] },
 } = {}) {
   const calls = {
-    delete: [], shrink: [], fetch: 0, boards: [], navigations: [], unreadRefreshes: 0,
+    delete: [], shrink: [], fetch: 0, feedRequests: [], boards: [], navigations: [], unreadRefreshes: 0,
     events: [], modals: [], actionSheets: [], toasts: [],
   };
   const app = {
@@ -62,9 +62,10 @@ function createHarness(item, {
     showToast: (options) => calls.toasts.push(options),
   };
   const posts = {
-    FEED_FILTERS: [],
-    fetchFeed: async () => {
+    FEED_FILTERS: [{ value: 'all', label: '全部' }],
+    fetchFeed: async (input) => {
       calls.fetch += 1;
+      calls.feedRequests.push(input);
       return { items: [item] };
     },
     toggleReaction: async () => {},
@@ -104,7 +105,10 @@ function createHarness(item, {
   });
   const context = Object.create(page);
   context.data = { ...page.data, list: [item], loading: false };
-  context.setData = (patch) => Object.assign(context.data, patch);
+  context.setData = (patch, callback) => {
+    Object.assign(context.data, patch);
+    if (callback) callback();
+  };
   return { context, calls, page, wx };
 }
 
@@ -130,11 +134,15 @@ assert.match(homeWxml, /推荐板块/);
 assert.match(homeWxml, /查看更多板块/);
 assert.match(homeWxml, /wx:for-item="board"/);
 assert.match(homeWxml, /data-id="\{\{ board\.id \}\}"/);
+assert.match(homeWxml, /bindtap="onRecommendationTap"/);
+assert.match(homeWxml, /catchtap="onRecommendationOpen"/);
+assert.match(homeWxml, /selectedBoardId === board\.id/);
 assert.match(homeWxml, /bind:tapboard="onTapBoard"/);
 assert.doesNotMatch(homeWxml, /weekPrompt|本周共写/);
-assert.match(homeWxml, /留一盏灯/);
+assert.doesNotMatch(homeWxml, /留一盏灯|给每一种表达|先选谁能看见|找回一句话/);
 assert.match(homeWxml, /class="hg-home__feed-heading"[\s\S]*?<text>帖子<\/text>/);
-assert.doesNotMatch(postServiceSource, /value: '(?:article|video|awaiting_reply)'/);
+assert.doesNotMatch(postServiceSource, /value: '(?:life|inspiration|article|video|awaiting_reply)'/);
+assert.match(postServiceSource, /if \(boardId\) query\.boardId = boardId/);
 assert.match(postCardWxml, /hg-post__content--feed/);
 assert.match(postCardStyles, /flex-direction:\s*column-reverse/);
 
@@ -166,6 +174,10 @@ assert.deepEqual(
     ['board-7', 'board-8', 'board-9'],
   ],
 );
+assert.deepEqual(
+  Array.from(recommendationHarness.context.data.filters, (filter) => filter.value),
+  ['all', 'board-1', 'board-2', 'board-3', 'board-4', 'board-5', 'board-6', 'board-7', 'board-8', 'board-9'],
+);
 const requestCountBeforeFirstShow = recommendationHarness.calls.boards.length;
 await recommendationHarness.context.onShow();
 assert.equal(recommendationHarness.calls.boards.length, requestCountBeforeFirstShow);
@@ -173,6 +185,22 @@ await recommendationHarness.context.onShow();
 assert.equal(recommendationHarness.calls.boards.length, requestCountBeforeFirstShow + 1);
 assert.equal(recommendationHarness.calls.unreadRefreshes, 1);
 recommendationHarness.context.onRecommendationTap({ currentTarget: { dataset: { id: 'board-1' } } });
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(recommendationHarness.context.data.selectedBoardId, 'board-1');
+assert.equal(recommendationHarness.calls.feedRequests.at(-1).boardId, 'board-1');
+assert.equal(recommendationHarness.calls.feedRequests.at(-1).cursor, '');
+recommendationHarness.context.onFilterTap({ currentTarget: { dataset: { value: 'all' } } });
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(recommendationHarness.context.data.selectedBoardId, '');
+assert.equal(recommendationHarness.calls.feedRequests.at(-1).boardId, '');
+recommendationHarness.context.data.nextCursor = 'old-cursor';
+recommendationHarness.context.data.hasMore = true;
+recommendationHarness.context.onFilterTap({ currentTarget: { dataset: { value: 'board-2' } } });
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(recommendationHarness.context.data.selectedBoardId, 'board-2');
+assert.equal(recommendationHarness.calls.feedRequests.at(-1).cursor, '');
+assert.equal(recommendationHarness.context.data.nextCursor, null);
+recommendationHarness.context.onRecommendationOpen({ currentTarget: { dataset: { id: 'board-1' } } });
 assert.equal(
   recommendationHarness.calls.navigations.at(-1),
   '/pages/community/board/index?id=board-1',
@@ -187,9 +215,17 @@ assert.equal(recommendationHarness.calls.navigations.at(-1), '/pages/community/b
 const emptyRecommendationHarness = createHarness(post(), {
   boardsResult: { items: [{ id: 'board-pending', status: 'pending' }] },
 });
+emptyRecommendationHarness.context.data.selectedBoardId = 'board-retired';
 await emptyRecommendationHarness.context.loadRecommendations();
+await new Promise((resolve) => setImmediate(resolve));
 assert.deepEqual(Array.from(emptyRecommendationHarness.context.data.recommendationCards), []);
 assert.equal(emptyRecommendationHarness.context.data.recommendationState, 'empty');
+assert.deepEqual(
+  JSON.parse(JSON.stringify(emptyRecommendationHarness.context.data.filters)),
+  [{ value: 'all', label: '全部' }],
+);
+assert.equal(emptyRecommendationHarness.context.data.selectedBoardId, '');
+assert.equal(emptyRecommendationHarness.calls.feedRequests.at(-1).boardId, '');
 
 let resolveOldSessionBoards;
 const sessionRaceHarness = createHarness(post(), {
@@ -201,6 +237,10 @@ resolveOldSessionBoards({ items: [{ id: 'stale-board', status: 'active' }] });
 await oldSessionLoad;
 assert.deepEqual(Array.from(sessionRaceHarness.context.data.recommendationCards), []);
 assert.equal(sessionRaceHarness.context.data.recommendationState, 'guest');
+assert.deepEqual(
+  JSON.parse(JSON.stringify(sessionRaceHarness.context.data.filters)),
+  [{ value: 'all', label: '全部' }],
+);
 
 const anonymousOwner = runPostCardObserver(
   post({

@@ -9,20 +9,6 @@
     </view>
   </hg-nav>
 
-  <!-- 欢迎区 -->
-  <view class="hg-home__welcome">
-    <view class="hg-home__slogan">
-      <view>留一盏灯，</view>
-      <view>给每一种表达。</view>
-    </view>
-    <view class="hg-home__sub">先选谁能看见，再选用什么身份；新内容默认仅社内可见。</view>
-  </view>
-
-  <!-- 搜索入口（不在本页输入） -->
-  <view class="hg-home__search" hover-class="hg-home__search--hover" bindtap="onSearchTap" aria-role="button" aria-label="搜索">
-    <text>找回一句话、一张照片</text>
-  </view>
-
   <!-- 只展示服务端返回的 active 板块；空状态不填充示例卡 -->
   <view class="hg-home__recommend">
     <view class="hg-home__recommend-head">
@@ -42,16 +28,24 @@
           wx:for="{{ item.items }}"
           wx:for-item="board"
           wx:key="id"
-          class="hg-home__recommend-row"
+          class="hg-home__recommend-row {{ selectedBoardId === board.id ? 'hg-home__recommend-row--selected' : '' }}"
           data-id="{{ board.id }}"
           hover-class="hg-home__recommend-row--hover"
           bindtap="onRecommendationTap"
           aria-role="button"
-          aria-label="查看板块 {{ board.title }}"
+          aria-label="筛选帖子：{{ board.title }}"
         >
           <t-icon class="hg-home__recommend-icon" name="{{ board.icon || 'chat-bubble-1' }}" size="28rpx" />
           <text class="hg-home__recommend-name">{{ board.title }}</text>
-          <t-icon class="hg-home__recommend-arrow" name="arrow-right" size="24rpx" />
+          <view
+            class="hg-home__recommend-arrow"
+            data-id="{{ board.id }}"
+            catchtap="onRecommendationOpen"
+            aria-role="button"
+            aria-label="进入板块 {{ board.title }}"
+          >
+            <t-icon name="arrow-right" size="24rpx" />
+          </view>
         </view>
       </view>
     </scroll-view>
@@ -69,7 +63,7 @@
     <view
       wx:for="{{ filters }}"
       wx:key="value"
-      class="hg-home__filter {{ filter === item.value ? 'hg-home__filter--on' : '' }}"
+      class="hg-home__filter {{ (item.value === 'all' && !selectedBoardId) || selectedBoardId === item.value ? 'hg-home__filter--on' : '' }}"
       data-value="{{ item.value }}"
       hover-class="hg-home__filter--hover"
       bindtap="onFilterTap"

@@ -9,15 +9,14 @@ import { createIdempotencyKey } from '~/utils/idempotency';
 
 export const FEED_FILTERS = [
   { value: 'all', label: '全部' },
-  { value: 'life', label: '生活' },
-  { value: 'inspiration', label: '灵感' },
 ];
 
 export const COMMENT_LIMIT = 1000;
 
 /** 树洞信息流。filter=awaiting_reply 时由服务端计算"尚未收到有效文字回应" */
-export function fetchFeed({ cursor = '', filter = 'all', topicId = '' } = {}) {
+export function fetchFeed({ cursor = '', filter = 'all', topicId = '', boardId = '' } = {}) {
   const query = { cursor, topicId };
+  if (boardId) query.boardId = boardId;
   if (filter === 'awaiting_reply') query.filter = filter;
   else if (filter !== 'all') query.type = filter;
   return request(withQuery(endpoints.posts, query));
