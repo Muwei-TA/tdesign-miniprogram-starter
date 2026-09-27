@@ -18,10 +18,10 @@
       <text>活跃社员与管理员均可提交；新板块需管理员审核后开放。</text>
     </view>
     <view wx:if="{{ canReviewTopics }}" class="hg-topics__review-link" bindtap="onReviewQueueTap" aria-role="button" hover-class="hg-topics__review-link--pressed">
-      <text>管理中心 · 话题待审队列</text>
+      <text>管理中心 · 板块待审队列</text>
       <t-icon name="chevron-right" size="28rpx" />
     </view>
-    <view wx:else class="hg-topics__review-note">管理员在管理中心的「话题」待审队列处理。</view>
+    <view wx:else class="hg-topics__review-note">管理员在管理中心的「板块」待审队列处理。</view>
   </view>
 
   <view class="hg-topics__search">
