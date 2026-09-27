@@ -11,8 +11,12 @@ export const TOPIC_CATEGORIES = [
   { value: 'play', label: '共玩' },
 ];
 
-export function fetchTopics({ category = 'all', cursor = '' } = {}) {
-  return request(withQuery(endpoints.topics, { category: category === 'all' ? '' : category, cursor }));
+export function fetchTopics({ category = 'all', q = '', cursor = '', status = '' } = {}) {
+  const query = { category: category === 'all' ? '' : category, cursor };
+  const keyword = String(q || '').trim();
+  if (keyword) query.q = keyword;
+  if (status) query.status = status;
+  return request(withQuery(endpoints.topics, query));
 }
 
 export function fetchTopicDetail(id, cursor = '') {
