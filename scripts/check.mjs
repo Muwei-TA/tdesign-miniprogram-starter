@@ -191,6 +191,27 @@ for (const file of files.filter((f) => extname(f) === '.js')) {
   }
 }
 
+// 页面内部模块可依赖共享 service，但不能直接依赖另一个页面的实现。
+const pageDirs = [...registered].map((page) => dirname(join(ROOT, page.slice(1))));
+for (const pageDir of pageDirs) {
+  for (const file of files.filter((f) => dirname(f) === pageDir && extname(f) === '.js')) {
+    const source = readFileSync(file, 'utf8');
+    const imports = /(?:\bfrom\s*|\brequire\(\s*)['"]([^'"]+)['"]/g;
+    let match;
+    while ((match = imports.exec(source))) {
+      const specifier = match[1];
+      let target;
+      if (specifier.startsWith('.')) target = resolve(pageDir, specifier);
+      else if (specifier.startsWith('~/pages/')) target = join(ROOT, specifier.slice(2));
+      else continue;
+      const otherPage = pageDirs.find((dir) =>
+        dir !== pageDir && !pageDir.startsWith(`${dir}${sep}`) &&
+        (target === dir || target.startsWith(`${dir}${sep}`)));
+      if (otherPage) fail(`[page boundary] ${rel(file)} -> ${specifier}，页面不得依赖其他页面的实现`);
+    }
+  }
+}
+
 console.log(
   `\njs: ${jsCount}, json: ${jsonCount}, wxml: ${wxmlFiles.length}, pages: ${registered.size}, pending: ${pending.size}`,
 );

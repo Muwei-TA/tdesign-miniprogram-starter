@@ -2,7 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
+import { loadPageModule } from './helpers/page-module-loader.mjs';
+
+const searchController = await loadPageModule(new URL('../pages/search/controller.js', import.meta.url), ['createSearchController']);
 const source = readFileSync(new URL('../pages/search/index.js', import.meta.url), 'utf8')
+  .replace("import { createSearchController } from './controller';", 'const { createSearchController } = __searchController;')
   .replace(/import[\s\S]*?from ['"][^'"]+['"];?/g, '');
 function deferred() {
   let resolve;
@@ -18,6 +22,7 @@ function harness() {
     Page: (value) => { page = value; },
     search: (input) => { const pending = deferred(); calls.push({ ...input, ...pending }); return pending.promise; },
     fetchSuggestions: async () => ({ items: [] }), navigateTo() {}, wx: { showToast() {} },
+    __searchController: searchController,
     setTimeout: (callback) => { timers.set(++timerId, callback); return timerId; },
     clearTimeout: (id) => timers.delete(id),
   });

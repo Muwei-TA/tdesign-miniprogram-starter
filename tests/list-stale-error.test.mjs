@@ -3,8 +3,10 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
+import { loadPageModule } from './helpers/page-module-loader.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const searchController = await loadPageModule(new URL('../pages/search/controller.js', import.meta.url), ['createSearchController']);
 
 function loadPage(relativePath, replacements, globals = {}) {
   let definition;
@@ -122,6 +124,10 @@ const searchPage = loadPage(
       "import { search, fetchSuggestions } from './search';",
       'const { search, fetchSuggestions } = __search;',
     ],
+    [
+      "import { createSearchController } from './controller';",
+      'const { createSearchController } = __searchController;',
+    ],
     ["import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;'],
   ],
   {
@@ -135,6 +141,7 @@ const searchPage = loadPage(
       fetchSuggestions() {},
     },
     __navigation: { navigateTo() {} },
+    __searchController: searchController,
   },
 );
 const searchContext = pageContext(searchPage, {

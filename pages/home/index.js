@@ -10,8 +10,28 @@ import { fetchBoards } from '~/services/boards';
 import { previewPostImage } from '~/services/image-preview';
 import { getCapabilities, getSession } from '~/services/session';
 import { navigateTo } from '~/utils/navigate';
+import { createHomeFeed } from './feed';
+import { createHomePostActions } from './post-actions';
 
 const app = getApp();
+let homeFeed;
+let homePostActions;
+
+function getHomeFeed() {
+  if (!homeFeed) {
+    homeFeed = createHomeFeed({ fetchFeed, fetchBoards, FEED_FILTERS, getSession, app, wx });
+  }
+  return homeFeed;
+}
+
+function getHomePostActions() {
+  if (!homePostActions) {
+    homePostActions = createHomePostActions({
+      shrinkVisibility, deletePost, toggleReaction, toggleBookmark, app, wx,
+    });
+  }
+  return homePostActions;
+}
 
 Page({
   data: {
@@ -98,127 +118,27 @@ Page({
   },
 
   async loadRecommendations(session = getSession()) {
-    const requestId = (this.recommendationRequestId || 0) + 1;
-    this.recommendationRequestId = requestId;
-
-    if (!session || session.memberStatus !== 'active') {
-      const patch = {
-        recommendationCards: [],
-        recommendationState: 'guest',
-        filters: FEED_FILTERS,
-      };
-      if (this.data.selectedBoardId) this.resetFeedForBoard('', patch);
-      else this.setData(patch);
-      return;
-    }
-
-    this.setData({ recommendationState: 'loading' });
-
-    try {
-      const data = (await fetchBoards({ status: 'active' })) || {};
-      if (requestId !== this.recommendationRequestId) return;
-      const boards = (data.items || [])
-        .filter((board) => board && board.status === 'active' && board.id)
-        .slice(0, 9);
-      const recommendationCards = [];
-      for (let start = 0; start < boards.length; start += 3) {
-        const items = boards.slice(start, start + 3);
-        recommendationCards.push({ id: items[0].id, items });
-      }
-      const filters = FEED_FILTERS.concat(boards.map((board) => ({
-        value: board.id,
-        label: board.title,
-      })));
-      const selectedBoardId = boards.some((board) => board.id === this.data.selectedBoardId)
-        ? this.data.selectedBoardId
-        : '';
-      const patch = {
-        recommendationCards,
-        recommendationState: recommendationCards.length > 0 ? 'ready' : 'empty',
-        filters,
-      };
-      if (selectedBoardId !== this.data.selectedBoardId) this.resetFeedForBoard(selectedBoardId, patch);
-      else this.setData(patch);
-    } catch (_) {
-      if (requestId !== this.recommendationRequestId) return;
-      this.setData({ recommendationState: 'error' });
-    }
+    return getHomeFeed().loadRecommendations.call(this, session);
   },
 
   async loadFeed({ silent = false, append = false } = {}) {
-    if (append && (this.data.loading || this.feedFirstPageLoading || this.data.loadingMore || !this.data.hasMore)) return;
-    const requestId = (this.feedRequestId || 0) + 1;
-    this.feedRequestId = requestId;
-    const { selectedBoardId } = this.data;
-    if (append) {
-      this.setData({ loadingMore: true });
-    } else {
-      this.feedFirstPageLoading = true;
-      this.setData(silent ? { loadingMore: false } : { loading: true, loadingMore: false, errorText: '' });
-    }
-    try {
-      const data = await fetchFeed({ boardId: selectedBoardId, cursor: append ? this.data.nextCursor : '' });
-      // 快速切换筛选时，旧响应不得覆盖新筛选
-      if (requestId !== this.feedRequestId) return;
-      if (!append) this.feedFirstPageLoading = false;
-      this.setData({
-        list: append ? this.data.list.concat(data.items || []) : data.items || [],
-        club: data.club || null,
-        nextCursor: data.nextCursor || null,
-        hasMore: !!data.nextCursor,
-        loading: false,
-        loadingMore: false,
-        stale: false,
-        errorText: '',
-      });
-      this.setUnread(app.globalData.unreadCount || 0);
-    } catch (err) {
-      if (requestId !== this.feedRequestId) return;
-      if (!append) this.feedFirstPageLoading = false;
-      if (append) {
-        // 追加失败不破坏已有列表
-        this.setData({ loadingMore: false });
-        wx.showToast({ title: '加载更多失败', icon: 'none' });
-        return;
-      }
-      // 失败时保留已加载数据，只提示未更新（docs/08 P01）
-      this.setData({
-        loading: false,
-        loadingMore: false,
-        stale: this.data.list.length > 0,
-        errorText: err.message || '加载失败',
-      });
-    }
+    return getHomeFeed().loadFeed.call(this, { silent, append });
   },
 
   onFilterTap(e) {
-    const { value } = e.currentTarget.dataset;
-    this.setBoardSelection(value === 'all' ? '' : value);
+    return getHomeFeed().onFilterTap.call(this, e);
   },
 
   setBoardSelection(boardId) {
-    if (boardId === this.data.selectedBoardId) return;
-    this.resetFeedForBoard(boardId);
+    return getHomeFeed().setBoardSelection.call(this, boardId);
   },
 
   resetFeedForBoard(boardId, patch = {}) {
-    // 立即作废旧请求，防止旧筛选的首屏或追加结果覆盖当前选择。
-    this.feedRequestId = (this.feedRequestId || 0) + 1;
-    this.feedFirstPageLoading = false;
-    this.setData({
-      ...patch,
-      selectedBoardId: boardId,
-      list: [],
-      nextCursor: null,
-      hasMore: false,
-      loadingMore: false,
-      stale: false,
-      errorText: '',
-    }, () => this.loadFeed());
+    return getHomeFeed().resetFeedForBoard.call(this, boardId, patch);
   },
 
   onRetry() {
-    this.loadFeed();
+    return getHomeFeed().onRetry.call(this);
   },
 
   onNoticeTap() {
@@ -226,8 +146,7 @@ Page({
   },
 
   onRecommendationTap(e) {
-    const { id } = e.currentTarget.dataset;
-    if (id) this.setBoardSelection(id);
+    return getHomeFeed().onRecommendationTap.call(this, e);
   },
 
   onRecommendationOpen(e) {
@@ -278,149 +197,36 @@ Page({
   },
 
   onMore(e) {
-    const post = this.data.list.find((item) => item.id === e.detail.id);
-    const viewer = post && post.viewer ? post.viewer : {};
-    if (!post || !viewer.isOwner) return;
-
-    const actions = [];
-    if (viewer.canShrinkVisibility) actions.push({ key: 'shrink', label: '缩小可见范围' });
-    if (viewer.canDelete) actions.push({ key: 'delete', label: '删除' });
-    if (actions.length === 0) return;
-
-    wx.showActionSheet({
-      itemList: actions.map((action) => action.label),
-      success: ({ tapIndex }) => {
-        const action = actions[tapIndex];
-        if (!action) return;
-        if (action.key === 'shrink') {
-          this.setData({ actionPost: post, scopeValue: post.visibility, scopeVisible: true });
-          return;
-        }
-        this.confirmDeletePost(post);
-      },
-    });
+    return getHomePostActions().onMore.call(this, e);
   },
 
   onScopeClose() {
-    this.setData({ scopeVisible: false, actionPost: null });
+    return getHomePostActions().onScopeClose.call(this);
   },
 
   onScopeChange(e) {
-    const post = this.data.actionPost;
-    const visibility = e.detail.value;
-    const allowedTargets = {
-      public: ['club', 'private'],
-      club: ['private'],
-      private: [],
-    };
-    const viewer = post && post.viewer ? post.viewer : {};
-    this.setData({ scopeVisible: false });
-
-    if (
-      !post ||
-      !viewer.isOwner ||
-      !viewer.canShrinkVisibility ||
-      !(allowedTargets[post.visibility] || []).includes(visibility)
-    ) {
-      this.setData({ actionPost: null });
-      wx.showToast({ title: '只能选择更小的可见范围', icon: 'none' });
-      return;
-    }
-    if (!Number.isInteger(post.version)) {
-      this.setData({ actionPost: null });
-      wx.showToast({ title: '内容已更新，请刷新后重试', icon: 'none' });
-      this.loadFeed({ silent: true });
-      return;
-    }
-
-    const labelMap = { club: '仅社内可见', private: '只有自己可见' };
-    wx.showModal({
-      title: '缩小可见范围',
-      content: `改为「${labelMap[visibility]}」后，原受众将无法再看到这条内容。已经保存的截图无法追回。`,
-      confirmText: '确认缩小',
-      success: async (res) => {
-        if (!res.confirm) {
-          this.setData({ actionPost: null });
-          return;
-        }
-        try {
-          await shrinkVisibility(post.id, visibility, post.version);
-          this.removePostAndRefresh(post.id, 'visibility');
-          wx.showToast({ title: '已更新可见范围', icon: 'none' });
-        } catch (err) {
-          this.setData({ actionPost: null });
-          wx.showToast({ title: err.message || '未能更新', icon: 'none' });
-          this.loadFeed({ silent: true });
-        }
-      },
-    });
+    return getHomePostActions().onScopeChange.call(this, e);
   },
 
   confirmDeletePost(post) {
-    const viewer = post && post.viewer ? post.viewer : {};
-    if (!post || !viewer.isOwner || !viewer.canDelete) return;
-    if (!Number.isInteger(post.version)) {
-      wx.showToast({ title: '内容已更新，请刷新后重试', icon: 'none' });
-      this.loadFeed({ silent: true });
-      return;
-    }
-
-    wx.showModal({
-      title: '删除这条内容',
-      content: '删除后无法恢复，相关回应也会一并停止展示。',
-      confirmText: '删除',
-      confirmColor: '#A85648',
-      success: async (res) => {
-        if (!res.confirm) return;
-        try {
-          await deletePost(post.id, post.version);
-          this.removePostAndRefresh(post.id, 'delete');
-          wx.showToast({ title: '已删除', icon: 'none' });
-        } catch (err) {
-          wx.showToast({ title: err.message || '未能删除', icon: 'none' });
-          this.loadFeed({ silent: true });
-        }
-      },
-    });
+    return getHomePostActions().confirmDeletePost.call(this, post);
   },
 
   removePostAndRefresh(id, action) {
-    this.setData({
-      list: this.data.list.filter((item) => item.id !== id),
-      actionPost: null,
-      scopeVisible: false,
-    });
-    app.eventBus.emit('post-changed', { id, action });
+    return getHomePostActions().removePostAndRefresh.call(this, id, action);
   },
 
   async onReact(e) {
-    await this.optimistic(e.detail.id, 'reacted', e.detail.next, 'reactions', toggleReaction);
+    return getHomePostActions().onReact.call(this, e);
   },
 
   async onBookmark(e) {
-    await this.optimistic(e.detail.id, 'bookmarked', e.detail.next, null, toggleBookmark);
+    return getHomePostActions().onBookmark.call(this, e);
   },
 
   /** 乐观更新 + 失败回滚，避免误触后无反馈 */
   async optimistic(id, flagKey, next, counterKey, action) {
-    const index = this.data.list.findIndex((item) => item.id === id);
-    if (index < 0) return;
-    const post = this.data.list[index];
-    const prevFlag = post.viewer[flagKey];
-    const prevCount = counterKey ? post.counters[counterKey] : null;
-
-    const patch = { [`list[${index}].viewer.${flagKey}`]: next };
-    if (counterKey) patch[`list[${index}].counters.${counterKey}`] = Math.max(0, prevCount + (next ? 1 : -1));
-    this.setData(patch);
-
-    try {
-      await action(id, next);
-    } catch (err) {
-      const rollback = { [`list[${index}].viewer.${flagKey}`]: prevFlag };
-      if (counterKey) rollback[`list[${index}].counters.${counterKey}`] = prevCount;
-      this.setData(rollback);
-      wx.showToast({ title: err.message || '操作未完成', icon: 'none' });
-    }
+    return getHomePostActions().optimistic.call(this, id, flagKey, next, counterKey, action);
   },
 
   onCompose() {

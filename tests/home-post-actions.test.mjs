@@ -3,8 +3,11 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
+import { loadPageModule } from './helpers/page-module-loader.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const homeFeed = await loadPageModule(new URL('../pages/home/feed.js', import.meta.url), ['createHomeFeed']);
+const homePostActions = await loadPageModule(new URL('../pages/home/post-actions.js', import.meta.url), ['createHomePostActions']);
 const homeWxml = readFileSync(join(ROOT, 'pages/home/index.wxml'), 'utf8');
 const postCardWxml = readFileSync(join(ROOT, 'components/post-card/index.wxml'), 'utf8');
 const postCardStyles = readFileSync(join(ROOT, 'components/post-card/index.less'), 'utf8');
@@ -22,7 +25,9 @@ const homeSource = readFileSync(join(ROOT, 'pages/home/index.js'), 'utf8')
     "import { getCapabilities, getSession } from '~/services/session';",
     'const { getCapabilities, getSession } = __helpers;',
   )
-  .replace("import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __helpers;');
+  .replace("import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __helpers;')
+  .replace("import { createHomeFeed } from './feed';", 'const { createHomeFeed } = __homeFeed;')
+  .replace("import { createHomePostActions } from './post-actions';", 'const { createHomePostActions } = __homePostActions;');
 
 const post = (overrides = {}) => ({
   id: 'post-1',
@@ -96,6 +101,8 @@ function createHarness(item, {
     wx,
     __posts: posts,
     __boards: boards,
+    __homeFeed: homeFeed,
+    __homePostActions: homePostActions,
     __helpers: {
       previewPostImage() {},
       getCapabilities: () => ({ publicScope: true }),
