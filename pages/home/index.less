@@ -27,20 +27,20 @@
   }
 
   &__welcome {
-    padding: @hg-sp-3 @hg-page-x 0;
+    padding: @hg-sp-1 @hg-page-x 0;
   }
 
   &__slogan {
-    .hg-serif(@hg-fs-display);
+    .hg-serif(@hg-fs-title);
 
-    line-height: 1.5;
-    letter-spacing: 2rpx;
+    line-height: 1.25;
+    letter-spacing: 1rpx;
   }
 
   &__sub {
-    margin-top: @hg-sp-2;
-    font-size: @hg-fs-sm;
-    line-height: @hg-lh-base;
+    margin-top: 4rpx;
+    font-size: @hg-fs-2xs;
+    line-height: 1.45;
     color: @hg-ink-3;
   }
 
@@ -48,7 +48,7 @@
     display: flex;
     align-items: center;
     height: @hg-touch-min;
-    margin: @hg-sp-3 @hg-page-x 0;
+    margin: @hg-sp-2 @hg-page-x 0;
     padding: 0 @hg-sp-3;
     background: @hg-surface-sunk;
     border: 1rpx solid @hg-line;
@@ -63,7 +63,7 @@
   }
 
   &__recommend {
-    margin-top: @hg-sp-2;
+    margin-top: @hg-sp-1;
   }
 
   &__recommend-head {
@@ -161,7 +161,15 @@
 
   &__filters {
     white-space: nowrap;
-    padding: 18rpx @hg-page-x 20rpx;
+    padding: 8rpx @hg-page-x 16rpx;
+  }
+
+  &__feed-heading {
+    margin: @hg-sp-1 @hg-page-x 0;
+    color: @hg-ink;
+    font-size: @hg-fs-h3;
+    line-height: 1.35;
+    font-weight: 600;
   }
 
   &__filter {

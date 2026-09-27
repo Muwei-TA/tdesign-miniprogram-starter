@@ -15,7 +15,7 @@
       <view>留一盏灯，</view>
       <view>给每一种表达。</view>
     </view>
-    <view class="hg-home__sub">先决定谁能看见，再决定用什么身份写。新内容默认只在社内可见。</view>
+    <view class="hg-home__sub">先选谁能看见，再选用什么身份；新内容默认仅社内可见。</view>
   </view>
 
   <!-- 搜索入口（不在本页输入） -->
@@ -58,6 +58,10 @@
     <view wx:elif="{{ recommendationState === 'empty' }}" class="hg-home__recommend-empty">暂时没有已审核的板块</view>
     <view wx:elif="{{ recommendationState === 'guest' }}" class="hg-home__recommend-empty">加入文学社后，可以查看社内板块</view>
     <view wx:elif="{{ recommendationState === 'error' }}" class="hg-home__recommend-empty">板块暂时没加载出来，前往板块页重试</view>
+  </view>
+
+  <view class="hg-home__feed-heading">
+    <text>帖子</text>
   </view>
 
   <!-- 筛选 -->

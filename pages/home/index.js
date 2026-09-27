@@ -67,9 +67,11 @@ Page({
       this.getTabBar().setData({ value: 'home' });
     }
     if (!this.hasShownOnce) {
+      // 首页 onLoad 已取推荐数据，首次 onShow 不重复请求。
       this.hasShownOnce = true;
       return;
     }
+    this.loadRecommendations(getSession());
     const { session } = app.globalData;
     if (session && session.role !== 'guest') return app.refreshUnreadCount();
   },

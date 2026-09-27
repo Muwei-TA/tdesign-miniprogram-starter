@@ -41,7 +41,7 @@ function createHarness(item, {
   topicsResult = { items: [] },
 } = {}) {
   const calls = {
-    delete: [], shrink: [], fetch: 0, topics: [], navigations: [], switchTabs: [],
+    delete: [], shrink: [], fetch: 0, topics: [], navigations: [], switchTabs: [], unreadRefreshes: 0,
     events: [], modals: [], actionSheets: [], toasts: [],
   };
   const app = {
@@ -50,7 +50,11 @@ function createHarness(item, {
       off() {},
       emit: (event, payload) => calls.events.push({ event, ...payload }),
     },
-    globalData: {},
+    globalData: { session: { role: 'member', memberStatus: 'active' } },
+    refreshUnreadCount: () => {
+      calls.unreadRefreshes += 1;
+      return Promise.resolve();
+    },
   };
   const wx = {
     showActionSheet: (options) => calls.actionSheets.push(options),
@@ -80,7 +84,7 @@ function createHarness(item, {
   const topics = {
     fetchTopics: async (options) => {
       calls.topics.push(options);
-      return topicsResult;
+      return typeof topicsResult === 'function' ? topicsResult(options) : topicsResult;
     },
   };
   let page;
@@ -126,6 +130,8 @@ assert.match(homeWxml, /bindtap="onMoreRecommendations"/);
 assert.match(homeWxml, /推荐板块/);
 assert.match(homeWxml, /查看更多板块/);
 assert.doesNotMatch(homeWxml, /weekPrompt|本周共写/);
+assert.match(homeWxml, /留一盏灯/);
+assert.match(homeWxml, /class="hg-home__feed-heading"[\s\S]*?<text>帖子<\/text>/);
 assert.doesNotMatch(postServiceSource, /value: '(?:article|video|awaiting_reply)'/);
 assert.match(postCardWxml, /hg-post__content--feed/);
 assert.match(postCardStyles, /flex-direction:\s*column-reverse/);
@@ -158,6 +164,12 @@ assert.deepEqual(
     ['topic-7', 'topic-8', 'topic-9'],
   ],
 );
+const requestCountBeforeFirstShow = recommendationHarness.calls.topics.length;
+await recommendationHarness.context.onShow();
+assert.equal(recommendationHarness.calls.topics.length, requestCountBeforeFirstShow);
+await recommendationHarness.context.onShow();
+assert.equal(recommendationHarness.calls.topics.length, requestCountBeforeFirstShow + 1);
+assert.equal(recommendationHarness.calls.unreadRefreshes, 1);
 recommendationHarness.context.onRecommendationTap({ currentTarget: { dataset: { id: 'topic-1' } } });
 assert.equal(
   recommendationHarness.calls.navigations.at(-1),
@@ -172,6 +184,17 @@ const emptyRecommendationHarness = createHarness(post(), {
 await emptyRecommendationHarness.context.loadRecommendations();
 assert.deepEqual(Array.from(emptyRecommendationHarness.context.data.recommendationCards), []);
 assert.equal(emptyRecommendationHarness.context.data.recommendationState, 'empty');
+
+let resolveOldSessionTopics;
+const sessionRaceHarness = createHarness(post(), {
+  topicsResult: () => new Promise((resolve) => { resolveOldSessionTopics = resolve; }),
+});
+const oldSessionLoad = sessionRaceHarness.context.loadRecommendations({ memberStatus: 'active' });
+await sessionRaceHarness.context.loadRecommendations({ memberStatus: 'removed' });
+resolveOldSessionTopics({ items: [{ id: 'stale-topic', status: 'active' }] });
+await oldSessionLoad;
+assert.deepEqual(Array.from(sessionRaceHarness.context.data.recommendationCards), []);
+assert.equal(sessionRaceHarness.context.data.recommendationState, 'guest');
 
 const anonymousOwner = runPostCardObserver(
   post({
