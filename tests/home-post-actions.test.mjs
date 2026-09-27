@@ -16,7 +16,7 @@ const homeSource = readFileSync(join(ROOT, 'pages/home/index.js'), 'utf8')
     /import \{[\s\S]*?FEED_FILTERS,\r?\n\} from '~\/services\/posts';/,
     'const { fetchFeed, toggleReaction, toggleBookmark, shrinkVisibility, deletePost, FEED_FILTERS } = __posts;',
   )
-  .replace("import { fetchTopics } from '~/services/topics';", 'const { fetchTopics } = __topics;')
+  .replace("import { fetchBoards } from '~/services/boards';", 'const { fetchBoards } = __boards;')
   .replace("import { previewPostImage } from '~/services/image-preview';", 'const { previewPostImage } = __helpers;')
   .replace(
     "import { getCapabilities, getSession } from '~/services/session';",
@@ -38,10 +38,10 @@ const post = (overrides = {}) => ({
 function createHarness(item, {
   deleteResult = Promise.resolve(),
   shrinkResult = Promise.resolve(),
-  topicsResult = { items: [] },
+  boardsResult = { items: [] },
 } = {}) {
   const calls = {
-    delete: [], shrink: [], fetch: 0, topics: [], navigations: [], switchTabs: [], unreadRefreshes: 0,
+    delete: [], shrink: [], fetch: 0, boards: [], navigations: [], unreadRefreshes: 0,
     events: [], modals: [], actionSheets: [], toasts: [],
   };
   const app = {
@@ -60,7 +60,6 @@ function createHarness(item, {
     showActionSheet: (options) => calls.actionSheets.push(options),
     showModal: (options) => calls.modals.push(options),
     showToast: (options) => calls.toasts.push(options),
-    switchTab: (options) => calls.switchTabs.push(options),
   };
   const posts = {
     FEED_FILTERS: [],
@@ -81,10 +80,10 @@ function createHarness(item, {
       return deleteResult;
     },
   };
-  const topics = {
-    fetchTopics: async (options) => {
-      calls.topics.push(options);
-      return typeof topicsResult === 'function' ? topicsResult(options) : topicsResult;
+  const boards = {
+    fetchBoards: async (options) => {
+      calls.boards.push(options);
+      return typeof boardsResult === 'function' ? boardsResult(options) : boardsResult;
     },
   };
   let page;
@@ -95,7 +94,7 @@ function createHarness(item, {
     getApp: () => app,
     wx,
     __posts: posts,
-    __topics: topics,
+    __boards: boards,
     __helpers: {
       previewPostImage() {},
       getCapabilities: () => ({ publicScope: true }),
@@ -129,6 +128,9 @@ assert.match(homeWxml, /recommendationCards\.length > 0/);
 assert.match(homeWxml, /bindtap="onMoreRecommendations"/);
 assert.match(homeWxml, /推荐板块/);
 assert.match(homeWxml, /查看更多板块/);
+assert.match(homeWxml, /wx:for-item="board"/);
+assert.match(homeWxml, /data-id="\{\{ board\.id \}\}"/);
+assert.match(homeWxml, /bind:tapboard="onTapBoard"/);
 assert.doesNotMatch(homeWxml, /weekPrompt|本周共写/);
 assert.match(homeWxml, /留一盏灯/);
 assert.match(homeWxml, /class="hg-home__feed-heading"[\s\S]*?<text>帖子<\/text>/);
@@ -137,61 +139,65 @@ assert.match(postCardWxml, /hg-post__content--feed/);
 assert.match(postCardStyles, /flex-direction:\s*column-reverse/);
 
 const recommendationHarness = createHarness(post(), {
-  topicsResult: {
+  boardsResult: {
     items: [
-      { id: 'topic-1', title: '一', status: 'active' },
-      { id: 'topic-pending', title: '待审', status: 'pending' },
-      { id: 'topic-2', title: '二', status: 'active' },
-      { id: 'topic-archived', title: '归档', status: 'archived' },
-      { id: 'topic-3', title: '三', status: 'active' },
-      { id: 'topic-4', title: '四', status: 'active' },
-      { id: 'topic-5', title: '五', status: 'active' },
-      { id: 'topic-6', title: '六', status: 'active' },
-      { id: 'topic-7', title: '七', status: 'active' },
-      { id: 'topic-8', title: '八', status: 'active' },
-      { id: 'topic-9', title: '九', status: 'active' },
-      { id: 'topic-10', title: '十', status: 'active' },
+      { id: 'board-1', title: '一', status: 'active' },
+      { id: 'board-pending', title: '待审', status: 'pending' },
+      { id: 'board-2', title: '二', status: 'active' },
+      { id: 'board-archived', title: '归档', status: 'archived' },
+      { id: 'board-3', title: '三', status: 'active' },
+      { id: 'board-4', title: '四', status: 'active' },
+      { id: 'board-5', title: '五', status: 'active' },
+      { id: 'board-6', title: '六', status: 'active' },
+      { id: 'board-7', title: '七', status: 'active' },
+      { id: 'board-8', title: '八', status: 'active' },
+      { id: 'board-9', title: '九', status: 'active' },
+      { id: 'board-10', title: '十', status: 'active' },
     ],
   },
 });
 await recommendationHarness.context.loadRecommendations();
-assert.equal(recommendationHarness.calls.topics[0].status, 'active');
+assert.deepEqual(JSON.parse(JSON.stringify(recommendationHarness.calls.boards[0])), { status: 'active' });
 assert.deepEqual(
-  Array.from(recommendationHarness.context.data.recommendationCards, (card) => card.items.map((topic) => topic.id)),
+  Array.from(recommendationHarness.context.data.recommendationCards, (card) => card.items.map((board) => board.id)),
   [
-    ['topic-1', 'topic-2', 'topic-3'],
-    ['topic-4', 'topic-5', 'topic-6'],
-    ['topic-7', 'topic-8', 'topic-9'],
+    ['board-1', 'board-2', 'board-3'],
+    ['board-4', 'board-5', 'board-6'],
+    ['board-7', 'board-8', 'board-9'],
   ],
 );
-const requestCountBeforeFirstShow = recommendationHarness.calls.topics.length;
+const requestCountBeforeFirstShow = recommendationHarness.calls.boards.length;
 await recommendationHarness.context.onShow();
-assert.equal(recommendationHarness.calls.topics.length, requestCountBeforeFirstShow);
+assert.equal(recommendationHarness.calls.boards.length, requestCountBeforeFirstShow);
 await recommendationHarness.context.onShow();
-assert.equal(recommendationHarness.calls.topics.length, requestCountBeforeFirstShow + 1);
+assert.equal(recommendationHarness.calls.boards.length, requestCountBeforeFirstShow + 1);
 assert.equal(recommendationHarness.calls.unreadRefreshes, 1);
-recommendationHarness.context.onRecommendationTap({ currentTarget: { dataset: { id: 'topic-1' } } });
+recommendationHarness.context.onRecommendationTap({ currentTarget: { dataset: { id: 'board-1' } } });
 assert.equal(
   recommendationHarness.calls.navigations.at(-1),
-  '/pages/community/topic/index?id=topic-1',
+  '/pages/community/board/index?id=board-1',
 );
 recommendationHarness.context.onMoreRecommendations();
-assert.equal(recommendationHarness.calls.switchTabs.at(-1).url, '/pages/topics/index');
+assert.equal(recommendationHarness.calls.navigations.at(-1), '/pages/community/boards/index');
+recommendationHarness.context.onTapTopic({ detail: { topicId: 'topic-1' } });
+assert.equal(recommendationHarness.calls.navigations.at(-1), '/pages/community/topic/index?id=topic-1');
+recommendationHarness.context.onTapBoard({ detail: { boardId: 'board-1' } });
+assert.equal(recommendationHarness.calls.navigations.at(-1), '/pages/community/board/index?id=board-1');
 
 const emptyRecommendationHarness = createHarness(post(), {
-  topicsResult: { items: [{ id: 'topic-pending', status: 'pending' }] },
+  boardsResult: { items: [{ id: 'board-pending', status: 'pending' }] },
 });
 await emptyRecommendationHarness.context.loadRecommendations();
 assert.deepEqual(Array.from(emptyRecommendationHarness.context.data.recommendationCards), []);
 assert.equal(emptyRecommendationHarness.context.data.recommendationState, 'empty');
 
-let resolveOldSessionTopics;
+let resolveOldSessionBoards;
 const sessionRaceHarness = createHarness(post(), {
-  topicsResult: () => new Promise((resolve) => { resolveOldSessionTopics = resolve; }),
+  boardsResult: () => new Promise((resolve) => { resolveOldSessionBoards = resolve; }),
 });
 const oldSessionLoad = sessionRaceHarness.context.loadRecommendations({ memberStatus: 'active' });
 await sessionRaceHarness.context.loadRecommendations({ memberStatus: 'removed' });
-resolveOldSessionTopics({ items: [{ id: 'stale-topic', status: 'active' }] });
+resolveOldSessionBoards({ items: [{ id: 'stale-board', status: 'active' }] });
 await oldSessionLoad;
 assert.deepEqual(Array.from(sessionRaceHarness.context.data.recommendationCards), []);
 assert.equal(sessionRaceHarness.context.data.recommendationState, 'guest');

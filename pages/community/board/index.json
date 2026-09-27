@@ -1,0 +1,11 @@
+{
+  "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
+  "usingComponents": {
+    "hg-nav": "/components/hg-nav/index",
+    "post-card": "/components/post-card/index",
+    "request-state": "/components/request-state/index",
+    "empty-state": "/components/empty-state/index"
+  }
+}

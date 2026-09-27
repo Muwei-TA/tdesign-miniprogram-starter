@@ -23,6 +23,32 @@ assert.deepEqual(plain(resolveTransport('/posts?cursor=c1&type=article', 'GET', 
   action: 'posts/list',
   payload: { cursor: 'c1', type: 'article' },
 });
+assert.deepEqual(plain(resolveTransport('/posts?boardId=b-1&cursor=c2', 'GET', {})), {
+  action: 'posts/list',
+  payload: { boardId: 'b-1', cursor: 'c2' },
+});
+assert.deepEqual(plain(resolveTransport('/boards?q=reading&cursor=c1&status=active', 'GET', {})), {
+  action: 'boards/list',
+  payload: { q: 'reading', cursor: 'c1', status: 'active' },
+});
+assert.deepEqual(plain(resolveTransport('/boards', 'POST', { title: 'Reading', description: 'Books together' })), {
+  action: 'boards/create',
+  payload: { title: 'Reading', description: 'Books together' },
+});
+assert.deepEqual(plain(resolveTransport('/boards/board-1?cursor=c2', 'GET', {})), {
+  action: 'boards/detail',
+  payload: { id: 'board-1', cursor: 'c2' },
+});
+assert.deepEqual(plain(resolveTransport('/admin/queues/board?cursor=c3', 'GET', {})), {
+  action: 'admin/queue',
+  payload: { cursor: 'c3', queue: 'board' },
+});
+assert.deepEqual(plain(resolveTransport('/admin/boards/board-1/decision', 'POST', {
+  decision: 'approve', reason: 'clear scope', expectedVersion: 2,
+})), {
+  action: 'admin/board/decide',
+  payload: { decision: 'approve', reason: 'clear scope', expectedVersion: 2, id: 'board-1' },
+});
 assert.deepEqual(plain(resolveTransport('/posts/p-1', 'GET', {})), {
   action: 'posts/detail',
   payload: { id: 'p-1' },
