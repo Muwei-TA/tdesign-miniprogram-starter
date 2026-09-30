@@ -2,8 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
+import { loadPageModule } from './helpers/page-module-loader.mjs';
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
+const homeFeed = await loadPageModule(new URL('../pages/home/feed.js', import.meta.url), ['createHomeFeed']);
+const homePostActions = await loadPageModule(new URL('../pages/home/post-actions.js', import.meta.url), ['createHomePostActions']);
 function deferred() {
   let resolve;
   let reject;
@@ -12,7 +15,13 @@ function deferred() {
 }
 
 function loadPage(path, services = {}) {
-  const source = readFileSync(new URL(path, import.meta.url), 'utf8')
+  let source = readFileSync(new URL(path, import.meta.url), 'utf8');
+  if (path.includes('pages/home/index.js')) {
+    source = source
+      .replace("import { createHomeFeed } from './feed';", 'const { createHomeFeed } = __homeFeed;')
+      .replace("import { createHomePostActions } from './post-actions';", 'const { createHomePostActions } = __homePostActions;');
+  }
+  source = source
     .replace(/import[\s\S]*?from ['"][^'"]+['"];?/g, '');
   let page;
   const app = {
@@ -43,6 +52,8 @@ function loadPage(path, services = {}) {
     previewPostImage() {},
     navigateTo() {},
     wx: { showToast() {} },
+    __homeFeed: homeFeed,
+    __homePostActions: homePostActions,
     ...services,
   });
   const context = Object.create(page);

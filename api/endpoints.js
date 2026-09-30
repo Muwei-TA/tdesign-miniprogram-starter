@@ -5,6 +5,8 @@
 export default {
   sessionWechat: '/session/wechat',
   sessionMe: '/session/me',
+  myLevels: '/me/levels',
+  myCheckIn: '/me/check-in',
 
   membershipApply: '/membership/applications',
   membershipMine: '/membership/applications/mine',

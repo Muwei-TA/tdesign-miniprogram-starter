@@ -119,6 +119,37 @@ notifyType:    comment | reply | reaction_digest | system_review | system_report
 2. `viewer.canDelete` 由服务端按文档归属计算，前端不得用昵称/别名推断；仅评论者本人为 `true`（`pending` 与 `published` 都可删）。
 3. 已删除的一级回应若有可见回复，返回墓碑（`deleted: true`、`body` 为固定文案「这条回应已被删除。」、无作者信息）；已删除的定向回复不再返回。
 
+### MeLevelsDTO（仅本人等级页）
+
+```json
+{
+  "level": 3,
+  "title": "青枝",
+  "totalXp": 135,
+  "currentLevelXp": 120,
+  "nextLevelXp": 280,
+  "progressXp": 15,
+  "progressTargetXp": 160,
+  "today": {
+    "earnedXp": 8,
+    "maxXp": 19,
+    "checkedIn": false,
+    "reactions": 2,
+    "maxReactions": 5,
+    "comments": 1,
+    "maxComments": 3
+  }
+}
+```
+
+- `title` 只返回等级名（如「青枝」），等级编号由 `level` 提供；`currentLevelXp` 和 `nextLevelXp` 是累计经验门槛，`progressXp` 与 `progressTargetXp` 是本级进度及本级区间长度。
+- `today.reactions`、`today.comments` 是当日已计入经验的不同目标数，不是互动总量。`today.earnedXp` 为当日已发放经验额度；经验后续被撤回时不返还额度。`maxXp` 为每日上限。
+- L8 为最高等级，`nextLevelXp` 返回 `null`，`progressTargetXp` 返回 `0`；前端显示累计经验，不计算下一等级剩余经验。
+- 仅允许当前有效成员读取自己的快照。用户身份取服务端会话，不接收客户端指定的 `userId`、经验值或业务日期。访客及失效成员不可读取或签到。
+- 等级快照不加入帖子、回应、评论、公开署名资料或匿名别名 DTO。匿名互动产生的经验与目标、作者之间的关联仅限服务端处理，不能据公开数据推断或查询。
+
+`POST /me/check-in` 返回同一份 `MeLevelsDTO`，另加 `awardedXp`。当日首次成功签到返回 `awardedXp: 5`；重复请求（包括超时后的重试或并发请求）返回当前快照且 `awardedXp: 0`，不得重复加分。
+
 ## 4.4 接口清单
 
 | # | 接口 | 方法 | 入参要点 | 返回/规则 |
@@ -166,6 +197,8 @@ notifyType:    comment | reply | reaction_digest | system_review | system_report
 | J1 | `/me/exports` | POST | — | 异步任务；需二次确认身份 |
 | J2 | `/me/account` | DELETE | 确认串 | 风险告知 → 清理/依法保留 → 结果通知 |
 | J3 | `/me/contents` | GET | `tab`、`cursor` | 发布/待审/私密/收藏/关注话题 |
+| J4 | `/me/levels` | GET | — | 当前有效成员本人等级 `MeLevelsDTO`；仅本人可读，不含公开/匿名关联 |
+| J5 | `/me/check-in` | POST | 空对象 `{}` | 当日签到；返回 `MeLevelsDTO` + `awardedXp`，重复或重试为 `0`，仅本人有效成员可操作 |
 
 ## 4.5 游标分页与一致性
 

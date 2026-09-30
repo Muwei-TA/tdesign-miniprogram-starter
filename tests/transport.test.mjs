@@ -103,6 +103,14 @@ assert.deepEqual(plain(resolveTransport('/session/wechat', 'POST', { code: 'igno
   action: 'session/me',
   payload: {},
 });
+assert.deepEqual(plain(resolveTransport('/me/levels', 'GET', {})), {
+  action: 'me/levels',
+  payload: {},
+});
+assert.deepEqual(plain(resolveTransport('/me/check-in', 'POST', {})), {
+  action: 'me/check-in',
+  payload: {},
+});
 assert.deepEqual(plain(resolveTransport('/admin/usage/status', 'GET', {})), {
   action: 'admin/usage/status',
   payload: {},

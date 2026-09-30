@@ -297,6 +297,8 @@ const homePage = loadPage(
       'const { getCapabilities, getSession } = __session;',
     ],
     ["import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;'],
+    ["import { createHomeFeed } from './feed';", 'const { createHomeFeed } = __homeFeed;'],
+    ["import { createHomePostActions } from './post-actions';", 'const { createHomePostActions } = __homePostActions;'],
   ],
   {
     __posts: {
@@ -307,7 +309,10 @@ const homePage = loadPage(
     __imagePreview: { previewPostImage() {} },
     __session: { getCapabilities: () => ({}), getSession: () => homeApp.globalData.session },
     __navigation: { navigateTo() {} },
+    __homeFeed: { createHomeFeed: () => ({ loadRecommendations() {} }) },
+    __homePostActions: { createHomePostActions: () => ({}) },
     getApp: () => homeApp,
+    wx: {},
   },
 );
 const home = pageContext(homePage);

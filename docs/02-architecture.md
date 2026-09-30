@@ -119,6 +119,8 @@ request(url, { method = 'GET', data, header, timeout = 10000, idempotencyKey })
 
 ## 2.5 页面规范
 
+- 每个注册页面以自己的目录为模块边界：`index.js` 注册 `Page` 并保留 WXML 事件入口，复杂的列表状态、操作流程等放在同目录的辅助模块。页面实现不得直接导入另一个页面目录；复用能力放 `services/`、`utils/` 或分包级共享模块。`npm run check` 检查这一边界。
+- 当前实例：`pages/home/feed.js` 负责推荐和信息流，`pages/home/post-actions.js` 负责内容操作；`pages/search/controller.js` 负责搜索状态和请求。它们只由各自页面入口调用。
 - 每页必须实现三态：`loading` / `error(可重试)` / `empty`，由 `request-state` + `empty-state` 承接。
 - 列表页保留滚动位置：Tab 页用 `onShow` 不重置 `scrollTop`；详情返回不 `reLaunch`。
 - **禁止** `wx.reLaunch` 作为常规返回（模板 `release` 页现用 `reLaunch`，必须改为 `navigateBack` + 结果页）。
