@@ -33,23 +33,30 @@ const withQuery = (url, query = {}) => {
 };
 const request = (url, options = {}) => {
   calls.push({ url, options });
+  const items = url.includes('/all?')
+    ? [
+        { id: 'same-id', queue: 'content', kind: 'article', title: '文章', summary: '正文', version: 1 },
+        { id: 'same-id', queue: 'comment', title: '回应', comment: '回应内容', version: 2 },
+        { appealId: 'appeal-1', queue: 'appeals', reason: '请重新检查', version: 3, createdAt: '2026-09-27T10:00:00Z' },
+      ]
+    : [
+        {
+          id: 'p-1',
+          queue: 'content',
+          title: '待审核内容',
+          summary: '摘要',
+          submittedAtText: '刚刚',
+          statusText: '等待审核',
+          assetIds: ['a-1'],
+          visibility: 'club',
+          isAnonymous: true,
+          ownerId: 'must-not-render',
+          reporterId: 'must-not-render',
+          mappings: [{ alias: 'secret', userId: 'u-secret' }],
+        },
+      ];
   return Promise.resolve({
-    items: [
-      {
-        id: 'p-1',
-        queue: 'content',
-        title: '待审核内容',
-        summary: '摘要',
-        submittedAtText: '刚刚',
-        statusText: '等待审核',
-        assetIds: ['a-1'],
-        visibility: 'club',
-        isAnonymous: true,
-        ownerId: 'must-not-render',
-        reporterId: 'must-not-render',
-        mappings: [{ alias: 'secret', userId: 'u-secret' }],
-      },
-    ],
+    items,
     nextCursor: 'next',
   });
 };
@@ -70,7 +77,7 @@ vm.runInNewContext(
 
 const moderation = module.exports;
 
-assert.deepEqual(plain(moderation.QUEUES.map((queue) => queue.value)), ['content', 'comment', 'topic', 'board', 'member', 'report', 'collection']);
+assert.deepEqual(plain(moderation.QUEUES.map((queue) => queue.value)), ['content', 'comment', 'topic', 'board', 'member', 'report', 'collection', 'appeals']);
 assert.equal(moderation.ACTIONS_BY_QUEUE.report.find((action) => action.key === 'keep').requiresReason, true);
 assert.equal(moderation.ACTIONS_BY_QUEUE.content.find((action) => action.key === 'approve').requiresReason, false);
 assert.equal(moderation.ACTIONS_BY_QUEUE.comment.find((action) => action.key === 'reject').requiresReason, true);
@@ -93,6 +100,7 @@ const item = moderation.normalizeQueueItem({
 assert.deepEqual(plain(item), {
   id: 'r-1',
   queue: 'report',
+  queueItemKey: 'report:r-1',
   queueLabel: '举报',
   title: '内容被举报',
   summary: '举报理由',
@@ -123,6 +131,7 @@ const commentItem = moderation.normalizeQueueItem({
 assert.deepEqual(plain(commentItem), {
   id: 'c-1',
   queue: 'comment',
+  queueItemKey: 'comment:c-1',
   queueLabel: '回应',
   title: '回应',
   summary: '回应正文',
@@ -151,6 +160,8 @@ assert.equal(boardItem.queueLabel, '板块');
 assert.equal(boardItem.version, 4);
 assert.deepEqual(plain(boardItem.actions.map((action) => action.key)), ['approve', 'reject']);
 assert.equal(Object.prototype.hasOwnProperty.call(boardItem, 'ownerId'), false);
+assert.equal(moderation.normalizeQueueItem({ id: 'article-1', kind: 'article' }, 'content').queueLabel, '文章');
+assert.equal(moderation.normalizeQueueItem({ id: 'fragment-1', kind: 'fragment' }, 'content').queueLabel, '帖子复核');
 
 const queue = await moderation.fetchQueue({ queue: 'content', cursor: 'cursor-1' });
 assert.equal(calls[0].url, '/admin/queues/content?cursor=cursor-1');
@@ -180,6 +191,18 @@ assert.deepEqual(plain(calls[6]), {
   options: { method: 'POST', data: { decision: 'reject', reason: '请补充表达', expectedVersion: 2 } },
 });
 
+const allQueue = await moderation.fetchQueue({ queue: 'all', cursor: 'cursor-all' });
+assert.equal(calls[7].url, '/admin/queues/all?cursor=cursor-all');
+assert.deepEqual(plain(allQueue.items.map((entry) => [entry.id, entry.queue, entry.queueItemKey])), [
+  ['same-id', 'content', 'content:same-id'],
+  ['same-id', 'comment', 'comment:same-id'],
+  ['appeal-1', 'appeals', 'appeals:appeal-1'],
+]);
+assert.equal(allQueue.items[0].queueLabel, '文章');
+assert.equal(allQueue.items[2].queueLabel, '申诉');
+assert.equal(allQueue.items[2].summary, '请重新检查');
+assert.deepEqual(plain(allQueue.items[2].actions), []);
+
 const transportSource = readFileSync(join(ROOT, 'api/transport.js'), 'utf8')
   .replace(/export const /g, 'const ')
   .replace(/export function /g, 'function ');
@@ -191,6 +214,7 @@ vm.runInNewContext(
 const adminRoutes = [
   ['GET', '/admin/queues/content', {}, 'admin/queue', { queue: 'content' }],
   ['GET', '/admin/queues/board', {}, 'admin/queue', { queue: 'board' }],
+  ['GET', '/admin/queues/all?cursor=next', {}, 'admin/queue', { queue: 'all', cursor: 'next' }],
   ['POST', '/admin/reviews/p-1/decision', { decision: 'reject', reason: '补充来源', expectedVersion: 3 }, 'admin/content/decide', { id: 'p-1', decision: 'reject', reason: '补充来源', expectedVersion: 3 }],
   ['POST', '/admin/topics/t-1/decision', { decision: 'archive', reason: '已过期' }, 'admin/topic/decide', { id: 't-1', decision: 'archive', reason: '已过期' }],
   ['POST', '/admin/boards/b-1/decision', { decision: 'reject', reason: '名称需要调整', expectedVersion: 4 }, 'admin/board/decide', { id: 'b-1', decision: 'reject', reason: '名称需要调整', expectedVersion: 4 }],
@@ -204,71 +228,81 @@ adminRoutes.forEach(([method, url, body, action, payload]) => {
   assert.deepEqual(plain(resolved), { action, payload });
 });
 
-const pageSource = readFileSync(join(ROOT, 'pages/admin/index.js'), 'utf8');
+const pageSource = readFileSync(join(ROOT, 'pages/admin/reviews/index.js'), 'utf8');
+const pageWxml = readFileSync(join(ROOT, 'pages/admin/reviews/index.wxml'), 'utf8');
 const componentSource = readFileSync(join(ROOT, 'components/moderation-item/index.wxml'), 'utf8');
+const componentJsSource = readFileSync(join(ROOT, 'components/moderation-item/index.js'), 'utf8');
 assert.match(pageSource, /expectedVersion: item\.version/);
 assert.match(pageSource, /item\.queue === 'comment'/);
 assert.match(pageSource, /decideComment/);
-assert.match(pageSource, /fetchPendingBoards/);
 assert.match(pageSource, /decideBoard\(item\.id, \{ decision: key, reason, expectedVersion: item\.version \}\)/);
 assert.match(pageSource, /pages\/community\/post\/index\?id=\$\{encodeURIComponent\(item\.id\)\}/);
 assert.match(pageSource, /请填写处理理由/);
 assert.match(pageSource, /session\.role === 'admin'|session\.role === 'moderator'/);
+assert.match(pageSource, /activeQueue: 'all'/);
+assert.match(pageSource, /fetchQueue\(\{ queue, cursor \}\)/);
+assert.doesNotMatch(pageWxml, /hg-admin__queues|wx:for="\{\{ queues \}\}"/);
+assert.match(pageWxml, /wx:key="queueItemKey"/);
+assert.match(pageWxml, /hg-admin__management-link/);
 assert.match(componentSource, /bindtap="onAction"/);
 assert.match(componentSource, /树洞身份/);
 assert.match(componentSource, /item\.queue === 'content'/);
 assert.match(componentSource, /查看内容/);
 assert.match(componentSource, /查看摘要/);
+assert.match(componentJsSource, /queue: this\.data\.item\.queue/);
 
-let adminPageDefinition;
-const boardQueueCalls = [];
+let reviewPageDefinition;
+const allQueueCalls = [];
 const boardDecisionCalls = [];
 const adminModals = [];
-const adminPageSource = pageSource
-  .replace(
-    "import {\n  QUEUES,\n  fetchQueue,\n  normalizeQueueItem,\n  fetchAssetReviewStatuses,\n  submitDecision,\n  decideComment,\n  decideTopic,\n  decideMembership,\n  decideReport,\n  decideCollection,\n} from './moderation';",
-    'const { QUEUES, fetchQueue, normalizeQueueItem, fetchAssetReviewStatuses, submitDecision, decideComment, decideTopic, decideMembership, decideReport, decideCollection } = __moderation;',
-  )
-  .replace("import { fetchPendingBoards, decideBoard } from '~/services/boards';", 'const { fetchPendingBoards, decideBoard } = __boards;')
-  .replace("import { fetchUsageStatus } from './usage';", 'const { fetchUsageStatus } = __usage;')
+const navigations = [];
+const reviewPageSource = pageSource
+  .replace(/import \{[\s\S]*?\} from '\.\.\/moderation';/, 'const { fetchQueue, fetchAssetReviewStatuses, submitDecision, decideComment, decideTopic, decideMembership, decideReport, decideCollection } = __moderation;')
+  .replace("import { decideBoard } from '~/services/boards';", 'const { decideBoard } = __boards;')
   .replace("import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;');
-vm.runInNewContext(adminPageSource, {
-  Page(definition) { adminPageDefinition = definition; },
+const reviewItems = [
+  moderation.normalizeQueueItem({ id: 'b-1', queue: 'board', title: '山茶读书会', summary: '每周共读', status: 'pending', version: 4 }, 'board'),
+  moderation.normalizeQueueItem({ id: 'b-1', queue: 'comment', title: '回应', comment: '一条回应', version: 5 }, 'comment'),
+  moderation.normalizeQueueItem({ appealId: 'appeal-1', queue: 'appeals', reason: '请复核', version: 6 }, 'appeals'),
+];
+vm.runInNewContext(reviewPageSource, {
+  Page(definition) { reviewPageDefinition = definition; },
   getApp: () => ({ eventBus: { on() {}, off() {} }, globalData: {} }),
   wx: { showToast() {}, showModal(options) { adminModals.push(options); }, stopPullDownRefresh() {} },
-  __moderation: moderation,
-  __boards: {
-    async fetchPendingBoards(options) {
-      boardQueueCalls.push(options);
-      return { items: [{ id: 'b-1', title: '山茶读书会', summary: '每周共读', status: 'pending', version: 4 }], nextCursor: null };
+  __moderation: {
+    ...moderation,
+    async fetchQueue(options) {
+      allQueueCalls.push(options);
+      return { items: reviewItems, nextCursor: null };
     },
+  },
+  __boards: {
     async decideBoard(id, payload) {
       boardDecisionCalls.push({ id, payload });
       return { state: 'approved' };
     },
   },
-  __usage: { fetchUsageStatus: async () => null },
-  __navigation: { navigateTo() {} },
+  __navigation: { navigateTo: (url) => navigations.push(url) },
 });
-const adminPage = Object.assign(Object.create(adminPageDefinition), {
-  data: { ...adminPageDefinition.data, accessState: 'allowed', activeQueue: 'board', items: [] },
+const reviewPage = Object.assign(Object.create(reviewPageDefinition), {
+  data: { ...reviewPageDefinition.data, accessState: 'allowed', items: [] },
   setData(patch, callback) {
     Object.assign(this.data, patch);
     if (callback) callback();
   },
 });
-const topicQueueServiceCallsBeforeBoardLoad = calls.length;
-await adminPage.loadQueue();
-assert.deepEqual(plain(boardQueueCalls), [{ cursor: '' }]);
-assert.equal(calls.length, topicQueueServiceCallsBeforeBoardLoad, 'the board queue does not call the topic queue service');
-assert.equal(adminPage.data.items[0].queue, 'board');
-assert.deepEqual(plain(adminPage.data.items[0].actions.map((action) => action.key)), ['approve', 'reject']);
-adminPage.confirmAction(adminPage.data.items[0], 'reject', '名称需要调整');
+await reviewPage.loadQueue();
+assert.deepEqual(plain(allQueueCalls), [{ queue: 'all', cursor: '' }]);
+assert.deepEqual(plain(reviewPage.data.items.map((entry) => entry.queueItemKey)), ['board:b-1', 'comment:b-1', 'appeals:appeal-1']);
+assert.deepEqual(plain(reviewPage.data.items[0].actions.map((action) => action.key)), ['approve', 'reject']);
+reviewPage.confirmAction(reviewPage.data.items[0], 'reject', '名称需要调整');
 assert.equal(adminModals.at(-1).content, '提交后会记录处理理由。确认继续？');
-adminPage.confirmAction(moderation.normalizeQueueItem({ id: 't-1' }, 'topic'), 'archive', '已过活动期');
+reviewPage.confirmAction(moderation.normalizeQueueItem({ id: 't-1' }, 'topic'), 'archive', '已过活动期');
 assert.match(adminModals.at(-1).content, /并通知相关用户/);
-await adminPage.executeAction(adminPage.data.items[0], 'approve', '');
+await reviewPage.executeAction(reviewPage.data.items[0], 'approve', '');
 assert.deepEqual(plain(boardDecisionCalls), [{ id: 'b-1', payload: { decision: 'approve', reason: '', expectedVersion: 4 } }]);
-assert.equal(adminPage.data.items.length, 0, 'a successful board decision removes the item from the board queue');
+assert.deepEqual(plain(reviewPage.data.items.map((entry) => entry.queueItemKey)), ['comment:b-1', 'appeals:appeal-1'], 'a decision removes only the matching queue/id pair');
+reviewPage.onItemDetail({ detail: { id: 'appeal-1', queue: 'appeals' } });
+assert.equal(navigations.at(-1), '/pages/admin/appeals/index');
 
 console.log('OK: moderation queue DTO whitelist, action reasons, expectedVersion, and decision routes passed');

@@ -16,7 +16,7 @@
 
   <view class="hg-moderation-item__foot">
     <view class="hg-moderation-item__detail" bindtap="onDetail" aria-role="button">
-      {{ item.queue === 'content' ? '查看内容' : '查看摘要' }}
+      {{ item.queue === 'content' ? '查看内容' : (item.queue === 'appeals' ? '前往申诉处理' : '查看摘要') }}
     </view>
     <view class="hg-moderation-item__actions">
       <view

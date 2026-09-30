@@ -8,7 +8,7 @@ const TABS = [
   { value: 'system', label: '系统' },
 ];
 
-const ADMIN_QUEUES = ['content', 'comment', 'topic', 'member', 'report', 'collection'];
+const ADMIN_QUEUES = ['content', 'comment', 'topic', 'board', 'member', 'report', 'collection', 'appeals'];
 
 Page({
   data: {
@@ -115,12 +115,12 @@ Page({
 
     if (target.type === 'admin_queue') {
       if (this.data.tab !== 'system' || !ADMIN_QUEUES.includes(target.queue) || target.id !== target.queue) return;
-      navigateTo(`/pages/admin/index?queue=${target.queue}`);
+      navigateTo('/pages/admin/reviews/index');
       return;
     }
     if (target.type === 'admin_appeals') {
       if (this.data.tab !== 'system' || target.queue !== 'appeals' || target.id !== 'appeals') return;
-      navigateTo('/pages/admin/appeals/index');
+      navigateTo('/pages/admin/reviews/index');
       return;
     }
     if (target.type === 'post' && typeof target.id === 'string' && target.id) {

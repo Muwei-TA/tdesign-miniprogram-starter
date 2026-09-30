@@ -12,8 +12,8 @@ const STATE_TEXT = {
     tab: 'private',
   },
   pending: {
-    title: '已收到，等待审核',
-    desc: '通过后会在你设定的范围内展示。结果会通过站内消息告知。',
+    title: '已收到，等待安全处理',
+    desc: '普通帖子先进行自动安全检查；如需人工复核或检查未通过，结果会通过站内消息告知。',
     primary: '查看我的发布',
     tab: 'pending',
   },
@@ -52,7 +52,13 @@ Page({
 
   onLoad(options) {
     const state = STATE_TEXT[options.state] ? options.state : 'pending';
-    const conf = STATE_TEXT[state];
+    const conf = state === 'pending' && options.kind === 'article'
+      ? {
+          ...STATE_TEXT.pending,
+          title: '文章已收到，正在处理',
+          desc: '文章会先进行安全检查，通过后由管理员审核；处理结果会通过站内消息告知。',
+        }
+      : STATE_TEXT[state];
     const scope = options.scope || 'club';
     const identity = options.identity || 'named';
 

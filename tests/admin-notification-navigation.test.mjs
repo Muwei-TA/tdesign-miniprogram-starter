@@ -98,13 +98,13 @@ await olderMessageRefresh;
 delayNotificationFetches = false;
 assert.deepEqual(lifecycleMessages.data.list.map((item) => item.id), ['message-newer']);
 
-for (const queue of ['content', 'comment', 'topic', 'member', 'report', 'collection']) {
+for (const queue of ['content', 'comment', 'topic', 'board', 'member', 'report', 'collection', 'appeals']) {
   messages.data.list = [{
     id: `notice-${queue}`,
     target: { type: 'admin_queue', queue, id: queue, accessible: true },
   }];
   messagePage.onItemTap.call(messages, { currentTarget: { dataset: { id: `notice-${queue}` } } });
-  assert.equal(navigations.at(-1), `/pages/admin/index?queue=${queue}`);
+  assert.equal(navigations.at(-1), '/pages/admin/reviews/index');
 }
 
 messages.data.list = [{
@@ -112,7 +112,7 @@ messages.data.list = [{
   target: { type: 'admin_appeals', queue: 'appeals', id: 'appeals', accessible: true },
 }];
 messagePage.onItemTap.call(messages, { currentTarget: { dataset: { id: 'appeal-notice' } } });
-assert.equal(navigations.at(-1), '/pages/admin/appeals/index');
+assert.equal(navigations.at(-1), '/pages/admin/reviews/index');
 
 const navigationCount = navigations.length;
 for (const target of [
@@ -144,39 +144,24 @@ messagePage.onItemTap.call(messages, { currentTarget: { dataset: { id: 'post-not
 assert.equal(navigations.at(-1), '/pages/community/post/index?id=post%2Fwith%20space&from=notice');
 
 const appBus = { on() {}, off() {}, emit() {} };
+const adminNavigations = [];
 const adminPage = loadPage(
   'pages/admin/index.js',
   [
-    [
-      /import \{[\s\S]*?\} from '\.\/moderation';/,
-      'const { QUEUES, fetchQueue, fetchAssetReviewStatuses, submitDecision, decideComment, decideTopic, decideMembership, decideReport, decideCollection } = __moderation;',
-    ],
-    ["import { fetchPendingBoards, decideBoard } from '~/services/boards';", 'const { fetchPendingBoards, decideBoard } = __boards;'],
     ["import { fetchUsageStatus } from './usage';", 'const { fetchUsageStatus } = __usage;'],
     ["import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;'],
   ],
   {
-    __moderation: {
-      QUEUES: ['content', 'comment', 'topic', 'member', 'report', 'collection'].map((value) => ({ value })),
-      fetchQueue: async () => ({ items: [] }),
-      fetchAssetReviewStatuses: async () => [],
-      submitDecision() {}, decideComment() {}, decideTopic() {}, decideMembership() {}, decideReport() {}, decideCollection() {},
-    },
     __usage: { fetchUsageStatus: async () => ({}) },
-    __boards: { fetchPendingBoards: async () => ({ items: [], nextCursor: null }), decideBoard() {} },
-    __navigation: { navigateTo() {} },
+    __navigation: { navigateTo: (url) => adminNavigations.push(url) },
     getApp: () => ({ eventBus: appBus, globalData: { session: null } }),
     wx: {},
   },
 );
 const admin = pageContext(adminPage);
-adminPage.onLoad.call(admin, { queue: 'report' });
-assert.equal(admin.data.activeQueue, 'report');
-assert.equal(admin.data.queueHint, '举报不等于违规事实，处理决定需要留下理由。');
-
-const invalidAdmin = pageContext(adminPage);
-adminPage.onLoad.call(invalidAdmin, { queue: 'constructor' });
-assert.equal(invalidAdmin.data.activeQueue, 'content', 'unknown query values must keep the default queue');
+adminPage.onLoad.call(admin);
+adminPage.onReviewsPage.call(admin);
+assert.equal(adminNavigations.at(-1), '/pages/admin/reviews/index');
 
 function loadApp(session, fetchUnreadCount = null) {
   let definition;

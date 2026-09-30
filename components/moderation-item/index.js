@@ -11,11 +11,12 @@ Component({
       this.triggerEvent('action', {
         key: e.currentTarget.dataset.key,
         id: this.data.item.id,
+        queue: this.data.item.queue,
       });
     },
 
     onDetail() {
-      this.triggerEvent('detail', { id: this.data.item.id });
+      this.triggerEvent('detail', { id: this.data.item.id, queue: this.data.item.queue });
     },
   },
 });

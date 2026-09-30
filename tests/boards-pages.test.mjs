@@ -119,7 +119,7 @@ directory.onViewCreatedBoard();
 assert.equal(navigations.at(-1), '/pages/community/board/index?id=existing-board');
 directory.syncSession({ role: 'admin', memberStatus: 'active' });
 directory.onAdminQueueTap();
-assert.equal(navigations.at(-1), '/pages/admin/index?queue=board');
+assert.equal(navigations.at(-1), '/pages/admin/reviews/index');
 createError = Object.assign(new Error('hidden resource'), { kind: 'conflict' });
 directory.onCreateTap();
 directory.onTitleInput({ detail: { value: '类似名称' } });

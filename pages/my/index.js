@@ -297,7 +297,7 @@ Page({
   },
 
   onAdminTap() {
-    navigateTo('/pages/admin/index?queue=content');
+    navigateTo('/pages/admin/reviews/index');
   },
 
   onSettingTap() {

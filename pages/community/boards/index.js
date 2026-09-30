@@ -239,7 +239,7 @@ Page({
   },
 
   onAdminQueueTap() {
-    if (this.data.isAdmin) navigateTo('/pages/admin/index?queue=board');
+    if (this.data.isAdmin) navigateTo('/pages/admin/reviews/index');
   },
 
   onJoinTap() {

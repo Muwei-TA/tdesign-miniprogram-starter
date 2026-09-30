@@ -13,7 +13,7 @@
             >{{ item.author.isAnonymous ? item.author.alias : item.author.displayName }}</text
           >
           <text wx:if="{{ item.author.isAuthor }}" class="hg-comment-list__author">作者</text>
-          <text wx:if="{{ item.status === 'pending' }}" class="hg-comment-list__pending">等待审核</text>
+          <text wx:if="{{ item.status === 'pending' }}" class="hg-comment-list__pending">{{ item.isLocalPending ? '安全检查中' : '等待安全处理' }}</text>
           <text class="hg-comment-list__time">{{ item.createdAtText }}</text>
         </view>
         <view class="hg-comment-list__body {{ item.deleted ? 'hg-comment-list__body--deleted' : '' }}">{{ item.body }}</view>
@@ -55,7 +55,7 @@
               >{{ reply.author.isAnonymous ? reply.author.alias : reply.author.displayName }}</text
             >
             <text wx:if="{{ reply.author.isAuthor }}" class="hg-comment-list__author">作者</text>
-            <text wx:if="{{ reply.status === 'pending' }}" class="hg-comment-list__pending">等待审核</text>
+            <text wx:if="{{ reply.status === 'pending' }}" class="hg-comment-list__pending">{{ reply.isLocalPending ? '安全检查中' : '等待安全处理' }}</text>
             <text class="hg-comment-list__time">{{ reply.createdAtText }}</text>
           </view>
           <view class="hg-comment-list__body">{{ reply.body }}</view>

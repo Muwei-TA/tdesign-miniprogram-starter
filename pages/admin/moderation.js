@@ -14,6 +14,7 @@ export const QUEUES = [
   { value: 'member', label: '入社' },
   { value: 'report', label: '举报' },
   { value: 'collection', label: '文集' },
+  { value: 'appeals', label: '申诉' },
 ];
 
 export const QUEUE_LABELS = QUEUES.reduce((labels, queue) => ({ ...labels, [queue.value]: queue.label }), {});
@@ -68,19 +69,42 @@ export function getQueueActions(queue) {
   return (ACTIONS_BY_QUEUE[queue] || []).map((action) => ({ ...action }));
 }
 
+function defaultStatusText(item, queue) {
+  if (queue === 'appeals') return '待处理';
+  if (queue === 'board' && item.status === 'pending') return '等待审核';
+  return '';
+}
+
+function queueLabelFor(item, queue) {
+  if (queue !== 'content') return QUEUE_LABELS[queue] || queue;
+  if (item.kind === 'article') return '文章';
+  if (item.kind === 'fragment') return '帖子复核';
+  return QUEUE_LABELS[queue] || queue;
+}
+
+function formatCreatedAt(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  const pad = (part) => (part < 10 ? `0${part}` : String(part));
+  return `${date.getMonth() + 1}月${pad(date.getDate())}日 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 /**
  * 只把后端管理 DTO 中允许展示的字段交给页面。
  * 即使服务端未来误带 ownerId/reporterId/mappings，前端也不应把它们传进组件。
  */
 export function normalizeQueueItem(item = {}, queue = item.queue || 'content') {
+  const id = item.id || item.appealId || '';
   const normalized = {
-    id: item.id,
+    id,
     queue,
-    queueLabel: QUEUE_LABELS[queue] || queue,
-    title: item.title || '',
-    summary: item.summary || '',
-    submittedAtText: item.submittedAtText || '',
-    statusText: item.statusText || (queue === 'board' && item.status === 'pending' ? '等待审核' : ''),
+    queueItemKey: `${queue}:${id}`,
+    queueLabel: queueLabelFor(item, queue),
+    title: item.title || (queue === 'appeals' ? '内容申诉' : ''),
+    summary: item.summary || (queue === 'appeals' ? item.reason || '' : ''),
+    submittedAtText: item.submittedAtText || item.createdAtText || formatCreatedAt(item.createdAt),
+    statusText: item.statusText || defaultStatusText(item, queue),
     version: Number.isInteger(item.version) ? item.version : null,
     actions: getQueueActions(queue),
     // 组件只显示"树洞身份"标记，不接收任何身份映射字段。
@@ -108,7 +132,9 @@ export function normalizeQueueItem(item = {}, queue = item.queue || 'content') {
 export function fetchQueue({ queue = 'content', cursor = '' } = {}) {
   return request(withQuery(withPath(endpoints.adminQueue, { queue }), { cursor })).then((data) => ({
     ...(data || {}),
-    items: (data && Array.isArray(data.items) ? data.items : []).map((item) => normalizeQueueItem(item, queue)),
+    items: (data && Array.isArray(data.items) ? data.items : []).map((item) => (
+      normalizeQueueItem(item, queue === 'all' ? item.queue : queue)
+    )),
     nextCursor: data && data.nextCursor ? data.nextCursor : null,
   }));
 }

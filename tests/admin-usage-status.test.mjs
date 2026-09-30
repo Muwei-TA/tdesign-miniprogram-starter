@@ -65,6 +65,31 @@ function loadAdminPage(fetchUsageStatus, { mediaFetcher, wxApi } = {}) {
   return definition;
 }
 
+function loadReviewsPage(mediaFetcher, wxApi) {
+  const source = readFileSync(join(ROOT, 'pages/admin/reviews/index.js'), 'utf8')
+    .replace(
+      /import \{[\s\S]*?\} from '\.\.\/moderation';/,
+      'const { fetchQueue, fetchAssetReviewStatuses, submitDecision, decideComment, decideTopic, decideMembership, decideReport, decideCollection } = __moderation;',
+    )
+    .replace("import { decideBoard } from '~/services/boards';", 'const { decideBoard } = __boards;')
+    .replace("import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;');
+  let definition;
+  vm.runInNewContext(source, {
+    Page(value) { definition = value; },
+    getApp: () => ({ eventBus: { on() {}, off() {} }, globalData: {} }),
+    __moderation: {
+      fetchQueue: async () => ({ items: [], nextCursor: null }),
+      fetchAssetReviewStatuses: mediaFetcher,
+      submitDecision() {}, decideComment() {}, decideTopic() {}, decideMembership() {}, decideReport() {}, decideCollection() {},
+    },
+    __boards: { decideBoard() {} },
+    __navigation: { navigateTo() {} },
+    wx: wxApi,
+  });
+  assert.ok(definition, 'review queue page must register a Page definition');
+  return definition;
+}
+
 function pageContext(definition, patch = {}) {
   const context = {
     data: { ...definition.data, ...patch },
@@ -189,13 +214,10 @@ console.log('OK: admin usage status is role-gated, shows UTC limits, retains sna
 const previewCalls = [];
 const previewMessages = [];
 let denyAsset = false;
-const mediaPage = loadAdminPage(async () => status, {
-  mediaFetcher: async () => {
+const mediaPage = loadReviewsPage(async () => {
     if (denyAsset) throw new Error('forbidden');
     return [{ assetId: 'image-a', mediaType: 'image', url: 'https://example.test/fresh' }];
-  },
-  wxApi: { previewImage: (value) => previewCalls.push(value), showToast: (value) => previewMessages.push(value) },
-});
+  }, { previewImage: (value) => previewCalls.push(value), showToast: (value) => previewMessages.push(value) });
 const mediaContext = pageContext(mediaPage, {
   accessState: 'allowed', mediaItems: [{ assetId: 'image-a', mediaType: 'image', url: 'https://example.test/expired' }],
 });

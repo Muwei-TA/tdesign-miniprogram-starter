@@ -75,7 +75,7 @@ export function fetchComments(id, cursor = '') {
   return request(withQuery(withPath(endpoints.postComments, { id }), { cursor }));
 }
 
-/** 评论提交后为 pending，审核通过才展示 */
+/** 提交回应后由服务端进行安全检查；通常立即发布，需人工复核时返回 pending。 */
 export function submitComment(id, { body, replyToId = '', identityMode = 'named' }, idempotencyKey) {
   return request(withPath(endpoints.postComments, { id }), {
     method: 'POST',

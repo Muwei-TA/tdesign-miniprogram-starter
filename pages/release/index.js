@@ -182,7 +182,14 @@ Page({
       club: '仅社内可见：只有当前有效成员能看到',
       private: '只有自己可见：不进入社区流、板块、话题、搜索与互动',
     }[visibility];
-    const tail = visibility === 'private' ? '保存后只留给自己。' : '提交后会先进入审核。';
+    let tail;
+    if (visibility === 'private') {
+      tail = '保存后只留给自己。';
+    } else if (this.data.mode === 'article') {
+      tail = '文章通过安全检查后会进入管理员审核，审核通过后按所选范围展示。';
+    } else {
+      tail = '普通帖子会先做自动安全检查，通过后直接展示；需要人工复核时会稍后通知。';
+    }
     this.setData({ previewText: `你将以「${identityText}」发布，${scopeText}。${tail}` });
   },
 
@@ -567,7 +574,7 @@ Page({
       if (this.data.draftId) removeDraft(this.data.draftId);
       app.eventBus.emit('post-created', { id: result.id, state: result.state });
 
-      const query = `state=${result.state}&scope=${this.data.visibility}&identity=${this.data.identityMode}&id=${result.id}`;
+      const query = `state=${result.state}&kind=${this.data.mode}&scope=${this.data.visibility}&identity=${this.data.identityMode}&id=${result.id}`;
       // redirectTo：返回栈不残留编辑器
       wx.redirectTo({ url: `/pages/community/result/index?${query}` });
     } catch (err) {

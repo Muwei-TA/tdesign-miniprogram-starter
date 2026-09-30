@@ -271,7 +271,7 @@ Page({
           commentFingerprint: '',
           commentIdempotencyKey: '',
         });
-        const title = { published: '回应已发布', rejected: '回应未通过安全检查', pending: '已收到，等待审核', deleted: '这条回应已删除' }[result.state];
+        const title = { published: '回应已发布', rejected: '回应未通过安全检查', pending: '已收到，等待安全处理', deleted: '这条回应已删除' }[result.state];
         wx.showToast({ title, icon: 'none' });
         app.eventBus.emit('post-changed', { id: this.data.id, action: 'comment' });
       })
@@ -300,6 +300,7 @@ Page({
       body,
       createdAtText: '刚刚',
       status: 'pending',
+      isLocalPending: true,
       version: 1,
       counters: { reactions: 0 },
       viewer: { reacted: false, canDelete: false },

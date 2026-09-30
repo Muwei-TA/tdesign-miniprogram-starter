@@ -64,6 +64,7 @@
       "root": "pages/admin",
       "pages": [
         "index",
+        "reviews/index",
         "members/index",
         "appeals/index"
       ]
