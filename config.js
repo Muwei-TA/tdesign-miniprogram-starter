@@ -11,7 +11,7 @@ const profiles = {
   },
   nasLanDevelopment: {
     transport: 'nas',
-    apiBaseUrl: 'http://192.168.50.28:18088',
+    apiBaseUrl: 'http://192.168.50.28:18118',
   },
   nasProduction: {
     transport: 'nas',

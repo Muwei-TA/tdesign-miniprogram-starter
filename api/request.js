@@ -168,7 +168,7 @@ function apiUrl(path) {
   const baseUrl = String(config.apiBaseUrl || '').trim().replace(/\/+$/, '');
   const isHttpsOrigin = /^https:\/\/[^/?#]+$/i.test(baseUrl);
   const isConfiguredLanDevelopmentOrigin = config.profile === 'nasLanDevelopment'
-    && baseUrl === 'http://192.168.50.28:18088';
+    && baseUrl === 'http://192.168.50.28:18118';
   if (!isHttpsOrigin && !isConfiguredLanDevelopmentOrigin) {
     throw new ApiError({
       kind: 'server',

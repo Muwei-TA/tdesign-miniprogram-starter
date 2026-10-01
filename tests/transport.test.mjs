@@ -130,7 +130,7 @@ assert.match(appSource, /wx\.cloud\.init/);
 assert.match(appSource, /env:\s*config\.env/);
 assert.match(appSource, /config\.transport !== 'cloudbase'/);
 assert.match(configSource, /activeProfile = 'cloudbase'/);
-assert.match(configSource, /nasLanDevelopment:[\s\S]*apiBaseUrl: 'http:\/\/192\.168\.50\.28:18088'/);
+assert.match(configSource, /nasLanDevelopment:[\s\S]*apiBaseUrl: 'http:\/\/192\.168\.50\.28:18118'/);
 assert.match(configSource, /nasProduction:[\s\S]*apiBaseUrl: ''/);
 assert.doesNotMatch(configSource, /api\.muwei\.xyz/);
 assert.match(requestSource, /wx\.cloud\.callFunction/);
@@ -207,7 +207,7 @@ const nasRuntime = {
   __config: {
     transport: 'nas',
     profile: 'nasLanDevelopment',
-    apiBaseUrl: 'http://192.168.50.28:18088',
+    apiBaseUrl: 'http://192.168.50.28:18118',
   },
   resolveTransport,
   withIdempotency,
@@ -253,10 +253,10 @@ assert.deepEqual(
 );
 assert.equal(loginCount, 1);
 assert.equal(httpCalls.length, 2);
-assert.equal(httpCalls[0].url, 'http://192.168.50.28:18088/v1/auth/wechat');
+assert.equal(httpCalls[0].url, 'http://192.168.50.28:18118/v1/auth/wechat');
 assert.deepEqual(plain(httpCalls[0].data), { code: 'login-code-1' });
 assert.equal(httpCalls[0].header.Authorization, undefined);
-assert.equal(httpCalls[1].url, 'http://192.168.50.28:18088/v1/action');
+assert.equal(httpCalls[1].url, 'http://192.168.50.28:18118/v1/action');
 assert.equal(httpCalls[1].header.Authorization, 'Bearer nas-token-1');
 assert.deepEqual(plain(httpCalls[1].data), {
   action: 'posts/create',
