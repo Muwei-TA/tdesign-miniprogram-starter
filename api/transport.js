@@ -1,8 +1,7 @@
 /**
- * 把现有 service 使用的 HTTP 风格 endpoint 转成 api 云函数契约。
+ * 把 service 使用的 HTTP 风格 endpoint 转成统一的 action/payload 契约。
  *
- * 页面与 service 不感知 CloudBase：它们仍传入 /posts、/posts/:id 等路径，
- * 真实传输层再把路径参数和 query 组装成 { action, payload }。
+ * CloudBase 与 NAS HTTP 传输共用此映射，页面和 service 不需要感知后端类型。
  */
 
 const ROUTES = [
@@ -204,7 +203,7 @@ function omitUndefined(value) {
 }
 
 /**
- * 将 HTTP 风格调用转换为后端 api 云函数的 action/payload。
+ * 将 HTTP 风格调用转换为后端 action/payload。
  * @param {string} url 路径，可包含 query
  * @param {string} method HTTP method
  * @param {object} body 请求体
@@ -234,7 +233,7 @@ export function resolveTransport(url, method, body = {}) {
 }
 
 /**
- * 幂等键统一进入业务 payload，供云函数 claimIdempotency 使用。
+ * 幂等键统一进入业务 payload，供后端 claimIdempotency 使用。
  * 不写入 Authorization 或自定义 HTTP header；同一键可安全重试。
  */
 export function withIdempotency(payload, idempotencyKey) {

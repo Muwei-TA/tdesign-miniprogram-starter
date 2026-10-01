@@ -1,87 +1,48 @@
-# T-17 传输层联调说明
+# 小程序 API 传输层
 
-前端继续保留 service 使用的 HTTP 风格路径，真实网络由统一传输层转换为 CloudBase `api` 云函数调用。页面和 `services/posts.js` 不需要感知 CloudBase action，也不需要持有会话 token。
+页面和 service 继续使用 HTTP 风格 endpoint。`api/transport.js` 将 endpoint、method、query 和 body 映射为后端 action/payload；传输方式由 `config.js` profile 决定，业务 action 与幂等键保持共用。
 
-## 运行模式
+## 运行 profile
 
-`config.js` 使用 CloudBase：
+`cloudbase` 是当前默认值，继续使用在线的 `api` 云函数。`nasLanDevelopment` 仅用于微信开发者工具连接局域网 NAS；`nasProduction` 的 HTTPS origin 暂留空。代码未预填历史预留的公网域名，也未改变 `project.config.json` 的 `urlCheck: true`。
 
-```js
-{
-  env: 'shudong-d4g4blap4a5069a28',
-  cloudFunctionName: 'api',
-  traceUser: true,
-}
+局域网 profile 使用 `http://192.168.50.28:18088`，只适合连接同一局域网的开发者工具。开发者工具可能需要在本机项目设置中关闭合法域名校验；不要把这个设置写进共享项目配置。真机和体验版必须使用有效 HTTPS 公网域名，并通过微信服务器域名校验。
+
+## NAS HTTP 契约
+
+业务调用均为 `POST /v1/action`，请求层保留 `api/transport.js` 的 action/payload 映射：
+
+```http
+POST /v1/action
+Authorization: Bearer <short-lived token>
+Content-Type: application/json
 ```
 
-应用启动时调用一次 `wx.cloud.init`。`appid` 由 `project.config.json` 固定为 `wx39773ed34aa30776`。小程序身份由微信自动注入云函数上下文，前端不调用 `/session/wechat` 换 token，不读写 `Authorization: Bearer`。
-
-前端 Mock 拦截和虚构数据已移除；业务请求统一经 `wx.cloud.callFunction`。
-
-## Endpoint 到 action 的转换
-
-`api/transport.js` 负责路径匹配、路径参数解码、query/body 合并，以及需要转换的 DTO 字段：
-
-| 旧 endpoint | 方法 | CloudBase action | payload 关键字段 |
-|---|---:|---|---|
-| `/session/me` | GET | `session/me` | — |
-| `/session/wechat` | POST | `session/me` | 旧 `code` 被忽略，保留兼容映射 |
-| `/membership/applications` | POST | `membership/apply` | `displayName`、`inviteCode`、`rulesVersion` |
-| `/membership/applications/mine` | GET | `membership/mine` | — |
-| `/me/profile` | GET | `me/profile` | — |
-| `/me/exports` | POST | `me/exports` | — |
-| `/me/account` | DELETE | `me/account/delete` | `confirm` |
-| `/posts` | GET | `posts/list` | `cursor`、`type`、`topicId`、`filter` |
-| `/posts` | POST | `posts/create` | 内容字段 + `idempotencyKey` |
-| `/posts/:id` | GET | `posts/detail` | `id` |
-| `/posts/:id` | DELETE | `posts/delete` | `id`、`expectedVersion` |
-| `/posts/:id/visibility` | PATCH | `posts/visibility` | `id`、`visibility`、`expectedVersion` |
-| `/posts/:id/reaction` | PUT/DELETE | `posts/reaction` | `id`、`next` |
-| `/posts/:id/bookmark` | PUT/DELETE | `posts/bookmark` | `id`、`next` |
-| `/posts/:id/comments` | GET | `posts/comments/list` | `id`、`cursor` |
-| `/posts/:id/comments` | POST | `posts/comments/create` | `id`、评论字段 + `idempotencyKey` |
-| `/me/contents` | GET | `me/contents` | `tab`、`cursor` |
-| `/me/contents?tab=topics` | GET | `me/topics` | `cursor` |
-| `/reports` | POST | `reports/create` | 举报字段 |
-| `/topics` | GET/POST | `topics/list`/`topics/create` | query 或话题字段 |
-| `/topics/:id` | GET | `topics/detail` | `id`、`cursor` |
-| `/topics/:id/follow` | PUT/DELETE | `topics/follow` | `id`、`next` |
-| `/me/topics` | GET | `me/topics` | `cursor` |
-| `/collections` | GET | `collections/list` | — |
-| `/collections/:id` | GET | `collections/detail` | `id` |
-| `/collections/:id/submissions` | POST | `collections/submit` | `id`、`postId`、`consentVersion` |
-| `/consents/:postId` | DELETE | `consents/revoke` | `postId` |
-| `/notifications` | GET | `notifications/list` | `tab`、`cursor` |
-| `/notifications/read-all` | POST | `notifications/read-all` | — |
-| `/notifications/unread-count` | GET | `notifications/unread-count` | — |
-| `/search` | GET | `search/query` | `q`、`scope`、`cursor` |
-| `/search/suggestions` | GET | `search/suggestions` | — |
-| `/search/private` | GET | `search/private` | `q` |
-| `/assets/upload-intents` | POST | `assets/intent` | `mediaType=image`、压缩后 `size`、`mimeType` + intent 幂等键 |
-| `/assets/upload` | POST | `assets/upload` | `assetId`、`contentBase64` + upload 幂等键；服务端清洗并绑定 fileId |
-| `/assets/confirm` | POST | `assets/confirm` | `assetId` + confirm 幂等键；不传 `fileId` |
-| `/assets/:id` | GET | `assets/status` | `assetId` |
-| `/admin/queues/:queue` | GET | `admin/queue` | `queue`、`cursor` |
-| `/admin/reviews/:id/decision` | POST | `admin/content/decide` | `id` + 决策字段 |
-| `/admin/members/applications/:id` | POST | `admin/membership/decide` | `id` + 决策字段 |
-
-后端返回 `{ code, message, data, requestId }`。成功时 request 只 resolve `data`；`code` 为错误 kind 时统一转换为 `ApiError`，沿用前端 `network`、`timeout`、`server` 等 UI 分类。
-
-## 弱网与幂等
-
-`request(url, { idempotencyKey })` 会把键合并进 `payload.idempotencyKey`。`POST /posts` 和 `POST /posts/:id/comments` 的键由草稿或调用方生成并持久化；图片 intent、upload、confirm 也各自保存稳定键。请求超时、网络中断后使用原键再次调用，后端 `claimIdempotency` 会返回首次结果。键不再放进 HTTP header，也不依赖 Bearer 会话。
-
-图片选择后先由 `wx.compressImage` 压缩，再由文件系统读取 base64 并检查实际 JPEG/PNG 头与 2MiB 解码大小。上传服务逐个轮询 `assets/status`，只有 `verified` 的 `assetId` 才进入 `posts/create`；审核超时、网络失败或用户取消都会保留附件状态和草稿，重试不会重新上传已经 verified 的图片。`capabilities.uploads` 为 false 时页面入口保持关闭。
-
-## 验证
-
-在前端工作树运行：
-
-```bash
-node tests/transport.test.mjs
-node tests/uploads.test.mjs
-node scripts/check.mjs
-npm run lint
+```json
+{"action":"posts/list","payload":{"cursor":"..."}}
 ```
 
-这些检查覆盖 action/payload 映射、旧登录兼容边界、幂等键保持和请求层不生成 Bearer。真实数据库适配与云函数部署属于后端/联调范围，本任务不部署、不推送。
+服务端响应使用 `{ code, message, data, requestId }`。成功时 service 只收到 `data`；HTTP 状态码和业务 `code` 映射为统一的 `ApiError`。`401` 或 `membership_invalid` 会清除内存 token 和账号作用域缓存、切换访客态；下一次请求会重新走微信登录，不自动重放刚失败的业务写入。写操作沿用已有 `idempotencyKey`。
+
+## 微信身份
+
+NAS profile 首次请求用 `wx.login` 取得一次性 `code`，向 `POST /v1/auth/wechat` 交换短时 token，再以 `Authorization: Bearer` 调业务 action。token 只存在 JavaScript 内存中，冷启动重新获取。客户端不提交 OpenID、角色或成员状态；NAS 服务端负责调用微信 code-session 接口并根据自己的数据库建立身份和权限。微信 AppSecret 只保存在 NAS 服务端。
+
+当前小程序没有独立的显式退出登录 API；`clearAccountScope()` 会清掉本地账号作用域和内存 token。若业务需要立即撤销服务端 token，后端还需提供并联调 logout/revoke 契约。
+
+## 图片
+
+现有上传流程把压缩后的 JPEG/PNG 转为 base64，经 `assets/upload` action 顺序发送；原图上限为 2 MiB，JSON/Base64 请求体会大于原图，NAS API 与反向代理必须允许对应请求体并覆盖当前 30 秒上传超时。上传意图、确认、状态轮询和幂等重试保持原契约。
+
+详情接口返回短时图片 URL。预览时前端重新请求详情以续签，再由 `wx.previewImage` 读取远端图片。因此受限图片 URL 必须经过后端权限检查并短时签名；其 host 必须列入公众平台 `downloadFile` 合法域名。若未来改成 `wx.uploadFile`，还需单独登记 `uploadFile` 合法域名；当前代码没有使用它。
+
+## 网络配置与上线门
+
+体验版/真机切换到 NAS 前，必须完成以下配置并逐项验收：
+
+- 将 API 的 HTTPS host 加入小程序 `request` 合法域名；把签名图片使用的 host 加入 `downloadFile` 合法域名。登记的是 host，不含路径；保持 `urlCheck: true`。
+- HTTPS 证书有效且完整、域名直接可达；API 和图片响应不能重定向到未登记域名。NAS 本地 HTTP 地址不能用于真机或体验版。
+- NAS 出站调用微信登录 code-session 接口可用；AppSecret 不进入小程序、请求日志或错误响应。服务端拒绝客户端自报的 OpenID、角色和成员状态。
+- 真实验收覆盖访客、有效成员、被移除成员、管理员、过期/撤销 token；检查登录、普通 action、图片签名下载、2 MiB 图片上传与审核、弱网/超时幂等、API 重启和 fail-closed。
+
+代码 profile、开发者工具请求成功或 HTTP health check 都不等于体验版/真机验收。当前默认仍为 CloudBase；外网 HTTPS 入口和公众平台域名白名单完成后，才填写 `nasProduction.apiBaseUrl` 并显式切换 profile。

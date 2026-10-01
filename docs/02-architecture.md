@@ -9,7 +9,7 @@
 pages/            页面：界面状态、导航、事件编排、错误展示
 components/       组件：纯展示 + 事件抛出，禁止直接请求数据、禁止判断业务权限
 services/         主包共享用例；分包专属用例放在对应 pages/ 分包内
-api/              传输层：URL、超时、会话头、HTTP/业务错误映射（不含业务规则）
+api/              传输层：CloudBase/NAS 请求、超时、会话头、HTTP/业务错误映射（不含业务规则）
 utils/            纯函数工具（时间、字符串、事件总线、幂等键）
 styles/           设计令牌与 mixin（tokens.less / mixins.less）
 ```
@@ -88,9 +88,8 @@ request(url, { method = 'GET', data, header, timeout = 10000, idempotencyKey })
 
 要求：
 
-1. **先看 HTTP 状态**（`res.statusCode`），再看业务 `code`；现模板用 `res.code === 200` 属缺陷，必须修正。
-2. 统一注入会话头：`Authorization: Bearer <sessionToken>`，token 从 `services/session.js` 取，
-   不在 `request.js` 里直接读 storage 以外的业务态。
+1. CloudBase profile 调 `wx.cloud.callFunction`；NAS profile 将相同 action/payload 发到 HTTPS API。先看 `res.statusCode`，再看业务 `code`。
+2. NAS profile 用 `wx.login` code 向服务端换取短时 token，只在内存中保存并由传输层注入 `Authorization: Bearer <token>`；客户端不传 OpenID、角色或成员状态。CloudBase 继续使用微信注入的函数上下文。
 3. 幂等：`POST /posts`、`POST /comments` 必须带 `Idempotency-Key`，由 `utils/idempotency.js` 生成并随草稿持久化。
 4. `ApiError` 结构：
 
@@ -102,7 +101,7 @@ request(url, { method = 'GET', data, header, timeout = 10000, idempotencyKey })
 ```
 
 5. `not_accessible` 必须统一文案，**不得**通过不同错误文本暴露某条私密内容是否存在。
-6. 401/`membership_invalid`：清理账号作用域缓存 → 切换访客态 → 由页面层决定是否跳 P12。
+6. 401/`membership_invalid`：清除 NAS 内存 token 和账号作用域缓存 → 切换访客态 → 由页面层决定是否跳 P12。
 
 ## 2.4 服务层规范
 

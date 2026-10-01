@@ -1,4 +1,4 @@
-import request from '~/api/request';
+import request, { clearAuthToken } from '~/api/request';
 import endpoints from '~/api/endpoints';
 
 /**
@@ -83,8 +83,8 @@ export function isAdmin() {
 }
 
 /**
- * 保留旧调用名以兼容页面，但小程序 CloudBase 身份由微信自动注入。
- * 不调用 /session/wechat，也不交换或保存 session token。
+ * 保留旧调用名以兼容页面。NAS profile 在传输层使用 wx.login code 建立会话；
+ * CloudBase profile 继续使用微信自动注入的调用上下文。
  */
 export async function loginWithWechat() {
   return bootstrapSession();
@@ -97,6 +97,7 @@ export async function loginWithWechat() {
 export function clearAccountScope() {
   // 使正在进行的旧会话读取失效，防止退出或撤权后旧响应重新写回成员态。
   sessionRequestVersion += 1;
+  clearAuthToken();
   const userId = current.user && current.user.id;
   try {
     const { keys } = wx.getStorageInfoSync();

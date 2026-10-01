@@ -55,25 +55,44 @@ const DEFAULT_MESSAGE = {
   server: '服务暂时不可用，请稍后重试',
 };
 
+const AUTH_TIMEOUT_MS = 10000;
+let authToken = '';
+let authGeneration = 0;
+let authPromise = null;
+
 function resolveKind(httpStatus, bodyCode) {
-  // 业务码优先：后端可用 code 细分 membership_invalid / pending_media 等
+  // 业务码优先：后端可用 code 细分 membership_invalid / pending_media 等。
   if (bodyCode && HTTP_BY_KIND[bodyCode]) return bodyCode;
   if (KIND_BY_HTTP[httpStatus]) return KIND_BY_HTTP[httpStatus];
   if (httpStatus >= 500) return 'server';
   return 'server';
 }
 
+function unwrapResult(result) {
+  if (typeof result === 'string') {
+    try {
+      return JSON.parse(result);
+    } catch (err) {
+      return null;
+    }
+  }
+  return result;
+}
+
 function buildError(httpStatus, body) {
-  const bodyCode = body && body.code;
+  const result = unwrapResult(body);
+  const bodyCode = result && result.code;
   const kind = resolveKind(httpStatus, bodyCode);
   return new ApiError({
     kind,
     httpStatus: httpStatus || HTTP_BY_KIND[kind] || 0,
     code: bodyCode,
-    // not_accessible 强制统一文案，忽略服务端可能携带的细节
-    message: kind === 'not_accessible' ? DEFAULT_MESSAGE.not_accessible : (body && body.message) || DEFAULT_MESSAGE[kind],
+    // not_accessible 强制统一文案，忽略服务端可能携带的细节。
+    message: kind === 'not_accessible'
+      ? DEFAULT_MESSAGE.not_accessible
+      : (result && result.message) || DEFAULT_MESSAGE[kind],
     retryable: kind === 'server' || kind === 'rate_limited',
-    detail: body && body.detail,
+    detail: result && result.detail,
   });
 }
 
@@ -88,17 +107,6 @@ function buildTransportError(err) {
     retryable: true,
     detail: message,
   });
-}
-
-function unwrapResult(result) {
-  if (typeof result === 'string') {
-    try {
-      return JSON.parse(result);
-    } catch (err) {
-      return null;
-    }
-  }
-  return result;
 }
 
 function resolveResponse(body, httpStatus = 200) {
@@ -156,6 +164,153 @@ function requestCloud(url, { method, data, timeout }) {
     });
 }
 
+function apiUrl(path) {
+  const baseUrl = String(config.apiBaseUrl || '').trim().replace(/\/+$/, '');
+  const isHttpsOrigin = /^https:\/\/[^/?#]+$/i.test(baseUrl);
+  const isConfiguredLanDevelopmentOrigin = config.profile === 'nasLanDevelopment'
+    && baseUrl === 'http://192.168.50.28:18088';
+  if (!isHttpsOrigin && !isConfiguredLanDevelopmentOrigin) {
+    throw new ApiError({
+      kind: 'server',
+      httpStatus: 0,
+      code: 'api_base_url_missing',
+      message: '服务配置暂不可用',
+      detail: 'Set an approved NAS API origin in config.js before selecting the NAS profile.',
+    });
+  }
+  return `${baseUrl}${path}`;
+}
+
+function nativeRequest({ url, data, header = {}, timeout = AUTH_TIMEOUT_MS }) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url,
+      method: 'POST',
+      data,
+      timeout,
+      header: {
+        'Content-Type': 'application/json',
+        ...header,
+      },
+      success: resolve,
+      fail: reject,
+    });
+  });
+}
+
+function getWechatLoginCode() {
+  return new Promise((resolve, reject) => {
+    wx.login({
+      success(result) {
+        if (result && typeof result.code === 'string' && result.code) {
+          resolve(result.code);
+          return;
+        }
+        reject(new Error('wx.login did not return a code'));
+      },
+      fail: reject,
+    });
+  });
+}
+
+function exchangeWechatCode(code, timeout, url) {
+  return nativeRequest({
+    url,
+    data: { code },
+    timeout,
+  }).then((response) => {
+    const data = resolveResponse(response && response.data, response && response.statusCode);
+    if (!data || typeof data.token !== 'string' || !data.token) {
+      throw new ApiError({
+        kind: 'server',
+        httpStatus: response && response.statusCode,
+        code: 'invalid_auth_response',
+        message: DEFAULT_MESSAGE.server,
+      });
+    }
+    return data.token;
+  });
+}
+
+/**
+ * 只在内存中持有短时会话 token。冷启动时通过 wx.login 获取一次性 code，
+ * 由服务端换取 token；客户端永不提交或推断 OpenID。
+ */
+export function ensureAuthToken(timeout = AUTH_TIMEOUT_MS) {
+  if (authToken) return Promise.resolve(authToken);
+  if (authPromise) return authPromise;
+
+  let authUrl;
+  try {
+    authUrl = apiUrl('/v1/auth/wechat');
+  } catch (err) {
+    return Promise.reject(err);
+  }
+
+  const generation = authGeneration;
+  const pending = withTimeout(getWechatLoginCode(), timeout)
+    .then((code) => withTimeout(exchangeWechatCode(code, timeout, authUrl), timeout))
+    .then((token) => {
+      if (generation !== authGeneration) {
+        throw new ApiError({
+          kind: 'unauthenticated',
+          httpStatus: 401,
+          code: 'session_changed',
+          message: DEFAULT_MESSAGE.unauthenticated,
+        });
+      }
+      authToken = token;
+      return authToken;
+    })
+    .catch((err) => {
+      throw buildTransportError(err);
+    })
+    .finally(() => {
+      if (authPromise === pending) authPromise = null;
+    });
+  authPromise = pending;
+  return pending;
+}
+
+/** 退出登录或服务端撤权时丢弃凭据，并使尚未完成的登录交换失效。 */
+export function clearAuthToken() {
+  authGeneration += 1;
+  authToken = '';
+  authPromise = null;
+}
+
+function requestAction(action, payload, { timeout }) {
+  return ensureAuthToken(timeout).then((token) => withTimeout(nativeRequest({
+    url: apiUrl('/v1/action'),
+    data: { action, payload },
+    timeout,
+    header: { Authorization: `Bearer ${token}` },
+  }), timeout).then((response) => resolveResponse(
+    response && response.data,
+    response && response.statusCode,
+  )));
+}
+
+function requestNas(url, { method, data, timeout }) {
+  let transport;
+  try {
+    transport = resolveTransport(url, method, data);
+  } catch (err) {
+    if (err && err.code === 'invalid_input') {
+      return Promise.reject(new ApiError({
+        kind: 'invalid_input',
+        httpStatus: 422,
+        code: err.code,
+        message: '请求不合法',
+        detail: err.message,
+      }));
+    }
+    return Promise.reject(buildTransportError(err));
+  }
+  return requestAction(transport.action, transport.payload, { timeout })
+    .catch((err) => { throw buildTransportError(err); });
+}
+
 /**
  * @param {string} url 以 / 开头的接口路径
  * @param {object} options { method, data, timeout, idempotencyKey }
@@ -164,12 +319,18 @@ function requestCloud(url, { method, data, timeout }) {
 export default function request(url, options = {}) {
   const { method = 'GET', data = {}, timeout = 10000, idempotencyKey } = options;
   const payload = withIdempotency(data, idempotencyKey);
-  return requestCloud(url, { method, data: payload, timeout }).catch((err) => {
-    if (err.kind === 'unauthenticated' || err.kind === 'membership_invalid') {
+  const call = config.transport === 'nas'
+    ? requestNas(url, { method, data: payload, timeout })
+    : requestCloud(url, { method, data: payload, timeout });
+
+  return Promise.resolve(call).catch((err) => {
+    const apiError = buildTransportError(err);
+    if (apiError.kind === 'unauthenticated' || apiError.kind === 'membership_invalid') {
+      if (config.transport === 'nas') clearAuthToken();
       const app = typeof getApp === 'function' ? getApp() : null;
       if (app && app.invalidateSession) app.invalidateSession();
     }
-    throw err;
+    throw apiError;
   });
 }
 

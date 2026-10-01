@@ -34,8 +34,9 @@ App({
     return this.refreshUnreadCount();
   },
 
-  /** CloudBase 小程序身份由微信自动注入，不再交换或持久化会话令牌。 */
+  /** CloudBase profile 需要初始化 SDK；NAS HTTP profile 不调用 CloudBase API。 */
   initCloudBase() {
+    if (config.transport !== 'cloudbase') return;
     if (!wx.cloud || typeof wx.cloud.init !== 'function') return;
     wx.cloud.init({
       env: config.env,

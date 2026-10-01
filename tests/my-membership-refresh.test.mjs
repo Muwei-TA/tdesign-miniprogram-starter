@@ -19,7 +19,7 @@ function deferred() {
 
 function loadSessionService(request) {
   const source = read('services/session.js')
-    .replace("import request from '~/api/request';", 'const request = __request;')
+    .replace("import request, { clearAuthToken } from '~/api/request';", 'const request = __request;\nconst clearAuthToken = __clearAuthToken;')
     .replace("import endpoints from '~/api/endpoints';", 'const endpoints = __endpoints;')
     .replace(/export function /g, 'function ')
     .replace(/export async function /g, 'async function ')
@@ -30,6 +30,7 @@ function loadSessionService(request) {
     module,
     exports: module.exports,
     __request: request,
+    __clearAuthToken: () => { tokenClearCount += 1; },
     __endpoints: { sessionMe: '/session/me' },
     wx: { getStorageInfoSync: () => ({ keys: [] }), removeStorageSync() {} },
   });
@@ -37,6 +38,7 @@ function loadSessionService(request) {
 }
 
 const responses = [];
+let tokenClearCount = 0;
 const sessionService = loadSessionService((url) => {
   assert.equal(url, '/session/me');
   const response = deferred();
@@ -55,6 +57,7 @@ assert.equal(sessionService.getSession().memberStatus, 'active', 'an older respo
 
 const refreshBeforeLogout = sessionService.refreshSessionFromServer();
 const guestSession = sessionService.clearAccountScope();
+assert.equal(tokenClearCount, 1, 'clearing the account scope also clears the in-memory NAS token');
 responses[2].resolve(activeSession);
 await refreshBeforeLogout;
 assert.equal(sessionService.getSession().memberStatus, 'none', 'a response started before logout must not restore membership');

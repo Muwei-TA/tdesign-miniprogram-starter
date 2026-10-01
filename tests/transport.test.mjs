@@ -128,14 +128,19 @@ const appSource = readFileSync(join(ROOT, 'app.js'), 'utf8');
 const configSource = readFileSync(join(ROOT, 'config.js'), 'utf8');
 assert.match(appSource, /wx\.cloud\.init/);
 assert.match(appSource, /env:\s*config\.env/);
-assert.doesNotMatch(configSource, /isMock|baseUrl/);
+assert.match(appSource, /config\.transport !== 'cloudbase'/);
+assert.match(configSource, /activeProfile = 'cloudbase'/);
+assert.match(configSource, /nasLanDevelopment:[\s\S]*apiBaseUrl: 'http:\/\/192\.168\.50\.28:18088'/);
+assert.match(configSource, /nasProduction:[\s\S]*apiBaseUrl: ''/);
+assert.doesNotMatch(configSource, /api\.muwei\.xyz/);
 assert.match(requestSource, /wx\.cloud\.callFunction/);
-assert.doesNotMatch(requestSource, /wx\.request/);
-assert.doesNotMatch(requestSource, /Bearer|SESSION_TOKEN_KEY|Idempotency-Key/);
+assert.match(requestSource, /wx\.request/);
+assert.match(requestSource, /Authorization: `Bearer \$\{token\}`/);
+assert.doesNotMatch(requestSource, /SESSION_TOKEN_KEY|Idempotency-Key/);
 
 // 加载实际 request.js（去掉小程序 alias import），验证 CloudBase 请求的运行行为。
 const requestModule = { exports: {} };
-const runtimeConfig = { cloudFunctionName: 'api' };
+const runtimeConfig = { transport: 'cloudbase', cloudFunctionName: 'api' };
 const runtime = {
   module: requestModule,
   exports: requestModule.exports,
@@ -193,4 +198,111 @@ await assert.rejects(request('/session/me', { timeout: 1 }), (error) => {
   return true;
 });
 
-console.log('OK: transport mapping, native auth boundary, and idempotency payload checks passed');
+// Load the same request implementation with the isolated NAS LAN profile.
+const nasModule = { exports: {} };
+let invalidations = 0;
+const nasRuntime = {
+  module: nasModule,
+  exports: nasModule.exports,
+  __config: {
+    transport: 'nas',
+    profile: 'nasLanDevelopment',
+    apiBaseUrl: 'http://192.168.50.28:18088',
+  },
+  resolveTransport,
+  withIdempotency,
+  wx: { cloud: {} },
+  setTimeout,
+  clearTimeout,
+  getApp: () => ({ invalidateSession: () => { invalidations += 1; } }),
+};
+vm.runInNewContext(requestSourceForNode, nasRuntime);
+
+const nasRequest = nasModule.exports.request;
+const httpCalls = [];
+let loginCount = 0;
+const queuedResponses = [];
+nasRuntime.wx.login = ({ success }) => {
+  loginCount += 1;
+  success({ code: `login-code-${loginCount}` });
+};
+nasRuntime.wx.request = (options) => {
+  httpCalls.push(options);
+  if (options.url.endsWith('/v1/auth/wechat')) {
+    options.success({
+      statusCode: 200,
+      data: { code: 0, data: { token: `nas-token-${loginCount}` } },
+    });
+    return {};
+  }
+  const response = queuedResponses.shift() || {
+    statusCode: 200,
+    data: { code: 0, data: { accepted: true } },
+  };
+  options.success(response);
+  return {};
+};
+
+assert.deepEqual(
+  plain(await nasRequest('/posts', {
+    method: 'POST',
+    data: { body: 'draft' },
+    idempotencyKey: 'nas-post-key',
+  })),
+  { accepted: true },
+);
+assert.equal(loginCount, 1);
+assert.equal(httpCalls.length, 2);
+assert.equal(httpCalls[0].url, 'http://192.168.50.28:18088/v1/auth/wechat');
+assert.deepEqual(plain(httpCalls[0].data), { code: 'login-code-1' });
+assert.equal(httpCalls[0].header.Authorization, undefined);
+assert.equal(httpCalls[1].url, 'http://192.168.50.28:18088/v1/action');
+assert.equal(httpCalls[1].header.Authorization, 'Bearer nas-token-1');
+assert.deepEqual(plain(httpCalls[1].data), {
+  action: 'posts/create',
+  payload: { body: 'draft', idempotencyKey: 'nas-post-key' },
+});
+
+await nasRequest('/boards?cursor=c1');
+assert.equal(loginCount, 1, 'a live in-memory token is reused');
+assert.equal(httpCalls[2].data.action, 'boards/list');
+
+queuedResponses.push({
+  statusCode: 401,
+  data: { code: 'unauthenticated', message: 'expired' },
+});
+await assert.rejects(nasRequest('/session/me'), (error) => {
+  assert.equal(error.kind, 'unauthenticated');
+  assert.equal(error.httpStatus, 401);
+  assert.equal(invalidations, 1);
+  return true;
+});
+
+await nasRequest('/session/me');
+assert.equal(loginCount, 2, '401 clears the old token so the next action logs in again');
+assert.equal(httpCalls[5].header.Authorization, 'Bearer nas-token-2');
+
+queuedResponses.push({
+  statusCode: 403,
+  data: { code: 'membership_invalid', message: 'membership expired' },
+});
+await assert.rejects(nasRequest('/boards'), (error) => {
+  assert.equal(error.kind, 'membership_invalid');
+  assert.equal(error.httpStatus, 403);
+  assert.equal(invalidations, 2);
+  return true;
+});
+
+const callsBeforeUnconfiguredProductionProfile = httpCalls.length;
+const loginsBeforeUnconfiguredProductionProfile = loginCount;
+nasRuntime.__config.profile = 'nasProduction';
+nasRuntime.__config.apiBaseUrl = '';
+await assert.rejects(nasRequest('/session/me'), (error) => {
+  assert.equal(error.kind, 'server');
+  assert.equal(error.code, 'api_base_url_missing');
+  return true;
+});
+assert.equal(httpCalls.length, callsBeforeUnconfiguredProductionProfile, 'an empty production origin must not send requests');
+assert.equal(loginCount, loginsBeforeUnconfiguredProductionProfile, 'an empty production origin must not consume a wx.login code');
+
+console.log('OK: CloudBase/NAS transport, server-side login boundary, error mapping, and idempotency checks passed');
