@@ -64,6 +64,8 @@ Page({
     moreVisible: false,
     scopeVisible: false,
     capabilities: { publicScope: false },
+    reactMotion: false,
+    bookmarkMotion: false,
   },
 
   onLoad(options) {
@@ -106,6 +108,8 @@ Page({
 
   onUnload() {
     this.commentsRequestId = (this.commentsRequestId || 0) + 1;
+    if (this.reactMotionTimer) clearTimeout(this.reactMotionTimer);
+    if (this.bookmarkMotionTimer) clearTimeout(this.bookmarkMotionTimer);
     if (this.onSessionChanged) app.eventBus.off('session-changed', this.onSessionChanged);
   },
 
@@ -248,6 +252,8 @@ Page({
     this.interactionBusy.react = true;
     const { post } = this.data;
     const next = !post.viewer.reacted;
+    if (next) this.startActionMotion('react', 320);
+    else this.stopActionMotion('react');
     const prevCount = post.counters.reactions;
     this.setData({
       'post.viewer.reacted': next,
@@ -258,6 +264,7 @@ Page({
       app.eventBus.emit('post-changed', { id: post.id, action: 'react' });
     } catch (err) {
       this.setData({ 'post.viewer.reacted': !next, 'post.counters.reactions': prevCount });
+      if (next) this.stopActionMotion('react');
       wx.showToast({ title: err.message || '操作未完成', icon: 'none' });
     } finally {
       this.interactionBusy.react = false;
@@ -271,16 +278,36 @@ Page({
     this.interactionBusy.bookmark = true;
     const { post } = this.data;
     const next = !post.viewer.bookmarked;
+    if (next) this.startActionMotion('bookmark', 280);
+    else this.stopActionMotion('bookmark');
     this.setData({ 'post.viewer.bookmarked': next });
     try {
       await toggleBookmark(post.id, next);
       app.eventBus.emit('post-changed', { id: post.id, action: 'bookmark' });
     } catch (err) {
       this.setData({ 'post.viewer.bookmarked': !next });
+      if (next) this.stopActionMotion('bookmark');
       wx.showToast({ title: err.message || '操作未完成', icon: 'none' });
     } finally {
       this.interactionBusy.bookmark = false;
     }
+  },
+
+  startActionMotion(name, duration) {
+    const timerKey = `${name}MotionTimer`;
+    if (this[timerKey]) clearTimeout(this[timerKey]);
+    this.setData({ [`${name}Motion`]: true });
+    this[timerKey] = setTimeout(() => {
+      this.setData({ [`${name}Motion`]: false });
+      this[timerKey] = null;
+    }, duration);
+  },
+
+  stopActionMotion(name) {
+    const timerKey = `${name}MotionTimer`;
+    if (this[timerKey]) clearTimeout(this[timerKey]);
+    this[timerKey] = null;
+    this.setData({ [`${name}Motion`]: false });
   },
 
   onCommentTap() {

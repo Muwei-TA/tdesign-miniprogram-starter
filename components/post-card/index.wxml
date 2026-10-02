@@ -56,7 +56,6 @@
 
   <!-- 活动信息 -->
   <view wx:if="{{ post.event }}" class="hg-post__event">
-    <view class="hg-post__event-label">ACTIVITY</view>
     <view class="hg-post__event-row">时间 · {{ post.event.dateText }}</view>
     <view class="hg-post__event-row">地点 · {{ post.event.place }}</view>
     <view class="hg-post__event-note">这只是意向，不需要报名，也可以随时取消。</view>
@@ -80,7 +79,7 @@
   <!-- 互动区 -->
   <view wx:if="{{ showInteractions }}" class="hg-post__actions">
     <view wx:if="{{ showMemberActions }}" class="hg-post__action {{ post.viewer.reacted ? 'hg-post__action--on' : '' }}" hover-class="hg-post__action--hover" catchtap="onReact" aria-role="button" aria-label="{{ post.viewer.reacted ? '取消共鸣' : '共鸣' }}">
-      <t-icon name="{{ post.viewer.reacted ? 'heart-filled' : 'heart' }}" size="32rpx" />
+      <t-icon class="hg-post__action-icon {{ reactMotion ? 'hg-post__action-icon--pulse' : '' }}" name="{{ post.viewer.reacted ? 'heart-filled' : 'heart' }}" size="32rpx" />
       <text>{{ post.viewer.reacted ? '已共鸣' : '共鸣' }}</text>
       <text wx:if="{{ post.counters.reactions > 0 }}" class="hg-post__count">{{ post.counters.reactions }}</text>
     </view>
@@ -90,7 +89,7 @@
       <text wx:if="{{ post.counters.comments > 0 }}" class="hg-post__count">{{ post.counters.comments }}</text>
     </view>
     <view wx:if="{{ showMemberActions }}" class="hg-post__action {{ post.viewer.bookmarked ? 'hg-post__action--on' : '' }}" hover-class="hg-post__action--hover" catchtap="onBookmark" aria-role="button" aria-label="{{ post.viewer.bookmarked ? '取消收藏' : '收藏' }}">
-      <t-icon name="{{ post.viewer.bookmarked ? 'bookmark-filled' : 'bookmark' }}" size="32rpx" />
+      <t-icon class="hg-post__action-icon {{ bookmarkMotion ? 'hg-post__action-icon--drop' : '' }}" name="{{ post.viewer.bookmarked ? 'bookmark-filled' : 'bookmark' }}" size="32rpx" />
       <text>{{ post.viewer.bookmarked ? '已收藏' : '收藏' }}</text>
     </view>
     <view wx:if="{{ post.categoryText }}" class="hg-post__category">{{ post.categoryText }}</view>

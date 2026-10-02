@@ -41,11 +41,11 @@ releaseContext.setData = (patch, callback) => {
 };
 releaseContext.pageOptions = { mode: 'article' };
 releaseContext.promptMembership();
-assert.equal(membershipPrompts[0].content, '写文稿需要先加入文学社。');
+assert.equal(membershipPrompts[0].content, '写文稿需要先加入当前社团。');
 releaseContext.joinPrompted = false;
 releaseContext.pageOptions = { mode: 'fragment' };
 releaseContext.promptMembership();
-assert.equal(membershipPrompts[1].content, '写一笔需要先加入文学社。');
+assert.equal(membershipPrompts[1].content, '写一笔需要先加入当前社团。');
 
 const feedCalls = [];
 const previewCalls = [];

@@ -143,7 +143,7 @@ Page({
     const isArticle = this.pageOptions && this.pageOptions.mode === 'article';
     wx.showModal({
       title: '需要成员资格',
-      content: isArticle ? '写文稿需要先加入文学社。' : '写一笔需要先加入文学社。',
+      content: isArticle ? '写文稿需要先加入当前社团。' : '写一笔需要先加入当前社团。',
       confirmText: '去了解',
       cancelText: '返回',
       success: (res) => {

@@ -28,6 +28,8 @@ Component({
   data: {
     avatarText: '',
     authorText: '',
+    reactMotion: false,
+    bookmarkMotion: false,
     showInteractions: false,
     showMemberActions: true,
     showComments: true,
@@ -39,10 +41,26 @@ Component({
   observers: {
     'post, showActions, mode, canInteract': function observePost() {
       const { post, showActions, mode, canInteract } = this.data;
-      if (!post) return;
+      if (!post) {
+        this.motionPostId = null;
+        this.lastReacted = false;
+        this.lastBookmarked = false;
+        this.resetActionMotion();
+        return;
+      }
 
       const author = post.author || {};
       const viewer = post.viewer || {};
+      if (this.motionPostId !== post.id) {
+        this.motionPostId = post.id;
+        this.resetActionMotion();
+      } else {
+        if (this.lastReacted && !viewer.reacted) this.stopActionMotion('react');
+        if (this.lastBookmarked && !viewer.bookmarked) this.stopActionMotion('bookmark');
+      }
+
+      this.lastReacted = !!viewer.reacted;
+      this.lastBookmarked = !!viewer.bookmarked;
       const name = author.isAnonymous ? author.alias || '树洞旅人' : author.displayName || '';
       const media = post.media || {};
       const video = media.video || null;
@@ -63,7 +81,56 @@ Component({
     },
   },
 
+  lifetimes: {
+    detached() {
+      this.clearActionMotionTimers();
+    },
+  },
+
   methods: {
+    clearActionMotionTimers() {
+      const motions = this.actionMotions || {};
+      ['react', 'bookmark'].forEach((name) => {
+        const motion = motions[name] || {};
+        if (motion.timer) clearTimeout(motion.timer);
+        motions[name] = { token: (motion.token || 0) + 1 };
+      });
+      this.actionMotions = motions;
+    },
+
+    resetActionMotion() {
+      this.clearActionMotionTimers();
+      this.setData({ reactMotion: false, bookmarkMotion: false });
+    },
+
+    playActionMotion(name, duration) {
+      const motions = this.actionMotions || (this.actionMotions = {});
+      const previous = motions[name] || {};
+      if (previous.timer) clearTimeout(previous.timer);
+      const token = (previous.token || 0) + 1;
+      const postId = this.data.post.id;
+      this.setData({ [`${name}Motion`]: true });
+      motions[name] = {
+        token,
+        postId,
+        timer: setTimeout(() => {
+          const current = this.actionMotions && this.actionMotions[name];
+          if (!current || current.token !== token || !this.data.post || this.data.post.id !== postId) return;
+          this.setData({ [`${name}Motion`]: false });
+          current.timer = null;
+        }, duration),
+      };
+    },
+
+    stopActionMotion(name) {
+      const motions = this.actionMotions || {};
+      const motion = motions[name] || {};
+      if (motion.timer) clearTimeout(motion.timer);
+      motions[name] = { token: (motion.token || 0) + 1 };
+      this.actionMotions = motions;
+      this.setData({ [`${name}Motion`]: false });
+    },
+
     onTapBody() {
       this.triggerEvent('tapbody', { id: this.data.post.id });
     },
@@ -95,12 +162,20 @@ Component({
 
     onReact() {
       const { post } = this.data;
-      this.triggerEvent('react', { id: post.id, next: !post.viewer.reacted });
+      if (!post) return;
+      const next = !((post.viewer || {}).reacted);
+      if (next) this.playActionMotion('react', 320);
+      else this.stopActionMotion('react');
+      this.triggerEvent('react', { id: post.id, next });
     },
 
     onBookmark() {
       const { post } = this.data;
-      this.triggerEvent('bookmark', { id: post.id, next: !post.viewer.bookmarked });
+      if (!post) return;
+      const next = !((post.viewer || {}).bookmarked);
+      if (next) this.playActionMotion('bookmark', 280);
+      else this.stopActionMotion('bookmark');
+      this.triggerEvent('bookmark', { id: post.id, next });
     },
 
     onMore() {

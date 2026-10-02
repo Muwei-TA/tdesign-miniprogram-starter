@@ -10,11 +10,8 @@
   display: flex;
   height: @hg-tab-bar-height;
   padding-bottom: env(safe-area-inset-bottom);
-  background: @hg-surface-glass; // 半透明毛玻璃效果
-  backdrop-filter: blur(20rpx);
-  -webkit-backdrop-filter: blur(20rpx);
-  border-top: 1rpx solid fade(@hg-line, 60%);
-  box-shadow: 0 -2rpx 12rpx fade(@hg-ink, 4%);
+  background: @hg-paper;
+  border-top: 1rpx solid @hg-line;
 
   &__item {
     flex: 1;
@@ -26,7 +23,7 @@
     min-height: @hg-touch-min;
     color: @hg-tab-inactive;
     position: relative;
-    transition: color @hg-ease, opacity @hg-ease;
+    transition: color @hg-ease, opacity @hg-ease, transform @hg-ease;
 
     &--on {
       color: @hg-green;
@@ -45,7 +42,8 @@
     }
 
     &--hover {
-      .hg-hover-dim();
+      opacity: 0.72;
+      transform: scale(0.96);
     }
   }
 
@@ -53,5 +51,15 @@
     font-size: @hg-fs-2xs;
     line-height: 1.4;
     font-weight: 500;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hg-tabbar__item {
+    transition: none;
+  }
+
+  .hg-tabbar__item--hover {
+    transform: none;
   }
 }
