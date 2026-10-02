@@ -32,6 +32,107 @@
     }
   }
 
+  &--blackbox-layout {
+    .hg-detail__reader,
+    .hg-detail__fragment {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hg-detail__images {
+      order: 1;
+      width: 100%;
+      margin: @hg-sp-3 0;
+    }
+
+    .hg-detail__subtitle,
+    .hg-detail__headline {
+      order: 2;
+    }
+
+    .hg-detail__body,
+    .hg-detail__article {
+      order: 3;
+    }
+
+    .hg-detail__video {
+      order: 1;
+    }
+
+    .hg-detail__end {
+      order: 4;
+    }
+  }
+
+  &--blackbox {
+    background: @hg-blackbox-paper;
+    color: @hg-blackbox-ink;
+
+    hg-nav {
+      background: @hg-blackbox-paper;
+    }
+
+    .hg-nav__title,
+    .hg-nav__tool {
+      color: @hg-blackbox-ink;
+    }
+
+    .hg-detail__headline,
+    .hg-detail__subtitle,
+    .hg-detail__author-name,
+    .hg-detail__body,
+    .hg-detail__article {
+      color: @hg-blackbox-ink;
+    }
+
+    .hg-detail__headline,
+    .hg-detail__subtitle,
+    .hg-detail__body,
+    .hg-detail__article {
+      font-family: @hg-font-sans;
+    }
+
+    .hg-detail__kicker {
+      color: @hg-blackbox-orange;
+    }
+
+    .hg-detail__action--on {
+      color: @hg-blackbox-orange;
+    }
+  }
+
+  &--night.hg-detail--blackbox {
+    background: @hg-reading-bg;
+    color: @hg-reading-fg;
+
+    hg-nav {
+      background: @hg-reading-bg;
+    }
+
+    .hg-nav__title,
+    .hg-nav__tool {
+      color: @hg-reading-fg;
+    }
+
+    .hg-detail__headline,
+    .hg-detail__subtitle,
+    .hg-detail__author-name,
+    .hg-detail__body,
+    .hg-detail__article {
+      color: @hg-reading-fg;
+    }
+
+    .hg-detail__kicker,
+    .hg-detail__tools,
+    .hg-detail__author-note {
+      color: @hg-reading-muted;
+    }
+
+    .hg-detail__tools {
+      border-color: @hg-reading-line;
+    }
+  }
+
   &__reader {
     padding: @hg-sp-3 @hg-page-x 60rpx;
   }

@@ -126,22 +126,32 @@ export function createHomePostActions({ shrinkVisibility, deletePost, toggleReac
 
   /** 乐观更新 + 失败回滚，避免误触后无反馈 */
   async function optimistic(id, flagKey, next, counterKey, action) {
-    const index = this.data.list.findIndex((item) => item.id === id);
+    const { list } = this.data;
+    const index = list.findIndex((item) => item.id === id);
     if (index < 0) return;
-    const post = this.data.list[index];
+    const post = list.find((item) => item.id === id);
+    const { sessionScope } = this;
     const prevFlag = post.viewer[flagKey];
     const prevCount = counterKey ? post.counters[counterKey] : null;
+    const nextCount = counterKey ? Math.max(0, prevCount + (next ? 1 : -1)) : null;
 
     const patch = { [`list[${index}].viewer.${flagKey}`]: next };
-    if (counterKey) patch[`list[${index}].counters.${counterKey}`] = Math.max(0, prevCount + (next ? 1 : -1));
+    if (counterKey) patch[`list[${index}].counters.${counterKey}`] = nextCount;
     this.setData(patch);
 
     try {
       await action(id, next);
     } catch (err) {
-      const rollback = { [`list[${index}].viewer.${flagKey}`]: prevFlag };
-      if (counterKey) rollback[`list[${index}].counters.${counterKey}`] = prevCount;
-      this.setData(rollback);
+      const currentIndex = this.data.list.findIndex((item) => item.id === id);
+      const currentPost = currentIndex >= 0 ? this.data.list[currentIndex] : null;
+      const sameOptimisticTarget = currentPost === post
+        && currentPost.viewer && currentPost.viewer[flagKey] === next
+        && (!counterKey || (currentPost.counters && currentPost.counters[counterKey] === nextCount));
+      if (this.sessionScope === sessionScope && sameOptimisticTarget) {
+        const rollback = { [`list[${currentIndex}].viewer.${flagKey}`]: prevFlag };
+        if (counterKey) rollback[`list[${currentIndex}].counters.${counterKey}`] = prevCount;
+        this.setData(rollback);
+      }
       wx.showToast({ title: err.message || '操作未完成', icon: 'none' });
     }
   }

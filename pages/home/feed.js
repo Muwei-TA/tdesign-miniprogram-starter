@@ -1,5 +1,5 @@
 /** 首页信息流与推荐板块流程。页面上下文通过参数传入，便于独立维护状态和请求规则。 */
-export function createHomeFeed({ fetchFeed, fetchBoards, FEED_FILTERS, getSession, app, wx }) {
+export function createHomeFeed({ fetchFeed, fetchBoards, FEED_FILTERS, getSession, app, wx, buildWaterfallColumns }) {
   async function loadRecommendations(session = getSession()) {
     const requestId = (this.recommendationRequestId || 0) + 1;
     this.recommendationRequestId = requestId;
@@ -57,8 +57,10 @@ export function createHomeFeed({ fetchFeed, fetchBoards, FEED_FILTERS, getSessio
       // 快速切换筛选时，旧响应不得覆盖新筛选
       if (requestId !== this.feedRequestId) return;
       if (!append) this.feedFirstPageLoading = false;
+      const list = append ? this.data.list.concat(data.items || []) : data.items || [];
       this.setData({
-        list: append ? this.data.list.concat(data.items || []) : data.items || [],
+        list,
+        waterfallColumns: this.data.isBlackbox && buildWaterfallColumns ? buildWaterfallColumns(list) : [{ id: 'left', items: [] }, { id: 'right', items: [] }],
         club: data.club || null,
         nextCursor: data.nextCursor || null,
         hasMore: !!data.nextCursor,
@@ -105,6 +107,7 @@ export function createHomeFeed({ fetchFeed, fetchBoards, FEED_FILTERS, getSessio
       ...patch,
       selectedBoardId: boardId,
       list: [],
+      waterfallColumns: buildWaterfallColumns ? buildWaterfallColumns([]) : [{ id: 'left', items: [] }, { id: 'right', items: [] }],
       nextCursor: null,
       hasMore: false,
       loadingMore: false,

@@ -1,4 +1,4 @@
-<view class="hg-page hg-detail {{ nightMode && post.kind === 'article' ? 'hg-detail--night' : '' }}">
+<view class="hg-page hg-detail {{ nightMode && post.kind === 'article' ? 'hg-detail--night' : '' }} {{ isBlackbox ? 'hg-detail--blackbox-layout hg-detail--blackbox' : '' }}">
   <hg-nav
     title="{{ post && post.kind === 'article' ? '' : '内容' }}"
     theme="{{ nightMode && post.kind === 'article' ? 'dark' : 'paper' }}"

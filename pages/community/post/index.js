@@ -36,6 +36,7 @@ Page({
   data: {
     id: '',
     clubId: '',
+    isBlackbox: false,
     historyOnly: false,
     from: 'feed',
     post: null,
@@ -70,11 +71,13 @@ Page({
 
   onLoad(options) {
     const readingPrefs = wx.getStorageSync(scopedKey('reading-prefs')) || {};
+    const clubId = options.clubId || (app.globalData.session && app.globalData.session.club
+      && app.globalData.session.club.id) || '';
     this.setData({
       id: options.id || '',
       from: options.from || 'feed',
-      clubId: options.clubId || (app.globalData.session && app.globalData.session.club
-        && app.globalData.session.club.id) || '',
+      clubId,
+      isBlackbox: clubId === 'blackbox-animation',
       historyOnly: options.historyOnly === '1' && !!options.clubId,
       capabilities: getCapabilities(),
       fontIndex: typeof readingPrefs.fontIndex === 'number' ? readingPrefs.fontIndex : 1,

@@ -8,6 +8,7 @@ import { loadPageModule } from './helpers/page-module-loader.mjs';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const homeFeed = await loadPageModule(new URL('../pages/home/feed.js', import.meta.url), ['createHomeFeed']);
 const homePostActions = await loadPageModule(new URL('../pages/home/post-actions.js', import.meta.url), ['createHomePostActions']);
+const homeWxml = readFileSync(new URL('../pages/home/index.wxml', import.meta.url), 'utf8');
 
 function deferred() {
   let resolve;
@@ -16,7 +17,7 @@ function deferred() {
 }
 
 const clubA = { id: 'club-a', name: 'A 社' };
-const clubB = { id: 'club-b', name: 'B 社' };
+const clubB = { id: 'blackbox-animation', name: 'B 社' };
 let currentSession = { user: { id: 'user-1' }, role: 'admin', memberStatus: 'active', club: clubA };
 const listeners = new Map();
 const feedCalls = [];
@@ -123,16 +124,33 @@ assert.equal(page.data.loadingMore, false);
 assert.equal(page.data.stale, false);
 assert.equal(page.data.errorText, '');
 assert.equal(page.data.recommendationState, 'loading');
-assert.deepEqual(feedCalls.map((call) => call.clubId), ['club-a', 'club-b'], 'the B session change must issue a new-club feed read');
-assert.deepEqual(boardCalls.map((call) => call.clubId), ['club-a', 'club-b'], 'the B session change must issue a new-club board read');
+assert.deepEqual(feedCalls.map((call) => call.clubId), ['club-a', 'blackbox-animation'], 'the B session change must issue a new-club feed read');
+assert.deepEqual(boardCalls.map((call) => call.clubId), ['club-a', 'blackbox-animation'], 'the B session change must issue a new-club board read');
+assert.equal(page.data.isBlackbox, true);
 
-feedCalls[1].resolve({ items: [{ id: 'post-b' }], nextCursor: null, club: clubB });
+feedCalls[1].resolve({ items: [{ id: 'post-b1' }, { id: 'post-b2' }, { id: 'post-b3' }], nextCursor: null, club: clubB });
 boardCalls[1].resolve({ items: [{ id: 'board-b', title: 'B 板块', status: 'active' }] });
 await new Promise((resolve) => setImmediate(resolve));
-assert.deepEqual(Array.from(page.data.list, (item) => item.id), ['post-b']);
+assert.deepEqual(Array.from(page.data.list, (item) => item.id), ['post-b1', 'post-b2', 'post-b3']);
+assert.deepEqual(Array.from(page.data.waterfallColumns, (column) => Array.from(column.items, (item) => item.id)), [['post-b1', 'post-b3'], ['post-b2']]);
 assert.equal(page.data.loading, false);
 assert.equal(page.data.errorText, '');
 assert.deepEqual(Array.from(page.data.filters, (item) => item.value), ['all', 'board-b']);
 assert.equal(page.data.recommendationState, 'ready');
+
+const clubC = { id: 'club-c', name: 'C 社' };
+currentSession = { user: { id: 'user-1' }, role: 'member', memberStatus: 'active', club: clubC };
+app.globalData.session = currentSession;
+bus.emit('session-changed', currentSession);
+assert.equal(page.data.isBlackbox, false);
+assert.deepEqual(Array.from(page.data.waterfallColumns, (column) => column.items.length), [0, 0]);
+assert.equal(page.data.list.length, 0);
+feedCalls[2].resolve({ items: [{ id: 'post-c' }], nextCursor: null, club: clubC });
+boardCalls[2].resolve({ items: [] });
+await new Promise((resolve) => setImmediate(resolve));
+assert.deepEqual(Array.from(page.data.list, (item) => item.id), ['post-c']);
+assert.deepEqual(Array.from(page.data.waterfallColumns, (column) => column.items.length), [0, 0]);
+assert.match(homeWxml, /mode="waterfall"/);
+assert.match(homeWxml, /post="\{\{ list\[postItem\.index\] \}\}"/);
 
 console.log('OK: home clears A state and loads B feed and recommendations on session change');

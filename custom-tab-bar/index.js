@@ -18,6 +18,7 @@ const TAB_LIST = [
   },
   { value: 'my', label: '我的', icon: 'user', iconActive: 'user-filled', path: '/pages/my/index' },
 ];
+const app = getApp();
 
 Component({
   options: {
@@ -27,6 +28,7 @@ Component({
   data: {
     value: '',
     list: TAB_LIST,
+    isBlackbox: false,
   },
 
   lifetimes: {
@@ -44,13 +46,16 @@ Component({
   methods: {
     /** 依据当前页面路径同步选中态，避免首次加载闪烁 */
     syncActive() {
+      const isBlackbox = !!(app.globalData.session && app.globalData.session.club
+        && app.globalData.session.club.id === 'blackbox-animation');
       const pages = getCurrentPages();
       const current = pages[pages.length - 1];
-      if (!current) return;
-      const matched = TAB_LIST.find((item) => item.path === `/${current.route}`);
-      if (matched && matched.value !== this.data.value) {
-        this.setData({ value: matched.value });
+      if (!current) {
+        this.setData({ isBlackbox });
+        return;
       }
+      const matched = TAB_LIST.find((item) => item.path === `/${current.route}`);
+      this.setData({ isBlackbox, ...(matched && matched.value !== this.data.value ? { value: matched.value } : {}) });
     },
 
     handleChange(e) {

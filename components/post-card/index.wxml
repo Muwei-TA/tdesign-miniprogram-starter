@@ -1,6 +1,6 @@
 <view wx:if="{{ post }}" class="hg-post hg-post--{{ mode }}">
   <!-- 作者行 -->
-  <view class="hg-post__head">
+  <view wx:if="{{ mode !== 'waterfall' }}" class="hg-post__head">
     <view class="hg-post__author" hover-class="hg-post__author--hover" bindtap="onTapAuthor" aria-role="button" aria-label="{{ authorText }}">
       <view class="hg-post__avatar {{ post.author.isAnonymous ? 'hg-post__avatar--anon' : '' }}">{{ avatarText }}</view>
       <view class="hg-post__meta">
@@ -17,7 +17,7 @@
     </view>
   </view>
 
-  <view class="hg-post__content {{ mode === 'feed' || mode === 'article' ? 'hg-post__content--feed' : '' }}">
+  <view class="hg-post__content {{ mode === 'feed' || mode === 'article' || mode === 'waterfall' ? 'hg-post__content--feed' : '' }}">
     <!-- feed 模式先展示媒体；文章卡片沿用同一顺序 -->
     <view class="hg-post__body" bindtap="onTapBody">
       <view wx:if="{{ post.title }}" class="hg-post__title">{{ post.title }}</view>
@@ -26,18 +26,20 @@
 
     <!-- 媒体 -->
     <block wx:if="{{ post.media.type === 'image' }}">
-      <view class="hg-post__images {{ isGrid ? 'hg-post__images--grid' : '' }}">
+      <view class="hg-post__images {{ isGrid ? 'hg-post__images--grid' : '' }} {{ mode === 'waterfall' ? 'hg-post__images--waterfall' : '' }}">
         <image
           wx:for="{{ post.media.images }}"
           wx:key="*this"
-          class="hg-post__image"
+          wx:if="{{ mode !== 'waterfall' || index === 0 }}"
+          class="hg-post__image {{ mode === 'waterfall' ? 'hg-post__image--waterfall' : '' }}"
           src="{{ item }}"
-          mode="aspectFill"
+          mode="{{ mode === 'waterfall' ? 'widthFix' : 'aspectFill' }}"
           data-index="{{ index }}"
           catchtap="onTapMedia"
           lazy-load
           aria-label="内容配图"
         />
+        <view wx:if="{{ mode === 'waterfall' && post.media.images.length > 1 }}" class="hg-post__image-count">{{ post.media.images.length }}张</view>
       </view>
     </block>
 
@@ -76,8 +78,26 @@
   <!-- 状态标签（仅本人可见的待审 / 退回） -->
   <view wx:if="{{ post.statusText }}" class="hg-post__status">{{ post.statusText }}</view>
 
+  <view wx:if="{{ mode === 'waterfall' }}" class="hg-post__waterfall-footer">
+    <view class="hg-post__waterfall-author" bindtap="onTapAuthor" aria-role="button" aria-label="{{ authorText }}">
+      <view class="hg-post__avatar {{ post.author.isAnonymous ? 'hg-post__avatar--anon' : '' }}">{{ avatarText }}</view>
+      <text class="hg-post__waterfall-name">{{ authorText }}</text>
+      <text wx:if="{{ post.author.isAnonymous }}" class="hg-post__identity">树洞身份</text>
+      <visibility-badge scope="{{ post.visibility }}" />
+    </view>
+    <view class="hg-post__waterfall-tools">
+      <view wx:if="{{ showInteractions && showMemberActions }}" class="hg-post__waterfall-react {{ post.viewer.reacted ? 'hg-post__waterfall-react--on' : '' }}" catchtap="onReact" aria-role="button" aria-label="{{ post.viewer.reacted ? '取消共鸣' : '共鸣' }}">
+        <t-icon name="{{ post.viewer.reacted ? 'heart-filled' : 'heart' }}" size="30rpx" />
+        <text wx:if="{{ post.counters.reactions > 0 }}">{{ post.counters.reactions }}</text>
+      </view>
+      <view wx:if="{{ showMoreActions }}" class="hg-post__waterfall-more" catchtap="onMore" aria-role="button" aria-label="更多">
+        <t-icon name="ellipsis" size="30rpx" />
+      </view>
+    </view>
+  </view>
+
   <!-- 互动区 -->
-  <view wx:if="{{ showInteractions }}" class="hg-post__actions">
+  <view wx:if="{{ showInteractions && mode !== 'waterfall' }}" class="hg-post__actions">
     <view wx:if="{{ showMemberActions }}" class="hg-post__action {{ post.viewer.reacted ? 'hg-post__action--on' : '' }}" hover-class="hg-post__action--hover" catchtap="onReact" aria-role="button" aria-label="{{ post.viewer.reacted ? '取消共鸣' : '共鸣' }}">
       <t-icon class="hg-post__action-icon {{ reactMotion ? 'hg-post__action-icon--pulse' : '' }}" name="{{ post.viewer.reacted ? 'heart-filled' : 'heart' }}" size="32rpx" />
       <text>{{ post.viewer.reacted ? '已共鸣' : '共鸣' }}</text>

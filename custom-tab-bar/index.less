@@ -54,6 +54,14 @@
   }
 }
 
+.hg-tabbar--blackbox .hg-tabbar__item--on {
+  color: @hg-blackbox-orange;
+
+  &::before {
+    background: @hg-blackbox-orange;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hg-tabbar__item {
     transition: none;

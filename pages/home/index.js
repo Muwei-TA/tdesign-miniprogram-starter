@@ -14,12 +14,25 @@ import { createHomeFeed } from './feed';
 import { createHomePostActions } from './post-actions';
 
 const app = getApp();
+const BLACKBOX_CLUB_ID = 'blackbox-animation';
 let homeFeed;
 let homePostActions;
 
+function getSessionClubId(session) {
+  return (session && session.club && session.club.id) || '';
+}
+
+function buildWaterfallColumns(posts) {
+  const columns = [{ id: 'left', items: [] }, { id: 'right', items: [] }];
+  (posts || []).forEach((post, index) => {
+    columns[index % 2].items.push({ id: post.id, index });
+  });
+  return columns;
+}
+
 function getHomeFeed() {
   if (!homeFeed) {
-    homeFeed = createHomeFeed({ fetchFeed, fetchBoards, FEED_FILTERS, getSession, app, wx });
+    homeFeed = createHomeFeed({ fetchFeed, fetchBoards, FEED_FILTERS, getSession, app, wx, buildWaterfallColumns });
   }
   return homeFeed;
 }
@@ -53,6 +66,8 @@ Page({
     filters: FEED_FILTERS,
     selectedBoardId: '',
     list: [],
+    waterfallColumns: buildWaterfallColumns([]),
+    isBlackbox: false,
     nextCursor: null,
     hasMore: false,
     loadingMore: false,
@@ -76,18 +91,19 @@ Page({
     this.setData({ navLeftMaxWidth: getNavLeftMaxWidth() });
     this.syncSession(app.globalData.session || getSession());
     this.onSessionChanged = (session) => {
-      const clubId = session && session.club && session.club.id;
+      const clubId = getSessionClubId(session);
       const nextScope = session
-        ? [session.user && session.user.id, session.club && session.club.id, session.role, session.memberStatus].join(':')
+        ? [session.user && session.user.id, clubId, session.role, session.memberStatus].join(':')
         : '';
       const changedClub = this.sessionScope !== nextScope;
       this.syncSession(session);
+      if (!session) this.setData({ isBlackbox: false });
       if (changedClub) {
         this.feedRequestId = (this.feedRequestId || 0) + 1;
         this.recommendationRequestId = (this.recommendationRequestId || 0) + 1;
         this.feedFirstPageLoading = false;
         this.setData({
-          selectedBoardId: '', filters: FEED_FILTERS, list: [], nextCursor: null, hasMore: false,
+          selectedBoardId: '', filters: FEED_FILTERS, list: [], waterfallColumns: buildWaterfallColumns([]), nextCursor: null, hasMore: false,
           loading: !!clubId, loadingMore: false, stale: false, errorText: '',
           recommendationState: clubId ? 'loading' : 'guest',
         });
@@ -139,13 +155,15 @@ Page({
 
   syncSession(session) {
     if (!session) return;
+    const clubId = getSessionClubId(session);
     this.setData({
       isMember: session.memberStatus === 'active',
       club: session.club || null,
       clubName: (session.club && session.club.name) || '',
+      isBlackbox: clubId === BLACKBOX_CLUB_ID,
       capabilities: getCapabilities(),
     });
-    this.sessionClubId = (session.club && session.club.id) || '';
+    this.sessionClubId = clubId;
     this.sessionScope = [session.user && session.user.id, this.sessionClubId, session.role, session.memberStatus].join(':');
   },
 
@@ -248,7 +266,9 @@ Page({
   },
 
   removePostAndRefresh(id, action) {
-    return getHomePostActions().removePostAndRefresh.call(this, id, action);
+    const result = getHomePostActions().removePostAndRefresh.call(this, id, action);
+    if (this.data.isBlackbox) this.setData({ waterfallColumns: buildWaterfallColumns(this.data.list) });
+    return result;
   },
 
   async onReact(e) {

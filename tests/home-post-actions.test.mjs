@@ -43,6 +43,7 @@ const post = (overrides = {}) => ({
 function createHarness(item, {
   deleteResult = Promise.resolve(),
   shrinkResult = Promise.resolve(),
+  reactionResult = Promise.resolve(),
   boardsResult = { items: [] },
 } = {}) {
   const calls = {
@@ -73,7 +74,10 @@ function createHarness(item, {
       calls.feedRequests.push(input);
       return { items: [item] };
     },
-    toggleReaction: async () => {},
+    toggleReaction: async () => {
+      if (reactionResult instanceof Error) throw reactionResult;
+      return reactionResult;
+    },
     toggleBookmark: async () => {},
     shrinkVisibility: async (...args) => {
       calls.shrink.push(args);
@@ -113,7 +117,19 @@ function createHarness(item, {
   const context = Object.create(page);
   context.data = { ...page.data, list: [item], loading: false };
   context.setData = (patch, callback) => {
-    Object.assign(context.data, patch);
+    Object.entries(patch).forEach(([path, value]) => {
+      const match = /^list\[(\d+)\]\.(.+)$/.exec(path);
+      if (!match) {
+        context.data[path] = value;
+        return;
+      }
+      const target = context.data.list[Number(match[1])];
+      const parts = match[2].split('.');
+      const leaf = parts.pop();
+      let parent = target;
+      parts.forEach((part) => { parent = parent[part]; });
+      parent[leaf] = value;
+    });
     if (callback) callback();
   };
   return { context, calls, page, wx };
@@ -162,6 +178,7 @@ assert.match(homeWxml, /wx:for="\{\{ filters \}\}"/);
 assert.match(homeWxml, /selectedBoardId === item\.value/);
 assert.doesNotMatch(homeWxml, /推荐板块|recommendationCards|onRecommendationTap|onRecommendationOpen/);
 assert.match(homeWxml, /bind:tapboard="onTapBoard"/);
+assert.match(homeWxml, /wx:key="id"[\s\S]*post="\{\{ list\[postItem\.index\] \}\}"/);
 assert.doesNotMatch(homeWxml, /weekPrompt|本周共写/);
 assert.doesNotMatch(homeWxml, /留一盏灯|给每一种表达|先选谁能看见|找回一句话/);
 assert.doesNotMatch(homeWxml, /hg-home__feed-heading|<text>帖子<\/text>/);
@@ -169,6 +186,9 @@ assert.doesNotMatch(postServiceSource, /value: '(?:life|inspiration|article|vide
 assert.match(postServiceSource, /if \(boardId\) query\.boardId = boardId/);
 assert.match(postCardWxml, /hg-post__content--feed/);
 assert.match(postCardStyles, /flex-direction:\s*column-reverse/);
+assert.match(postCardWxml, /mode === 'waterfall' \? 'widthFix' : 'aspectFill'/);
+assert.match(postCardWxml, /class="hg-post__waterfall-footer"/);
+assert.match(postCardStyles, /min-width:\s*88rpx/);
 
 const recommendationHarness = createHarness(post(), {
   boardsResult: {
@@ -400,6 +420,51 @@ failedHarness.calls.actionSheets[0].success({ tapIndex: 1 });
 await failedHarness.calls.modals[0].success({ confirm: true });
 assert.equal(failedHarness.context.data.list.length, 1);
 assert.match(failedHarness.calls.toasts.at(-1).title, /server denied/);
+
+function deferred() {
+  let resolve;
+  let reject;
+  const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
+  return { promise, resolve, reject };
+}
+
+const movingPost = post({ viewer: { isOwner: false, reacted: false }, counters: { reactions: 2, comments: 0 } });
+const movingAction = deferred();
+const movingHarness = createHarness(movingPost, { reactionResult: movingAction.promise });
+movingHarness.context.sessionScope = 'user:club-a:member';
+const movingRequest = movingHarness.context.onReact({ detail: { id: movingPost.id, next: true } });
+assert.equal(movingPost.viewer.reacted, true);
+const otherPost = post({ id: 'post-other', viewer: { reacted: false }, counters: { reactions: 0, comments: 0 } });
+movingHarness.context.data.list = [otherPost, movingPost];
+movingAction.reject(new Error('reaction failed'));
+await movingRequest;
+assert.equal(movingPost.viewer.reacted, false, 'failure restores the same post after its index changes');
+assert.equal(movingPost.counters.reactions, 2);
+
+const switchingPost = post({ viewer: { isOwner: false, reacted: false }, counters: { reactions: 2, comments: 0 } });
+const switchingAction = deferred();
+const switchingHarness = createHarness(switchingPost, { reactionResult: switchingAction.promise });
+switchingHarness.context.sessionScope = 'user:club-a:member';
+const switchingRequest = switchingHarness.context.onReact({ detail: { id: switchingPost.id, next: true } });
+switchingHarness.context.sessionScope = 'user:club-b:member';
+switchingAction.reject(new Error('late failure'));
+await switchingRequest;
+assert.strictEqual(switchingHarness.context.data.list[0], switchingPost, 'late failure must preserve the current club target');
+assert.equal(switchingPost.viewer.reacted, true, 'club switch prevents an old request from rolling back');
+assert.equal(switchingPost.counters.reactions, 3);
+
+const refreshedOriginal = post({ viewer: { isOwner: false, reacted: false }, counters: { reactions: 2, comments: 0 } });
+const refreshAction = deferred();
+const refreshHarness = createHarness(refreshedOriginal, { reactionResult: refreshAction.promise });
+refreshHarness.context.sessionScope = 'user:club-a:member';
+const refreshRequest = refreshHarness.context.onReact({ detail: { id: refreshedOriginal.id, next: true } });
+const refreshedPost = post({ viewer: { isOwner: false, reacted: false }, counters: { reactions: 6, comments: 0 } });
+refreshHarness.context.data.list = [refreshedPost];
+refreshAction.reject(new Error('stale failure'));
+await refreshRequest;
+assert.strictEqual(refreshHarness.context.data.list[0], refreshedPost, 'late failure must preserve the same-club server snapshot');
+assert.equal(refreshedPost.viewer.reacted, false);
+assert.equal(refreshedPost.counters.reactions, 6);
 
 console.log(
   'OK: feed post actions are owner-gated, direction-limited, confirmed, versioned, and reflected in the list',
