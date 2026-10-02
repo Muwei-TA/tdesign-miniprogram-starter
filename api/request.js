@@ -56,6 +56,11 @@ const DEFAULT_MESSAGE = {
 };
 
 const AUTH_TIMEOUT_MS = 10000;
+const DNS_LABEL_PATTERN = '[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?';
+const HTTPS_ORIGIN_PATTERN = new RegExp(
+  `^https://((?:${DNS_LABEL_PATTERN}\\.)+${DNS_LABEL_PATTERN})(?::([1-9]\\d{0,4}))?$`,
+  'i',
+);
 let authToken = '';
 let authGeneration = 0;
 let authPromise = null;
@@ -165,17 +170,21 @@ function requestCloud(url, { method, data, timeout }) {
 }
 
 function apiUrl(path) {
-  const baseUrl = String(config.apiBaseUrl || '').trim().replace(/\/+$/, '');
-  const isHttpsOrigin = /^https:\/\/[^/?#]+$/i.test(baseUrl);
+  const baseUrl = typeof config.apiBaseUrl === 'string' ? config.apiBaseUrl : '';
+  const httpsOriginMatch = baseUrl.match(HTTPS_ORIGIN_PATTERN);
+  const isHttpsOrigin = Boolean(httpsOriginMatch)
+    && httpsOriginMatch[1].length <= 253
+    && (!httpsOriginMatch[2] || Number(httpsOriginMatch[2]) <= 65535);
   const isConfiguredLanDevelopmentOrigin = config.profile === 'nasLanDevelopment'
     && baseUrl === 'http://192.168.50.28:18118';
   if (!isHttpsOrigin && !isConfiguredLanDevelopmentOrigin) {
+    const code = baseUrl ? 'api_base_url_invalid' : 'api_base_url_missing';
     throw new ApiError({
       kind: 'server',
       httpStatus: 0,
-      code: 'api_base_url_missing',
+      code,
       message: '服务配置暂不可用',
-      detail: 'Set an approved NAS API origin in config.js before selecting the NAS profile.',
+      detail: 'Set a valid NAS API origin in config.js before selecting the NAS profile.',
     });
   }
   return `${baseUrl}${path}`;

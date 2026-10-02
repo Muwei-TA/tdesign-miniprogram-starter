@@ -1,6 +1,6 @@
 /**
  * 运行环境配置。默认仍使用当前在线的 CloudBase API。
- * NAS 局域网 profile 仅供微信开发者工具联调；生产 HTTPS profile 等域名与白名单就绪后再填。
+ * NAS 局域网 profile 仅供微信开发者工具联调；生产 profile 的候选域名就绪后再显式切换。
  */
 const profiles = {
   cloudbase: {
@@ -15,7 +15,7 @@ const profiles = {
   },
   nasProduction: {
     transport: 'nas',
-    apiBaseUrl: '',
+    apiBaseUrl: 'https://api.muwei.xyz',
   },
 };
 

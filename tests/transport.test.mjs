@@ -131,8 +131,7 @@ assert.match(appSource, /env:\s*config\.env/);
 assert.match(appSource, /config\.transport !== 'cloudbase'/);
 assert.match(configSource, /activeProfile = 'cloudbase'/);
 assert.match(configSource, /nasLanDevelopment:[\s\S]*apiBaseUrl: 'http:\/\/192\.168\.50\.28:18118'/);
-assert.match(configSource, /nasProduction:[\s\S]*apiBaseUrl: ''/);
-assert.doesNotMatch(configSource, /api\.muwei\.xyz/);
+assert.match(configSource, /nasProduction:[\s\S]*apiBaseUrl: 'https:\/\/api\.muwei\.xyz'/);
 assert.match(requestSource, /wx\.cloud\.callFunction/);
 assert.match(requestSource, /wx\.request/);
 assert.match(requestSource, /Authorization: `Bearer \$\{token\}`/);
@@ -158,7 +157,7 @@ const requestSourceForNode = requestSource
   .replace('export default function request', 'function request')
   .replace(/export function /g, 'function ')
   .replace('export { DEFAULT_MESSAGE };', '')
-  .concat('\nmodule.exports = { request, ApiError };');
+  .concat('\nmodule.exports = { request, ApiError, clearAuthToken };');
 vm.runInNewContext(requestSourceForNode, runtime);
 
 const request = requestModule.exports.request;
@@ -295,6 +294,7 @@ await assert.rejects(nasRequest('/boards'), (error) => {
 
 const callsBeforeUnconfiguredProductionProfile = httpCalls.length;
 const loginsBeforeUnconfiguredProductionProfile = loginCount;
+nasModule.exports.clearAuthToken();
 nasRuntime.__config.profile = 'nasProduction';
 nasRuntime.__config.apiBaseUrl = '';
 await assert.rejects(nasRequest('/session/me'), (error) => {
@@ -304,5 +304,34 @@ await assert.rejects(nasRequest('/session/me'), (error) => {
 });
 assert.equal(httpCalls.length, callsBeforeUnconfiguredProductionProfile, 'an empty production origin must not send requests');
 assert.equal(loginCount, loginsBeforeUnconfiguredProductionProfile, 'an empty production origin must not consume a wx.login code');
+
+nasRuntime.__config.apiBaseUrl = 'https://api.muwei.xyz';
+await nasRequest('/session/me');
+assert.equal(httpCalls[callsBeforeUnconfiguredProductionProfile].url, 'https://api.muwei.xyz/v1/auth/wechat');
+assert.equal(httpCalls[callsBeforeUnconfiguredProductionProfile + 1].url, 'https://api.muwei.xyz/v1/action');
+
+const callsBeforeInvalidProductionOrigins = httpCalls.length;
+const loginsBeforeInvalidProductionOrigins = loginCount;
+for (const apiBaseUrl of [
+  'http://api.muwei.xyz',
+  'https://user@api.muwei.xyz',
+  'https://api.muwei.xyz/',
+  'https://api.muwei.xyz/v1',
+  'https://api.muwei.xyz?target=other',
+  'https://api.muwei.xyz#fragment',
+  ' https://api.muwei.xyz',
+  'https://api.muwei.xyz:65536',
+  'https://-invalid.api.muwei.xyz',
+]) {
+  nasModule.exports.clearAuthToken();
+  nasRuntime.__config.apiBaseUrl = apiBaseUrl;
+  await assert.rejects(nasRequest('/session/me'), (error) => {
+    assert.equal(error.kind, 'server');
+    assert.equal(error.code, 'api_base_url_invalid');
+    return true;
+  }, `${apiBaseUrl} must not be accepted as a production origin`);
+}
+assert.equal(httpCalls.length, callsBeforeInvalidProductionOrigins, 'invalid production origins must not send requests');
+assert.equal(loginCount, loginsBeforeInvalidProductionOrigins, 'invalid production origins must not consume a wx.login code');
 
 console.log('OK: CloudBase/NAS transport, server-side login boundary, error mapping, and idempotency checks passed');
