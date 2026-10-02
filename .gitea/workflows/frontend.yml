@@ -13,6 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+        env:
+          TAR_OPTIONS: --no-same-owner
         with:
           node-version: '22'
           cache: npm
