@@ -19,7 +19,7 @@ const profiles = {
   },
 };
 
-const activeProfile = 'cloudbase';
+const activeProfile = 'nasProduction';
 
 export default {
   profile: activeProfile,

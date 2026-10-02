@@ -129,7 +129,7 @@ const configSource = readFileSync(join(ROOT, 'config.js'), 'utf8');
 assert.match(appSource, /wx\.cloud\.init/);
 assert.match(appSource, /env:\s*config\.env/);
 assert.match(appSource, /config\.transport !== 'cloudbase'/);
-assert.match(configSource, /activeProfile = 'cloudbase'/);
+assert.match(configSource, /activeProfile = 'nasProduction'/);
 assert.match(configSource, /nasLanDevelopment:[\s\S]*apiBaseUrl: 'http:\/\/192\.168\.50\.28:18118'/);
 assert.match(configSource, /nasProduction:[\s\S]*apiBaseUrl: 'https:\/\/api\.muwei\.xyz'/);
 assert.match(requestSource, /wx\.cloud\.callFunction/);
