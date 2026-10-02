@@ -96,7 +96,7 @@ feedCalls[0].resolve({ items: [{ id: 'post-a' }], nextCursor: 'cursor-a', club: 
 boardCalls[0].resolve({ items: [{ id: 'board-a', title: 'A 板块', status: 'active' }] });
 await new Promise((resolve) => setImmediate(resolve));
 assert.deepEqual(Array.from(page.data.list, (item) => item.id), ['post-a']);
-assert.deepEqual(Array.from(page.data.recommendationCards).flatMap((card) => Array.from(card.items, (item) => item.id)), ['board-a']);
+assert.deepEqual(Array.from(page.data.filters, (item) => item.value), ['all', 'board-a']);
 
 Object.assign(page.data, {
   selectedBoardId: 'board-a',
@@ -114,6 +114,7 @@ assert.doesNotThrow(() => bus.emit('session-changed', currentSession));
 assert.equal(page.data.clubName, 'B 社');
 assert.equal(page.data.isMember, true);
 assert.equal(page.data.selectedBoardId, '');
+assert.deepEqual(Array.from(page.data.filters, (item) => item.value), ['all']);
 assert.deepEqual(Array.from(page.data.list), []);
 assert.equal(page.data.nextCursor, null);
 assert.equal(page.data.hasMore, false);
@@ -121,7 +122,6 @@ assert.equal(page.data.loading, true);
 assert.equal(page.data.loadingMore, false);
 assert.equal(page.data.stale, false);
 assert.equal(page.data.errorText, '');
-assert.deepEqual(Array.from(page.data.recommendationCards), []);
 assert.equal(page.data.recommendationState, 'loading');
 assert.deepEqual(feedCalls.map((call) => call.clubId), ['club-a', 'club-b'], 'the B session change must issue a new-club feed read');
 assert.deepEqual(boardCalls.map((call) => call.clubId), ['club-a', 'club-b'], 'the B session change must issue a new-club board read');
@@ -132,7 +132,7 @@ await new Promise((resolve) => setImmediate(resolve));
 assert.deepEqual(Array.from(page.data.list, (item) => item.id), ['post-b']);
 assert.equal(page.data.loading, false);
 assert.equal(page.data.errorText, '');
-assert.deepEqual(Array.from(page.data.recommendationCards).flatMap((card) => Array.from(card.items, (item) => item.id)), ['board-b']);
+assert.deepEqual(Array.from(page.data.filters, (item) => item.value), ['all', 'board-b']);
 assert.equal(page.data.recommendationState, 'ready');
 
 console.log('OK: home clears A state and loads B feed and recommendations on session change');

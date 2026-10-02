@@ -3,81 +3,43 @@
     theme="transparent"
     show-back="{{ false }}"
   >
-    <view slot="left" class="hg-home__notice" hover-class="hg-home__notice--hover" bindtap="onNoticeTap" aria-role="button" aria-label="消息">
-      <t-icon name="notification" size="42rpx" />
-      <view wx:if="{{ unread > 0 }}" class="hg-home__notice-dot"></view>
+    <view slot="left" class="hg-home__nav-left" style="max-width: {{ navLeftMaxWidth }}px">
+      <view class="hg-home__club-switch" hover-class="hg-home__club-switch--hover" bindtap="onClubSwitchTap" aria-role="button" aria-label="切换社团">
+        <text class="hg-home__club-name">{{ clubName || '选择社团' }}</text>
+        <t-icon name="chevron-right" size="28rpx" />
+      </view>
+      <view class="hg-home__notice" hover-class="hg-home__notice--hover" bindtap="onNoticeTap" aria-role="button" aria-label="消息">
+        <t-icon name="notification" size="42rpx" />
+        <view wx:if="{{ unread > 0 }}" class="hg-home__notice-dot"></view>
+      </view>
     </view>
   </hg-nav>
 
-  <view class="hg-home__club-switch" bindtap="onClubSwitchTap" aria-role="button" aria-label="切换社团">
-    <text class="hg-home__club-name">{{ clubName || '选择社团' }}</text>
-    <text class="hg-home__club-action">{{ clubName ? '切换' : '加入社团' }}</text>
-    <t-icon name="chevron-right" size="28rpx" />
-  </view>
-
-  <!-- 只展示服务端返回的 active 板块；空状态不填充示例卡 -->
-  <view class="hg-home__recommend">
-    <view class="hg-home__recommend-head">
-      <text class="hg-home__recommend-title">推荐板块</text>
-      <view class="hg-home__recommend-more" hover-class="hg-home__recommend-more--hover" bindtap="onMoreRecommendations" aria-role="button" aria-label="查看更多板块">
-        <text>查看更多</text>
-        <t-icon name="arrow-right" size="28rpx" />
-      </view>
-    </view>
-    <scroll-view wx:if="{{ recommendationCards.length > 0 }}" class="hg-home__recommend-list" scroll-x enhanced show-scrollbar="{{ false }}">
+  <view class="hg-home__filter-wrap">
+    <scroll-view class="hg-home__filters" scroll-x enhanced show-scrollbar="{{ false }}">
       <view
-        wx:for="{{ recommendationCards }}"
-        wx:key="id"
-        class="hg-home__recommend-card"
+        wx:for="{{ filters }}"
+        wx:key="value"
+        class="hg-home__filter {{ (item.value === 'all' && !selectedBoardId) || selectedBoardId === item.value ? 'hg-home__filter--on' : '' }}"
+        data-value="{{ item.value }}"
+        hover-class="hg-home__filter--hover"
+        bindtap="onFilterTap"
+        aria-role="button"
+        aria-label="筛选帖子：{{ item.label }}"
+        aria-pressed="{{ (item.value === 'all' && !selectedBoardId) || selectedBoardId === item.value }}"
       >
-        <view
-          wx:for="{{ item.items }}"
-          wx:for-item="board"
-          wx:key="id"
-          class="hg-home__recommend-row {{ selectedBoardId === board.id ? 'hg-home__recommend-row--selected' : '' }}"
-          data-id="{{ board.id }}"
-          hover-class="hg-home__recommend-row--hover"
-          bindtap="onRecommendationTap"
-          aria-role="button"
-          aria-label="筛选帖子：{{ board.title }}"
-        >
-          <t-icon class="hg-home__recommend-icon" name="{{ board.icon || 'chat-bubble-1' }}" size="28rpx" />
-          <text class="hg-home__recommend-name">{{ board.title }}</text>
-          <view
-            class="hg-home__recommend-arrow"
-            data-id="{{ board.id }}"
-            catchtap="onRecommendationOpen"
-            aria-role="button"
-            aria-label="进入板块 {{ board.title }}"
-          >
-            <t-icon name="arrow-right" size="24rpx" />
-          </view>
-        </view>
+        {{ item.label }}
       </view>
     </scroll-view>
-    <view wx:elif="{{ recommendationState === 'empty' }}" class="hg-home__recommend-empty">暂时没有已审核的板块</view>
-    <view wx:elif="{{ recommendationState === 'guest' }}" class="hg-home__recommend-empty">选择并加入社团后，可以查看社内板块</view>
-    <view wx:elif="{{ recommendationState === 'error' }}" class="hg-home__recommend-empty">板块暂时没加载出来，前往板块页重试</view>
-  </view>
-
-  <view class="hg-home__feed-heading">
-    <text>帖子</text>
-  </view>
-
-  <!-- 筛选 -->
-  <scroll-view class="hg-home__filters" scroll-x enhanced show-scrollbar="{{ false }}">
-    <view
-      wx:for="{{ filters }}"
-      wx:key="value"
-      class="hg-home__filter {{ (item.value === 'all' && !selectedBoardId) || selectedBoardId === item.value ? 'hg-home__filter--on' : '' }}"
-      data-value="{{ item.value }}"
-      hover-class="hg-home__filter--hover"
-      bindtap="onFilterTap"
-      aria-role="button"
-    >
-      {{ item.label }}
+    <view class="hg-home__board-more" hover-class="hg-home__board-more--hover" bindtap="onMoreRecommendations" aria-role="button" aria-label="查看全部板块">
+      <t-icon name="arrow-right" size="28rpx" />
     </view>
-  </scroll-view>
+  </view>
+  <view wx:if="{{ recommendationState === 'empty' }}" class="hg-home__board-state">暂时没有可选板块</view>
+  <view wx:elif="{{ recommendationState === 'error' }}" class="hg-home__board-state">
+    <text>板块暂时没加载出来</text>
+    <text class="hg-home__board-retry" hover-class="hg-home__board-retry--hover" bindtap="onRetryRecommendations" aria-role="button">重试</text>
+  </view>
 
   <!-- 未更新提示（保留已加载数据） -->
   <view wx:if="{{ stale }}" class="hg-home__stale">

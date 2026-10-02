@@ -119,35 +119,52 @@ function createHarness(item, {
   return { context, calls, page, wx };
 }
 
-function runPostCardObserver(value, mode = 'feed', canInteract = true) {
+function createPostCardHarness(value, mode = 'feed', canInteract = true) {
   let definition;
+  let nextTimer = 0;
+  const timers = new Map();
+  const events = [];
   vm.runInNewContext(postCardSource, {
     Component: (component) => {
       definition = component;
     },
+    setTimeout: (callback, delay) => {
+      const id = ++nextTimer;
+      timers.set(id, { callback, delay });
+      return id;
+    },
+    clearTimeout: (id) => timers.delete(id),
   });
   const context = {
     data: { post: value, showActions: true, mode, canInteract },
     setData: (patch) => Object.assign(context.data, patch),
+    triggerEvent: (name, detail) => events.push({ name, ...detail }),
   };
-  definition.observers['post, showActions, mode, canInteract'].call(context);
-  return context.data;
+  Object.entries(definition.methods).forEach(([name, method]) => {
+    context[name] = method.bind(context);
+  });
+  function update(postValue) {
+    context.data.post = postValue;
+    definition.observers['post, showActions, mode, canInteract'].call(context);
+  }
+  update(value);
+  return { context, definition, events, timers, update };
+}
+
+function runPostCardObserver(value, mode = 'feed', canInteract = true) {
+  return createPostCardHarness(value, mode, canInteract).context.data;
 }
 
 assert.match(homeWxml, /bind:more="onMore"/);
-assert.match(homeWxml, /recommendationCards\.length > 0/);
 assert.match(homeWxml, /bindtap="onMoreRecommendations"/);
-assert.match(homeWxml, /推荐板块/);
-assert.match(homeWxml, /查看更多板块/);
-assert.match(homeWxml, /wx:for-item="board"/);
-assert.match(homeWxml, /data-id="\{\{ board\.id \}\}"/);
-assert.match(homeWxml, /bindtap="onRecommendationTap"/);
-assert.match(homeWxml, /catchtap="onRecommendationOpen"/);
-assert.match(homeWxml, /selectedBoardId === board\.id/);
+assert.match(homeWxml, /aria-label="查看全部板块"/);
+assert.match(homeWxml, /wx:for="\{\{ filters \}\}"/);
+assert.match(homeWxml, /selectedBoardId === item\.value/);
+assert.doesNotMatch(homeWxml, /推荐板块|recommendationCards|onRecommendationTap|onRecommendationOpen/);
 assert.match(homeWxml, /bind:tapboard="onTapBoard"/);
 assert.doesNotMatch(homeWxml, /weekPrompt|本周共写/);
 assert.doesNotMatch(homeWxml, /留一盏灯|给每一种表达|先选谁能看见|找回一句话/);
-assert.match(homeWxml, /class="hg-home__feed-heading"[\s\S]*?<text>帖子<\/text>/);
+assert.doesNotMatch(homeWxml, /hg-home__feed-heading|<text>帖子<\/text>/);
 assert.doesNotMatch(postServiceSource, /value: '(?:life|inspiration|article|video|awaiting_reply)'/);
 assert.match(postServiceSource, /if \(boardId\) query\.boardId = boardId/);
 assert.match(postCardWxml, /hg-post__content--feed/);
@@ -173,14 +190,7 @@ const recommendationHarness = createHarness(post(), {
 });
 await recommendationHarness.context.loadRecommendations();
 assert.deepEqual(JSON.parse(JSON.stringify(recommendationHarness.calls.boards[0])), { status: 'active' });
-assert.deepEqual(
-  Array.from(recommendationHarness.context.data.recommendationCards, (card) => card.items.map((board) => board.id)),
-  [
-    ['board-1', 'board-2', 'board-3'],
-    ['board-4', 'board-5', 'board-6'],
-    ['board-7', 'board-8', 'board-9'],
-  ],
-);
+assert.equal(recommendationHarness.context.data.recommendationState, 'ready');
 assert.deepEqual(
   Array.from(recommendationHarness.context.data.filters, (filter) => filter.value),
   ['all', 'board-1', 'board-2', 'board-3', 'board-4', 'board-5', 'board-6', 'board-7', 'board-8', 'board-9'],
@@ -191,7 +201,7 @@ assert.equal(recommendationHarness.calls.boards.length, requestCountBeforeFirstS
 await recommendationHarness.context.onShow();
 assert.equal(recommendationHarness.calls.boards.length, requestCountBeforeFirstShow + 1);
 assert.equal(recommendationHarness.calls.unreadRefreshes, 1);
-recommendationHarness.context.onRecommendationTap({ currentTarget: { dataset: { id: 'board-1' } } });
+recommendationHarness.context.onFilterTap({ currentTarget: { dataset: { value: 'board-1' } } });
 await new Promise((resolve) => setImmediate(resolve));
 assert.equal(recommendationHarness.context.data.selectedBoardId, 'board-1');
 assert.equal(recommendationHarness.calls.feedRequests.at(-1).boardId, 'board-1');
@@ -207,11 +217,6 @@ await new Promise((resolve) => setImmediate(resolve));
 assert.equal(recommendationHarness.context.data.selectedBoardId, 'board-2');
 assert.equal(recommendationHarness.calls.feedRequests.at(-1).cursor, '');
 assert.equal(recommendationHarness.context.data.nextCursor, null);
-recommendationHarness.context.onRecommendationOpen({ currentTarget: { dataset: { id: 'board-1' } } });
-assert.equal(
-  recommendationHarness.calls.navigations.at(-1),
-  '/pages/community/board/index?id=board-1',
-);
 recommendationHarness.context.onMoreRecommendations();
 assert.equal(recommendationHarness.calls.navigations.at(-1), '/pages/community/boards/index');
 recommendationHarness.context.onTapTopic({ detail: { topicId: 'topic-1' } });
@@ -225,7 +230,6 @@ const emptyRecommendationHarness = createHarness(post(), {
 emptyRecommendationHarness.context.data.selectedBoardId = 'board-retired';
 await emptyRecommendationHarness.context.loadRecommendations();
 await new Promise((resolve) => setImmediate(resolve));
-assert.deepEqual(Array.from(emptyRecommendationHarness.context.data.recommendationCards), []);
 assert.equal(emptyRecommendationHarness.context.data.recommendationState, 'empty');
 assert.deepEqual(
   JSON.parse(JSON.stringify(emptyRecommendationHarness.context.data.filters)),
@@ -242,7 +246,6 @@ const oldSessionLoad = sessionRaceHarness.context.loadRecommendations({ memberSt
 await sessionRaceHarness.context.loadRecommendations({ memberStatus: 'removed' });
 resolveOldSessionBoards({ items: [{ id: 'stale-board', status: 'active' }] });
 await oldSessionLoad;
-assert.deepEqual(Array.from(sessionRaceHarness.context.data.recommendationCards), []);
 assert.equal(sessionRaceHarness.context.data.recommendationState, 'guest');
 assert.deepEqual(
   JSON.parse(JSON.stringify(sessionRaceHarness.context.data.filters)),
@@ -283,6 +286,38 @@ const articleWithComments = runPostCardObserver(
 );
 assert.equal(articleWithComments.showComments, true);
 assert.equal(articleWithComments.showMemberActions, false);
+
+const loadedSelected = createPostCardHarness(
+  post({ viewer: { isOwner: false, reacted: true, bookmarked: true } }),
+);
+assert.equal(loadedSelected.context.data.reactMotion, false, 'server-rendered reaction state does not animate');
+assert.equal(loadedSelected.context.data.bookmarkMotion, false, 'server-rendered bookmark state does not animate');
+loadedSelected.context.onReact();
+loadedSelected.context.onBookmark();
+assert.deepEqual(loadedSelected.events.map((event) => event.next), [false, false]);
+assert.equal(loadedSelected.timers.size, 0, 'deselecting does not start motion timers');
+
+const reactionMotion = createPostCardHarness(
+  post({ viewer: { isOwner: false, reacted: false, bookmarked: false } }),
+);
+reactionMotion.context.onReact();
+assert.equal(reactionMotion.context.data.reactMotion, true);
+assert.equal(Array.from(reactionMotion.timers.values())[0].delay, 320);
+reactionMotion.update(post({ viewer: { isOwner: false, reacted: true, bookmarked: false } }));
+assert.equal(reactionMotion.context.data.reactMotion, true, 'optimistic selection keeps its motion until expiry');
+reactionMotion.update(post({ viewer: { isOwner: false, reacted: false, bookmarked: false } }));
+assert.equal(reactionMotion.context.data.reactMotion, false, 'failed optimistic update clears reaction motion');
+assert.equal(reactionMotion.timers.size, 0);
+
+const recycledCard = createPostCardHarness(
+  post({ viewer: { isOwner: false, reacted: false, bookmarked: false } }),
+);
+recycledCard.context.onBookmark();
+assert.equal(recycledCard.context.data.bookmarkMotion, true);
+assert.equal(Array.from(recycledCard.timers.values())[0].delay, 280);
+recycledCard.update(null);
+assert.equal(recycledCard.context.data.bookmarkMotion, false, 'clearing a recycled card removes motion state');
+assert.equal(recycledCard.timers.size, 0, 'clearing a recycled card cancels the pending timer');
 
 const privatePost = post({
   visibility: 'private',

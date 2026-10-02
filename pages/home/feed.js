@@ -6,7 +6,6 @@ export function createHomeFeed({ fetchFeed, fetchBoards, FEED_FILTERS, getSessio
 
     if (!session || session.memberStatus !== 'active') {
       const patch = {
-        recommendationCards: [],
         recommendationState: 'guest',
         filters: FEED_FILTERS,
       };
@@ -23,11 +22,6 @@ export function createHomeFeed({ fetchFeed, fetchBoards, FEED_FILTERS, getSessio
       const boards = (data.items || [])
         .filter((board) => board && board.status === 'active' && board.id)
         .slice(0, 9);
-      const recommendationCards = [];
-      for (let start = 0; start < boards.length; start += 3) {
-        const items = boards.slice(start, start + 3);
-        recommendationCards.push({ id: items[0].id, items });
-      }
       const filters = FEED_FILTERS.concat(boards.map((board) => ({
         value: board.id,
         label: board.title,
@@ -36,8 +30,7 @@ export function createHomeFeed({ fetchFeed, fetchBoards, FEED_FILTERS, getSessio
         ? this.data.selectedBoardId
         : '';
       const patch = {
-        recommendationCards,
-        recommendationState: recommendationCards.length > 0 ? 'ready' : 'empty',
+        recommendationState: boards.length > 0 ? 'ready' : 'empty',
         filters,
       };
       if (selectedBoardId !== this.data.selectedBoardId) this.resetFeedForBoard(selectedBoardId, patch);
@@ -124,11 +117,6 @@ export function createHomeFeed({ fetchFeed, fetchBoards, FEED_FILTERS, getSessio
     this.loadFeed();
   }
 
-  function onRecommendationTap(e) {
-    const { id } = e.currentTarget.dataset;
-    if (id) this.setBoardSelection(id);
-  }
-
   return {
     loadRecommendations,
     loadFeed,
@@ -136,6 +124,5 @@ export function createHomeFeed({ fetchFeed, fetchBoards, FEED_FILTERS, getSessio
     setBoardSelection,
     resetFeedForBoard,
     onRetry,
-    onRecommendationTap,
   };
 }

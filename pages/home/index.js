@@ -33,6 +33,21 @@ function getHomePostActions() {
   return homePostActions;
 }
 
+function getNavLeftMaxWidth() {
+  if (typeof wx.getMenuButtonBoundingClientRect === 'function') {
+    try {
+      const rect = wx.getMenuButtonBoundingClientRect();
+      if (rect && Number.isFinite(rect.left) && rect.left > 0) return Math.max(0, rect.left - 24);
+    } catch (_) {
+      // Some base libraries expose but do not implement this API.
+    }
+  }
+  let info = {};
+  if (wx.getWindowInfo) info = wx.getWindowInfo();
+  else if (wx.getSystemInfoSync) info = wx.getSystemInfoSync();
+  return Math.max(0, ((info && info.windowWidth) || 320) - 132);
+}
+
 Page({
   data: {
     filters: FEED_FILTERS,
@@ -41,7 +56,6 @@ Page({
     nextCursor: null,
     hasMore: false,
     loadingMore: false,
-    recommendationCards: [],
     recommendationState: 'loading',
     club: null,
     clubName: '',
@@ -55,9 +69,11 @@ Page({
     scopeValue: 'club',
     actionPost: null,
     capabilities: { publicScope: false },
+    navLeftMaxWidth: 188,
   },
 
   onLoad() {
+    this.setData({ navLeftMaxWidth: getNavLeftMaxWidth() });
     this.syncSession(app.globalData.session || getSession());
     this.onSessionChanged = (session) => {
       const clubId = session && session.club && session.club.id;
@@ -71,9 +87,9 @@ Page({
         this.recommendationRequestId = (this.recommendationRequestId || 0) + 1;
         this.feedFirstPageLoading = false;
         this.setData({
-          selectedBoardId: '', list: [], nextCursor: null, hasMore: false,
+          selectedBoardId: '', filters: FEED_FILTERS, list: [], nextCursor: null, hasMore: false,
           loading: !!clubId, loadingMore: false, stale: false, errorText: '',
-          recommendationCards: [], recommendationState: clubId ? 'loading' : 'guest',
+          recommendationState: clubId ? 'loading' : 'guest',
         });
         if (clubId) this.loadFeed();
       }
@@ -169,17 +185,12 @@ Page({
     navigateTo('/pages/community/clubs/index');
   },
 
-  onRecommendationTap(e) {
-    return getHomeFeed().onRecommendationTap.call(this, e);
-  },
-
-  onRecommendationOpen(e) {
-    const { id } = e.currentTarget.dataset;
-    if (id) navigateTo(`/pages/community/board/index?id=${encodeURIComponent(id)}`);
-  },
-
   onMoreRecommendations() {
     navigateTo('/pages/community/boards/index');
+  },
+
+  onRetryRecommendations() {
+    return this.loadRecommendations();
   },
 
   onTapBody(e) {

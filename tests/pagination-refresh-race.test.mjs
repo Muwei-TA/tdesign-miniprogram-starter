@@ -148,7 +148,7 @@ test('board selection invalidates old feed pages and resets the cursor', async (
   const oldFirstPage = ctx.loadFeed();
   assert.equal(calls[0].input.boardId, '');
   assert.equal(calls[0].input.cursor, '');
-  ctx.onRecommendationTap({ currentTarget: { dataset: { id: 'board-1' } } });
+  ctx.onFilterTap({ currentTarget: { dataset: { value: 'board-1' } } });
   assert.equal(calls.length, 2);
   assert.equal(calls[1].input.boardId, 'board-1');
   assert.equal(calls[1].input.cursor, '');

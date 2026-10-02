@@ -46,14 +46,14 @@
         </view>
 
         <view class="hg-detail__tools">
-          <view class="hg-detail__tool" data-step="-1" bindtap="onFontChange" aria-role="button" aria-label="缩小字号"
+          <view class="hg-detail__tool" hover-class="hg-detail__tool--hover" data-step="-1" bindtap="onFontChange" aria-role="button" aria-label="缩小字号"
             >A-</view
           >
           <view class="hg-detail__tool-label">字号</view>
-          <view class="hg-detail__tool" data-step="1" bindtap="onFontChange" aria-role="button" aria-label="放大字号"
+          <view class="hg-detail__tool" hover-class="hg-detail__tool--hover" data-step="1" bindtap="onFontChange" aria-role="button" aria-label="放大字号"
             >A+</view
           >
-          <view class="hg-detail__tool hg-detail__tool--right" bindtap="onNightToggle" aria-role="button">
+          <view class="hg-detail__tool hg-detail__tool--right" hover-class="hg-detail__tool--hover" bindtap="onNightToggle" aria-role="button">
             <t-icon name="{{ nightMode ? 'sunny' : 'moon' }}" size="30rpx" />
             <text>{{ nightMode ? '日间' : '夜间' }}</text>
           </view>
@@ -155,22 +155,28 @@
     <view wx:if="{{ !historyOnly && post.visibility !== 'private' && post.status === 'published' }}" class="hg-detail__actions">
       <view
         class="hg-detail__action {{ post.viewer.reacted ? 'hg-detail__action--on' : '' }}"
-        bindtap="onReact"
+        hover-class="hg-detail__action--hover"
+        catchtap="onReact"
         aria-role="button"
+        aria-label="{{ post.viewer.reacted ? '取消共鸣' : '共鸣' }}"
+        aria-pressed="{{ post.viewer.reacted }}"
       >
-        <t-icon name="{{ post.viewer.reacted ? 'heart-filled' : 'heart' }}" size="32rpx" />
+        <t-icon class="hg-detail__action-icon {{ reactMotion ? 'hg-detail__action-icon--pulse' : '' }}" name="{{ post.viewer.reacted ? 'heart-filled' : 'heart' }}" size="32rpx" />
         <text>共鸣 {{ post.counters.reactions }}</text>
       </view>
-      <view class="hg-detail__action" bindtap="onCommentTap" aria-role="button">
+      <view class="hg-detail__action" hover-class="hg-detail__action--hover" catchtap="onCommentTap" aria-role="button">
         <t-icon name="chat-bubble-1" size="32rpx" />
         <text>回应 {{ post.counters.comments }}</text>
       </view>
       <view
         class="hg-detail__action {{ post.viewer.bookmarked ? 'hg-detail__action--on' : '' }}"
-        bindtap="onBookmark"
+        hover-class="hg-detail__action--hover"
+        catchtap="onBookmark"
         aria-role="button"
+        aria-label="{{ post.viewer.bookmarked ? '取消收藏' : '收藏' }}"
+        aria-pressed="{{ post.viewer.bookmarked }}"
       >
-        <t-icon name="{{ post.viewer.bookmarked ? 'bookmark-filled' : 'bookmark' }}" size="32rpx" />
+        <t-icon class="hg-detail__action-icon {{ bookmarkMotion ? 'hg-detail__action-icon--drop' : '' }}" name="{{ post.viewer.bookmarked ? 'bookmark-filled' : 'bookmark' }}" size="32rpx" />
         <text>收藏</text>
       </view>
     </view>

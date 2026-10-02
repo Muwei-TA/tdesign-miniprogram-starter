@@ -1,13 +1,5 @@
 <view class="hg-page hg-compose">
   <hg-nav title="{{ mode === 'article' ? '写文稿' : '写一笔' }}">
-    <view
-      wx:if="{{ canPublish }}"
-      slot="right"
-      class="hg-compose__preview-btn"
-      bindtap="onPreviewOpen"
-      aria-role="button"
-      >预览</view
-    >
   </hg-nav>
 
   <view wx:if="{{ !sessionReady }}" class="hg-compose__session-loading">
@@ -22,7 +14,7 @@
     wx:elif="{{ session.memberStatus !== 'active' }}"
     icon="usergroup-add"
     title="需要成员资格"
-    desc="加入文学社后，才可以写下并提交内容。"
+    desc="加入社团后，才可以写下并提交内容。"
     action="了解并申请加入"
     bind:action="onJoin"
   />
@@ -41,6 +33,7 @@
     <view class="hg-compose__segmented">
       <view
         class="hg-compose__seg {{ mode === 'fragment' ? 'hg-compose__seg--on' : '' }}"
+        hover-class="hg-compose__seg--hover"
         data-value="fragment"
         bindtap="onModeTap"
         aria-role="button"
@@ -49,6 +42,7 @@
       </view>
       <view
         class="hg-compose__seg {{ mode === 'article' ? 'hg-compose__seg--on' : '' }}"
+        hover-class="hg-compose__seg--hover"
         data-value="article"
         bindtap="onModeTap"
         aria-role="button"
@@ -85,6 +79,7 @@
       <view class="hg-compose__attach">
         <view
           class="hg-compose__attach-btn {{ capabilities.uploads ? '' : 'hg-compose__attach-btn--off' }}"
+          hover-class="hg-compose__attach-btn--hover"
           bindtap="onChooseImage"
           aria-role="button"
         >
@@ -93,6 +88,7 @@
         </view>
         <view
           class="hg-compose__attach-btn {{ capabilities.video ? '' : 'hg-compose__attach-btn--off' }}"
+          hover-class="hg-compose__attach-btn--hover"
           bindtap="onChooseVideo"
           aria-role="button"
         >
@@ -116,6 +112,7 @@
           <view
             wx:if="{{ !submitting }}"
             class="hg-compose__thumb-remove"
+            hover-class="hg-compose__thumb-remove--hover"
             data-index="{{ index }}"
             catchtap="onRemoveImage"
             aria-role="button"
@@ -126,6 +123,7 @@
           <view
             wx:if="{{ !submitting && (item.status === 'failed' || item.status === 'canceled') }}"
             class="hg-compose__thumb-retry"
+            hover-class="hg-compose__thumb-retry--hover"
             data-index="{{ index }}"
             catchtap="onRetryImage"
             aria-role="button"
@@ -142,11 +140,11 @@
 
     <!-- 范围与身份 -->
     <view class="hg-compose__form">
-      <view class="hg-compose__row" bindtap="onScopeOpen" aria-role="button">
+      <view class="hg-compose__row hg-compose__row--interactive" hover-class="hg-compose__row--interactive--hover" bindtap="onScopeOpen" aria-role="button">
         <t-icon name="usergroup" size="36rpx" />
         <view class="hg-compose__row-main">
           <view class="hg-compose__row-title">谁可以看见</view>
-          <view class="hg-compose__row-sub">新内容默认只在社内可见</view>
+          <view class="hg-compose__row-sub">新内容默认社内可见</view>
         </view>
         <visibility-badge scope="{{ visibility }}" />
         <t-icon class="hg-compose__row-arrow" name="chevron-right" size="32rpx" />
@@ -154,10 +152,10 @@
 
       <view class="hg-compose__row">
         <t-icon name="user-circle" size="36rpx" />
-        <view class="hg-compose__row-main">
+        <view class="hg-compose__row-main hg-compose__identity-explainer" bindtap="onIdentityExplain" aria-role="button" aria-label="树洞身份说明">
           <view class="hg-compose__row-title">以树洞身份发布</view>
-          <view class="hg-compose__row-sub" bindtap="onIdentityExplain">
-            隐藏昵称与头像，但不是绝对匿名 · 查看说明
+          <view class="hg-compose__row-sub">
+            隐藏昵称与头像 · 非绝对匿名
           </view>
         </view>
         <t-switch value="{{ identityMode === 'anonymous' }}" bind:change="onIdentityChange" />
@@ -167,18 +165,18 @@
         <t-icon name="chat-bubble-1" size="36rpx" />
         <view class="hg-compose__row-main">
           <view class="hg-compose__row-title">允许回应</view>
-          <view class="hg-compose__row-sub">关闭后这条内容不接受新的评论</view>
+          <view class="hg-compose__row-sub">关闭后不再接受回应</view>
         </view>
         <t-switch value="{{ commentsEnabled }}" bind:change="onCommentsChange" />
       </view>
 
-      <view wx:if="{{ visibility !== 'private' }}" class="hg-compose__row hg-compose__row--interactive" bindtap="onBoardPickerOpen" aria-role="button">
+      <view wx:if="{{ visibility !== 'private' }}" class="hg-compose__row hg-compose__row--interactive" hover-class="hg-compose__row--interactive--hover" bindtap="onBoardPickerOpen" aria-role="button">
         <t-icon name="bulletpoint" size="36rpx" />
         <view class="hg-compose__row-main">
           <view class="hg-compose__row-title">关联板块（可选）</view>
-          <view class="hg-compose__row-sub">{{ board ? board.title : '选择后会显示在对应板块中' }}</view>
+          <view class="hg-compose__row-sub">{{ board ? board.title : '选择板块' }}</view>
         </view>
-        <view wx:if="{{ board }}" class="hg-compose__row-clear" catchtap="onBoardClear" aria-role="button">移除</view>
+        <view wx:if="{{ board }}" class="hg-compose__row-clear" hover-class="hg-compose__row-clear--hover" catchtap="onBoardClear" aria-role="button">移除</view>
         <t-icon class="hg-compose__row-arrow" name="chevron-right" size="32rpx" />
       </view>
 
@@ -188,7 +186,7 @@
           <view class="hg-compose__row-title">关联话题</view>
           <view class="hg-compose__row-sub">{{ topic.title }}</view>
         </view>
-        <view class="hg-compose__row-clear" catchtap="onClearTopic" aria-role="button">移除</view>
+        <view class="hg-compose__row-clear" hover-class="hg-compose__row-clear--hover" catchtap="onClearTopic" aria-role="button">移除</view>
       </view>
     </view>
 
@@ -206,12 +204,13 @@
     <view class="hg-compose__summary">{{ previewText }}</view>
 
     <view class="hg-compose__footer">
-      <view class="hg-compose__btn-secondary" bindtap="onSaveDraft" aria-role="button">存草稿</view>
+      <view class="hg-compose__btn-secondary" hover-class="hg-compose__btn-secondary--hover" bindtap="onSaveDraft" aria-role="button">存草稿</view>
       <view wx:if="{{ submitting && uploadPhase === 'media' }}" class="hg-compose__btn-cancel" bindtap="onCancelUpload" aria-role="button">
         取消上传
       </view>
       <view
         class="hg-compose__btn-primary {{ submitting || !canPublish ? 'hg-compose__btn-primary--disabled' : '' }}"
+        hover-class="{{ submitting || !canPublish ? '' : 'hg-compose__btn-primary--hover' }}"
         bindtap="onPreviewOpen"
         aria-role="button"
       >
@@ -251,6 +250,7 @@
             wx:for="{{ boards }}"
             wx:key="id"
             class="hg-compose__board-option {{ board && board.id === item.id ? 'hg-compose__board-option--selected' : '' }}"
+            hover-class="hg-compose__board-option--hover"
             data-id="{{ item.id }}"
             data-title="{{ item.title }}"
             bindtap="onBoardSelect"
@@ -296,7 +296,7 @@
           以树洞身份发布前，建议再检查一遍正文与画面里的地名、班级、联系方式等信息。
         </view>
 
-        <view class="hg-sheet__submit" bindtap="onSubmit" aria-role="button">
+        <view class="hg-sheet__submit hg-compose__confirm-submit" hover-class="hg-compose__confirm-submit--hover" bindtap="onSubmit" aria-role="button">
           {{ visibility === 'private' ? '保存给自己' : '确认提交' }}
         </view>
       </view>
