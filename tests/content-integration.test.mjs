@@ -8,7 +8,8 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 // 运行真实发布分包草稿实现，只替换小程序 alias 与 storage 前缀。
 const draftSource = readFileSync(join(ROOT, 'pages/release/drafts.js'), 'utf8')
-  .replace("import { scopedKey } from '~/services/session';", 'const scopedKey = (name) => `test:${name}`;')
+  .replace("import { getSession, scopedKey } from '~/services/session';", 'const scopedKey = (name) => `test:${name}`; const getSession = () => ({ club: { id: "club-a" } });')
+  .replace("import { migrateLegacyDraft, migrateLegacyDraftIndex, removeLegacyDraft } from '~/services/legacy-drafts';", 'const migrateLegacyDraft = () => null; const migrateLegacyDraftIndex = () => []; const removeLegacyDraft = () => {};')
   .replace(
     "import { createIdempotencyKey } from '~/utils/idempotency';",
     'let sequence = 0; const createIdempotencyKey = (prefix) => `${prefix}-test-${++sequence}`;',
@@ -72,6 +73,7 @@ assert.notEqual(changedBoard.idempotencyKey, associatedDraft.idempotencyKey, '�
 
 const communityDraftSource = readFileSync(join(ROOT, 'pages/community/drafts.js'), 'utf8')
   .replace("import { scopedKey } from '~/services/session';", 'const scopedKey = (name) => `test:${name}`;')
+  .replace("import { migrateLegacyDraftIndex, removeLegacyDraft } from '~/services/legacy-drafts';", 'const migrateLegacyDraftIndex = () => wx.getStorageSync(scopedKey("draft-index")) || []; const removeLegacyDraft = () => {};')
   .replace(/export function /g, 'function ')
   .concat('\nmodule.exports = { listDrafts, removeDraft };');
 const communityDraftModule = { exports: {} };

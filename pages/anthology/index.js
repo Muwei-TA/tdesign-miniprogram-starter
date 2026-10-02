@@ -11,6 +11,10 @@ import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();
 
+function sessionScope(session) {
+  return session ? [session.user && session.user.id, session.club && session.club.id, session.role, session.memberStatus].join(':') : '';
+}
+
 /** 列表仅把首图交给卡片，图片点击仍由 previewPostImage 重新鉴权。 */
 function prepareArticlePost(post) {
   if (!post) return post;
@@ -42,8 +46,13 @@ Page({
   onLoad() {
     this.syncSession(getSession());
     this.onSessionChanged = (session) => {
+      const changed = this.sessionScope !== sessionScope(session);
       this.syncSession(session);
-      this.loadFeed({ silent: true });
+      if (changed) {
+        this.feedRequestId = (this.feedRequestId || 0) + 1;
+        this.setData({ list: [], nextCursor: null, hasMore: false, loading: !!this.data.isMember, loadingMore: false, stale: false, errorText: '' });
+      }
+      if (this.data.isMember) this.loadFeed({ silent: true });
     };
     this.onPostChanged = () => this.loadFeed({ silent: true });
     app.eventBus.on('session-changed', this.onSessionChanged);
@@ -85,9 +94,14 @@ Page({
       canPublish: isMember && capabilities.publishing === true,
       capabilities,
     });
+    this.sessionScope = sessionScope(session);
   },
 
   async loadFeed({ silent = false, append = false } = {}) {
+    if (!this.data.isMember) {
+      this.setData({ list: [], nextCursor: null, hasMore: false, loading: false, loadingMore: false });
+      return;
+    }
     if (append && (this.data.loading || this.feedFirstPageLoading || this.data.loadingMore || !this.data.hasMore)) return;
 
     const requestId = (this.feedRequestId || 0) + 1;

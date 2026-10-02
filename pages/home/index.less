@@ -26,6 +26,31 @@
     border-radius: 50%;
   }
 
+  &__club-switch {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    min-height: 64rpx;
+    margin: 0 @hg-page-x;
+    color: @hg-ink-3;
+    font-size: @hg-fs-2xs;
+  }
+
+  &__club-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: @hg-green;
+    font-family: @hg-font-serif;
+    font-size: @hg-fs-sm;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__club-action {
+    color: @hg-ink-4;
+  }
+
   &__recommend {
     margin-top: @hg-sp-3;
   }

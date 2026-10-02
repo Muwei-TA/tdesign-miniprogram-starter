@@ -105,7 +105,7 @@ vm.runInNewContext(manuscriptSource, {
   },
 });
 const manuscriptContext = Object.create(manuscriptPage);
-manuscriptContext.data = { ...manuscriptPage.data, list: [] };
+manuscriptContext.data = { ...manuscriptPage.data, list: [], isMember: true };
 manuscriptContext.setData = (patch, callback) => {
   Object.assign(manuscriptContext.data, patch);
   if (callback) callback();
@@ -124,7 +124,7 @@ assert.equal(feedCalls[1].cursor, 'cursor-2');
 assert.deepEqual(Array.from(manuscriptContext.data.list, (item) => item.id), ['article-1', 'article-2']);
 manuscriptContext.onTapMedia({ detail: { id: 'article-1', index: 0, type: 'image' } });
 assert.deepEqual(previewCalls[0], ['article-1', 0]);
-manuscriptContext.syncSession({ memberStatus: 'active', capabilities: { publishing: true } });
+manuscriptContext.syncSession({ memberStatus: 'active', club: { id: 'club-a' }, capabilities: { publishing: true } });
 manuscriptContext.onWriteArticle();
 assert.equal(navigations[0], '/pages/release/index?mode=article');
 
@@ -162,7 +162,8 @@ assert.match(read('pages/community/profile/index.wxml'), /匿名、私密或当�
 
 const infoEdit = read('pages/my/info-edit/index.js');
 assert.match(infoEdit, /updateMyProfile\(name\)/);
-assert.match(infoEdit, /await bootstrapSession\(\)/);
+assert.match(infoEdit, /this\.syncSession\(getSession\(\)\)/);
+assert.doesNotMatch(infoEdit, /bootstrapSession/);
 assert.doesNotMatch(infoEdit, /wx\.chooseMedia/);
 assert.match(read('pages/my/info-edit/index.wxml'), /头像上传暂未开放/);
 

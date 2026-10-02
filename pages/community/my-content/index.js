@@ -14,7 +14,7 @@ const TABS = [
   { value: 'topics', label: '关注的话题' },
 ];
 
-const VALID_TABS = new Set(TABS.map((item) => item.value));
+const HISTORY_TABS = TABS.filter((item) => ['published', 'pending', 'private'].includes(item.value));
 
 Page({
   data: {
@@ -23,6 +23,8 @@ Page({
     session: null,
     sessionReady: false,
     isGuest: false,
+    historyOnly: false,
+    historyClubId: '',
     loading: true,
     stale: false,
     errorText: '',
@@ -35,12 +37,33 @@ Page({
     loadingMore: false,
   },
 
-  onLoad(options) {
-    const tab = VALID_TABS.has(options.tab) ? options.tab : 'published';
-    this.setData({ tab });
-    this.onSessionChanged = (session) => this.applySession(session);
+  async onLoad(options = {}) {
+    this.historyOnly = options.historyOnly === '1' && !!options.clubId;
+    this.historyClubId = this.historyOnly ? options.clubId : '';
+    const tabs = this.historyOnly ? HISTORY_TABS : TABS;
+    const allowedTabs = new Set(tabs.map((item) => item.value));
+    const tab = allowedTabs.has(options.tab) ? options.tab : 'published';
+    this.setData({ tab, tabs, historyOnly: this.historyOnly, historyClubId: this.historyClubId });
+    this.onSessionChanged = (session) => {
+      if (!this.historyOnly) {
+        this.applySession(session);
+        return;
+      }
+      const userId = session && session.user && session.user.id;
+      if (!userId || (this.historyUserId && userId !== this.historyUserId)) {
+        this.tabRequestId = (this.tabRequestId || 0) + 1;
+        this.setData({ sessionReady: true, isGuest: true, loading: false, list: [], nextCursor: null, hasMore: false });
+        return;
+      }
+      this.historyUserId = userId;
+      this.setData({ session, sessionReady: true, isGuest: false, list: [], nextCursor: null, hasMore: false }, () => this.loadTab());
+    };
     app.eventBus.on('session-changed', this.onSessionChanged);
-    if (app.globalData.session) this.applySession(app.globalData.session);
+    let { session } = app.globalData;
+    if (!session && app.sessionInitialization) session = await app.sessionInitialization;
+    if (this.historyOnly) {
+      this.onSessionChanged(session);
+    } else if (session) this.applySession(session);
   },
 
   onUnload() {
@@ -58,10 +81,21 @@ Page({
 
   applySession(session) {
     if (!session) return;
-    const isGuest = !session.user;
+    const scope = [session.user && session.user.id, session.club && session.club.id, session.role, session.memberStatus].join(':');
+    const changed = this.sessionScope !== scope;
+    this.sessionScope = scope;
+    const isGuest = !session.user || session.memberStatus !== 'active' || !session.club;
     // 账号切换或退出时，丢弃仍在途的列表请求，避免旧账号内容回写。
     this.tabRequestId = (this.tabRequestId || 0) + 1;
-    this.setData({ session, sessionReady: true, isGuest }, () => {
+    this.setData({
+      session,
+      sessionReady: true,
+      isGuest,
+      ...(changed ? {
+        list: [], unavailable: [], drafts: [], topics: [], nextCursor: null,
+        hasMore: false, loadingMore: false, stale: false, errorText: '',
+      } : {}),
+    }, () => {
       if (isGuest) {
         this.tabFirstPageLoading = false;
         this.setData({ loading: false, list: [], unavailable: [], drafts: [], topics: [], nextCursor: null, hasMore: false });
@@ -73,6 +107,7 @@ Page({
 
   async loadTab({ silent = false, append = false } = {}) {
     if (!this.data.sessionReady || this.data.isGuest) return;
+    if (this.historyOnly && !['published', 'pending', 'private'].includes(this.data.tab)) return;
     if (append && (this.data.loading || this.tabFirstPageLoading || this.data.loadingMore || !this.data.hasMore || this.data.tab === 'draft')) return;
     const requestedTab = this.data.tab;
     const requestId = (this.tabRequestId || 0) + 1;
@@ -103,7 +138,11 @@ Page({
 
     if (!append) this.tabFirstPageLoading = true;
     try {
-      const result = await fetchMyContents({ tab: requestedTab, cursor: append ? this.data.nextCursor : '' });
+      const result = await fetchMyContents({
+        tab: requestedTab,
+        cursor: append ? this.data.nextCursor : '',
+        clubId: this.historyOnly ? this.historyClubId : '',
+      });
       if (requestId !== this.tabRequestId || requestedTab !== this.data.tab) return;
       if (!append) this.tabFirstPageLoading = false;
       const items = result.items || [];
@@ -151,7 +190,8 @@ Page({
 
   onTabTap(e) {
     const tab = e.currentTarget.dataset.value;
-    if (!VALID_TABS.has(tab) || tab === this.data.tab) return;
+    const available = this.historyOnly ? HISTORY_TABS : TABS;
+    if (!available.some((item) => item.value === tab) || tab === this.data.tab) return;
     this.setData({ tab, list: [], unavailable: [], drafts: [], topics: [], nextCursor: null, hasMore: false }, () =>
       this.loadTab(),
     );
@@ -168,6 +208,10 @@ Page({
   onPostTap(e) {
     const id = (e.detail && e.detail.id) || e.currentTarget.dataset.id;
     if (!id) return;
+    if (this.historyOnly) {
+      navigateTo(`/pages/community/post/index?id=${encodeURIComponent(id)}&from=mine&clubId=${encodeURIComponent(this.historyClubId)}&historyOnly=1`);
+      return;
+    }
     navigateTo(`/pages/community/post/index?id=${id}&from=mine`);
   },
 
@@ -194,6 +238,7 @@ Page({
   },
 
   async onRemoveBookmark(e) {
+    if (this.historyOnly) return;
     const { id } = e.currentTarget.dataset;
     if (!id || this.bookmarkRemoving) return;
     this.bookmarkRemoving = true;
@@ -213,7 +258,7 @@ Page({
     this.contentDeleting = true;
     try {
       // 列表 DTO 没有 version；先按 id 重新鉴权读取详情，再确认删除。
-      const detail = await fetchPostDetail(id);
+      const detail = await fetchPostDetail(id, this.historyOnly ? this.historyClubId : '');
       wx.showModal({
         title: '删除这条内容',
         content: '删除后无法恢复，相关回应也会一并停止展示。',
@@ -224,7 +269,7 @@ Page({
             return;
           }
           try {
-            await deletePost(id, detail.version);
+            await deletePost(id, detail.version, this.historyOnly ? this.historyClubId : '');
             this.setData({ list: this.data.list.filter((item) => item.id !== id) });
             wx.showToast({ title: '已删除', icon: 'none' });
           } catch (err) {
@@ -241,6 +286,7 @@ Page({
   },
 
   async onAppealContent(e) {
+    if (this.historyOnly) return;
     const { id } = e.currentTarget.dataset;
     if (!id || this.appealOpening) return;
     this.appealOpening = true;
@@ -265,6 +311,7 @@ Page({
   },
 
   onEditRejected(e) {
+    if (this.historyOnly) return;
     const { id } = e.currentTarget.dataset;
     const item = this.data.list.find((entry) => entry.id === id);
     if (!item || item.status !== 'rejected') return;

@@ -1,5 +1,5 @@
 <view class="hg-page hg-join">
-  <hg-nav title="加入黑光文学社" />
+  <hg-nav title="加入社团" />
 
   <block wx:if="{{ loading }}">
     <view class="hg-join__loading">
@@ -31,10 +31,10 @@
 
   <block wx:else>
     <view class="hg-join__hero">
-      <view class="hg-join__emblem" aria-label="黑光文学社社徽">黑</view>
+      <view class="hg-join__emblem" aria-label="社团标识">社</view>
       <view class="hg-join__title">{{ club.name }}</view>
-      <view class="hg-join__slogan">{{ club.slogan }}</view>
-      <view class="hg-join__intro">{{ club.intro }}</view>
+      <view wx:if="{{ club.slogan }}" class="hg-join__slogan">{{ club.slogan }}</view>
+      <view class="hg-join__intro">{{ club.description || club.intro }}</view>
     </view>
 
     <view class="hg-join__notice">

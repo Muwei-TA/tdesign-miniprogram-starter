@@ -1,0 +1,65 @@
+<view class="hg-page hg-clubs">
+  <hg-nav title="选择社团" />
+
+  <view class="hg-clubs__intro">每次进入一个社团；成员身份、管理权限和经验分别计算。</view>
+
+  <view wx:if="{{ loading }}" class="hg-clubs__state">正在读取社团…</view>
+  <empty-state
+    wx:elif="{{ errorText }}"
+    icon="error-circle"
+    title="社团列表暂时无法读取"
+    desc="{{ errorText }}"
+    action="重试"
+    bind:action="onRetry"
+  />
+  <block wx:else>
+    <view class="hg-clubs__section">
+      <view class="hg-clubs__heading">我的社团</view>
+      <view wx:if="{{ myClubs.length === 0 }}" class="hg-clubs__empty">还没有加入社团，可以从下面的目录查看可加入的社团。</view>
+      <view
+        wx:for="{{ myClubs }}"
+        wx:key="id"
+        class="hg-clubs__row {{ currentClubId === item.id ? 'hg-clubs__row--current' : '' }}"
+        data-id="{{ item.id }}"
+        bindtap="onSelectClub"
+        aria-role="button"
+        aria-label="选择社团 {{ item.name }}"
+      >
+        <view class="hg-clubs__row-main">
+          <view class="hg-clubs__name">{{ item.name }}</view>
+          <view wx:if="{{ item.description }}" class="hg-clubs__description">{{ item.description }}</view>
+        </view>
+        <view class="hg-clubs__row-actions">
+          <text class="hg-clubs__badge">{{ currentClubId === item.id ? '当前社团' : (item.memberStatus === 'pending' ? '查看申请' : (item.memberStatus === 'rejected' || item.memberStatus === 'removed' ? '重新申请' : (item.role === 'admin' || item.role === 'moderator' ? '管理成员' : '已加入'))) }}</text>
+          <text
+            wx:if="{{ item.memberStatus === 'removed' }}"
+            class="hg-clubs__history"
+            data-id="{{ item.id }}"
+            catchtap="onMyClubContent"
+            aria-role="button"
+          >我的内容</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="hg-clubs__section">
+      <view class="hg-clubs__heading">发现社团</view>
+      <view wx:if="{{ directory.length === 0 }}" class="hg-clubs__empty">暂无开放目录的社团；也可以通过社团二维码或邀请链接加入。</view>
+      <view
+        wx:for="{{ directory }}"
+        wx:key="id"
+        class="hg-clubs__row hg-clubs__row--join"
+        data-id="{{ item.id }}"
+        bindtap="onJoinClub"
+        aria-role="button"
+        aria-label="查看并加入社团 {{ item.name }}"
+      >
+        <view class="hg-clubs__row-main">
+          <view class="hg-clubs__name">{{ item.name }}</view>
+          <view wx:if="{{ item.description }}" class="hg-clubs__description">{{ item.description }}</view>
+        </view>
+        <text class="hg-clubs__badge">查看并加入</text>
+      </view>
+    </view>
+  </block>
+</view>

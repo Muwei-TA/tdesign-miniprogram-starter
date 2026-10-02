@@ -1,16 +1,6 @@
-import { fetchMembershipSession } from '../membership';
+import { fetchClub } from '~/services/clubs';
 
-const CLUB_RULES = [
-  { title: '不涉黄', body: '不发布露骨色情内容，也不把他人当作猎奇对象。' },
-  { title: '不涉政', body: '不发布法律法规禁止传播的政治内容，不把社团变成动员场所。' },
-  { title: '不人身攻击', body: '可以不同意作品和观点，但不羞辱、威胁或围堵具体的人。' },
-  { title: '不骚扰', body: '不反复私下打扰、跟踪、逼迫回应，也不利用匿名身份伤害他人。' },
-  { title: '不披露他人隐私', body: '发布故事、截图或照片前，先去掉足以识别他人的信息并取得必要同意。' },
-  { title: '尊重作品来源', body: '引用、改写或使用他人作品时说明来源；不把未经授权的作品说成自己的。' },
-  { title: '举报与申诉', body: '遇到问题可以举报，处理结果不等于对任何一方的公开定性；对处理有疑问可以申诉。' },
-  { title: '匿名边界', body: '树洞身份会隐藏昵称与头像，但不是绝对匿名。具体经历、地名、画面和文风仍可能让人猜到。' },
-  { title: '公开范围解释', body: '公开可见意味着打开本小程序的人都可能看到；社内内容只对当前有效成员开放。' },
-];
+const app = getApp();
 
 const PLATFORM_RULES = [
   '遵守微信小程序平台规范与内容审核要求，提交后可能进入审核流程。',
@@ -36,7 +26,7 @@ Page({
     version: '',
     changeSummary: '',
     sections: [
-      { key: 'club', title: '社团约定', intro: '这是我们在社内共同遵守的相处方式。', type: 'rules', items: CLUB_RULES },
+      { key: 'club', title: '社团约定', intro: '这是我们在社内共同遵守的相处方式。', type: 'rules', items: [] },
       {
         key: 'platform',
         title: '平台要求',
@@ -56,15 +46,36 @@ Page({
     loadError: '',
   },
 
-  onLoad() {
+  onLoad(options) {
+    this.clubId = options.clubId || (app.globalData.session && app.globalData.session.club
+      && app.globalData.session.club.id) || '';
+    this.onSessionChanged = (session) => {
+      const nextClubId = session && session.club && session.club.id;
+      if (nextClubId === this.clubId) return;
+      this.rulesRequestId = (this.rulesRequestId || 0) + 1;
+      this.clubId = '';
+      this.setData({ club: null, version: '', loading: false, loadError: '' });
+    };
+    app.eventBus.on('session-changed', this.onSessionChanged);
     this.loadRules();
   },
 
+  onUnload() {
+    this.rulesRequestId = (this.rulesRequestId || 0) + 1;
+    app.eventBus.off('session-changed', this.onSessionChanged);
+  },
+
   async loadRules() {
+    if (!this.clubId) {
+      this.setData({ loading: false, club: null });
+      return;
+    }
+    const requestId = (this.rulesRequestId || 0) + 1;
+    this.rulesRequestId = requestId;
     this.setData({ loading: true, loadError: '' });
     try {
-      const session = await fetchMembershipSession();
-      const club = session && session.club;
+      const club = await fetchClub(this.clubId);
+      if (requestId !== this.rulesRequestId) return;
       if (!club) {
         this.setData({ loading: false, club: null });
         return;
@@ -74,12 +85,14 @@ Page({
         loading: false,
         club,
         version,
+        sections: this.data.sections.map((section) => section.key === 'club'
+          ? { ...section, items: Array.isArray(club.rules) ? club.rules : [], intro: Array.isArray(club.rules) ? section.intro : '本社团尚未配置可展示的约定条目。' }
+          : section),
         changeSummary:
-          version === 'v1.1'
-            ? '在原有三项约定基础上，补充骚扰、隐私、作品来源、举报申诉、匿名边界与公开范围说明，并将三层规则分开呈现。'
-            : '当前版本由社团会话提供；如规则发生变化，页面会同步显示新的版本号与变更摘要。',
+          club.rulesSummary || '规则版本由当前社团提供。',
       });
     } catch (err) {
+      if (requestId !== this.rulesRequestId) return;
       this.setData({ loading: false, loadError: errorTextForLoad(err) });
     }
   },

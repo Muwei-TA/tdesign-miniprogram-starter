@@ -36,6 +36,7 @@ Page({
     ],
 
     clubEntries: [
+      { key: 'clubs', name: '我的社团', icon: 'usergroup', url: '/pages/community/clubs/index' },
       { key: 'club', name: '社团名片', icon: 'usergroup', url: '/pages/community/club/index' },
       { key: 'rules', name: '社区约定', icon: 'secured', url: '/pages/community/rules/index' },
     ],
@@ -121,8 +122,10 @@ Page({
   syncSession(session) {
     if (!session) return;
     const nextUserId = session.memberStatus === 'active' && session.user ? session.user.id : null;
-    const identityChanged = this.currentMemberId !== nextUserId;
+    const nextClubId = nextUserId && session.club ? session.club.id : null;
+    const identityChanged = this.currentMemberId !== nextUserId || this.currentClubId !== nextClubId;
     this.currentMemberId = nextUserId;
+    this.currentClubId = nextClubId;
     if (identityChanged) {
       this.levelsRequestId = (this.levelsRequestId || 0) + 1;
       this.checkInRequestId = (this.checkInRequestId || 0) + 1;
@@ -146,10 +149,15 @@ Page({
     }
     this.setData({
       session,
+      showDeveloper: session.platformRole === 'developer',
       isMember: session.memberStatus === 'active',
       // 管理入口只在服务端返回管理角色时出现；接口仍需鉴权
       showAdmin: isAdmin(),
     });
+  },
+
+  onDeveloperTap() {
+    navigateTo('/pages/admin/platform/index');
   },
 
   async loadProfile() {
@@ -173,8 +181,10 @@ Page({
       && !!userId
       && !!session
       && !!session.user
+      && !!session.club
       && session.user.id === userId
-      && this.currentMemberId === userId;
+      && this.currentMemberId === userId
+      && this.currentClubId === session.club.id;
   },
 
   async loadLevels() {
@@ -313,7 +323,7 @@ Page({
   },
 
   onJoinTap() {
-    navigateTo('/pages/community/join/index?from=my');
+    navigateTo('/pages/community/clubs/index');
   },
 
   onLogout() {

@@ -23,4 +23,5 @@
   <view class="hg-edit__save {{ saving ? 'hg-edit__save--disabled' : '' }}" bindtap="onSave" aria-role="button">
     {{ saving ? '保存中…' : '保存' }}
   </view>
+  <view wx:if="{{ accountId }}">账号 ID：{{ accountId }}<button bindtap="onCopyAccountId" aria-label="复制本人账号ID">复制账号 ID</button></view>
 </view>

@@ -1,5 +1,5 @@
 import { fetchPostDetail, resubmitRejectedPost } from '~/services/posts';
-import { bootstrapSession, scopedKey } from '~/services/session';
+import { scopedKey } from '~/services/session';
 import { createIdempotencyKey } from '~/utils/idempotency';
 
 function draftKey(id) {
@@ -32,14 +32,22 @@ Page({
       return;
     }
     try {
-      const session = getApp().globalData.session || await bootstrapSession();
+      const currentApp = getApp();
+      if (currentApp.sessionInitialization && !currentApp.globalData.session) await currentApp.sessionInitialization;
+      const { session } = currentApp.globalData;
       if (!session.user || !session.user.id || session.memberStatus !== 'active') {
         this.setData({ loading: false, errorText: '需要有效成员资格才能重新提交' });
         return;
       }
       this.sessionUserId = session.user.id;
+      this.sessionClubId = session.club && session.club.id;
+      if (!this.sessionClubId || (options.clubId && options.clubId !== this.sessionClubId)) {
+        this.setData({ loading: false, errorText: '请先切换到内容所属社团' });
+        return;
+      }
       this.onSessionChanged = (next) => {
-        if (!next || !next.user || next.user.id !== this.sessionUserId || next.memberStatus !== 'active') {
+        if (!next || !next.user || next.user.id !== this.sessionUserId || next.memberStatus !== 'active'
+          || !next.club || next.club.id !== this.sessionClubId) {
           this.accountChanged = true;
           this.setData({ version: 0, title: '', body: '', errorText: '账号或成员资格已变化，请重新进入' });
         }
@@ -94,7 +102,7 @@ Page({
   },
 
   saveDraft() {
-    if (!this.data.id || !this.data.version || this.completed) return;
+    if (!this.data.id || !this.data.version || this.completed || this.accountChanged) return;
     wx.setStorageSync(draftKey(this.data.id), {
       version: this.data.version,
       title: this.data.title,
@@ -109,7 +117,7 @@ Page({
   },
 
   onSubmit() {
-    if (this.data.loading || this.data.submitting || this.data.errorText) return;
+    if (this.accountChanged || this.data.loading || this.data.submitting || this.data.errorText) return;
     if (this.data.kind === 'article' && !this.data.title.trim()) {
       wx.showToast({ title: '文章需要一个标题', icon: 'none' });
       return;

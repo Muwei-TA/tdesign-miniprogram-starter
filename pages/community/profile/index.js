@@ -4,6 +4,10 @@ import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();
 
+function sessionScope(session) {
+  return session ? [session.user && session.user.id, session.club && session.club.id, session.role, session.memberStatus].join(':') : '';
+}
+
 function showAnonymousNotice() {
   wx.showModal({
     title: '树洞身份',
@@ -31,15 +35,31 @@ Page({
   },
 
   onLoad(options) {
+    this.syncSessionScope(app.globalData.session);
     this.setData({ userId: options.userId || '' });
-    this.onSessionChanged = () => this.loadProfile();
+    this.onSessionChanged = (session) => {
+      const changed = this.sessionScope !== sessionScope(session);
+      this.syncSessionScope(session);
+      if (!changed) return;
+      this.profileRequestId = (this.profileRequestId || 0) + 1;
+      this.profileFirstPageLoading = false;
+      this.setData({ user: null, list: [], visibleCount: 0, nextCursor: null, hasMore: false,
+        loading: !!(session && session.memberStatus === 'active' && session.club), loadingMore: false,
+        stale: false, errorText: '', errorKind: '' });
+      if (session && session.memberStatus === 'active' && session.club) this.loadProfile();
+    };
     app.eventBus.on('session-changed', this.onSessionChanged);
     if (this.data.userId) this.loadProfile();
     else this.setData({ loading: false, errorText: '当前主页不可访问', errorKind: 'not_accessible' });
   },
 
   onUnload() {
+    this.profileRequestId = (this.profileRequestId || 0) + 1;
     app.eventBus.off('session-changed', this.onSessionChanged);
+  },
+
+  syncSessionScope(session) {
+    this.sessionScope = sessionScope(session);
   },
 
   onPullDownRefresh() {
@@ -52,7 +72,8 @@ Page({
   },
 
   async loadProfile({ append = false } = {}) {
-    if (!this.data.userId) return;
+    const { session } = app.globalData;
+    if (!this.data.userId || !session || session.memberStatus !== 'active' || !session.club) return;
     if (append && (this.data.loading || this.profileFirstPageLoading || this.data.loadingMore || !this.data.hasMore)) return;
     const requestId = (this.profileRequestId || 0) + 1;
     this.profileRequestId = requestId;

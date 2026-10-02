@@ -9,13 +9,15 @@ const read = (path) => readFileSync(join(ROOT, path), 'utf8');
 
 function loadJoinPage(harness) {
   const source = read('pages/community/join/index.js')
-    .replace(/import \{[\s\S]*?\} from '\.\.\/membership';/, 'const { fetchMyMembershipApplication, submitMembershipApplication } = __membership;')
+    .replace(/import \{[\s\S]*?\} from '\.\.\/membership';/, 'const { fetchMyMembershipApplication, submitMembershipApplication, fetchMembershipSession } = __membership;')
+    .replace("import { fetchClub } from '~/services/clubs';", 'const { fetchClub } = __clubs;')
     .replace("import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;');
   let definition;
   vm.runInNewContext(source, {
     Page(value) { definition = value; },
     getApp: () => harness.app,
     __membership: harness.membership,
+    __clubs: { fetchClub: async (id) => ({ id, name: 'Test club', rulesVersion: 'v1.1' }) },
     __navigation: { navigateTo() {} },
     wx: {
       showToast: (value) => harness.toasts.push(value),
@@ -54,6 +56,7 @@ function createHarness({ refreshes, submit, application = null }) {
   const emitted = [];
   const toasts = [];
   const submitCalls = [];
+  const applicationCalls = [];
   const eventBus = {
     on(name, callback) {
       const callbacks = listeners.get(name) || new Set();
@@ -71,8 +74,12 @@ function createHarness({ refreshes, submit, application = null }) {
     },
   };
   const app = {
-    globalData: { session: null },
+    globalData: { session: null, clubMemberships: [] },
     eventBus,
+    async activateJoinedClub(session) {
+      app.globalData.session = session;
+      eventBus.emit('session-changed', session);
+    },
     async refreshSession() {
       const response = refreshes.shift();
       if (response && response.error) throw response.error;
@@ -82,7 +89,13 @@ function createHarness({ refreshes, submit, application = null }) {
     },
   };
   const membership = {
+    async fetchMembershipSession(clubId) {
+      const response = refreshes.shift();
+      if (response && response.error) throw response.error;
+      return response ? { ...response, club: { ...(response.club || {}), id: clubId } } : response;
+    },
     async fetchMyMembershipApplication() {
+      applicationCalls.push(arguments[0]);
       return typeof application === 'function' ? application() : application;
     },
     async submitMembershipApplication(payload) {
@@ -90,7 +103,7 @@ function createHarness({ refreshes, submit, application = null }) {
       return submit(payload);
     },
   };
-  const harness = { app, membership, toasts, emitted, submitCalls };
+  const harness = { app, membership, toasts, emitted, submitCalls, applicationCalls };
   harness.page = loadJoinPage(harness);
   return harness;
 }
@@ -113,7 +126,7 @@ const successfulJoin = createHarness({
   refreshes: [visitor, active],
   submit: async () => ({ state: 'active' }),
 });
-await successfulJoin.page.onLoad({ from: 'home' });
+  await successfulJoin.page.onLoad({ from: 'home', clubId: 'club-test' });
 await successfulJoin.page.onSubmit();
 assert.equal(successfulJoin.page.data.status, 'active');
 assert.equal(successfulJoin.page.data.session.memberStatus, 'active');
@@ -125,7 +138,7 @@ const refreshFailure = createHarness({
   refreshes: [visitor, { error: { kind: 'network' } }, active],
   submit: async () => ({ state: 'active' }),
 });
-await refreshFailure.page.onLoad({ from: 'my' });
+await refreshFailure.page.onLoad({ from: 'my', clubId: 'club-test' });
 await refreshFailure.page.onSubmit();
 assert.equal(refreshFailure.page.data.status, 'uncertain');
 assert.notEqual(refreshFailure.page.data.status, 'active', 'submit response alone must not fake active membership');
@@ -138,7 +151,7 @@ const responseLost = createHarness({
   refreshes: [visitor, active],
   submit: async () => { throw { kind: 'timeout' }; },
 });
-await responseLost.page.onLoad({ from: 'topics' });
+await responseLost.page.onLoad({ from: 'topics', clubId: 'club-test' });
 await responseLost.page.onSubmit();
 assert.equal(responseLost.page.data.status, 'active', 'a lost submit response must reconcile against /session/me');
 assert.equal(responseLost.app.globalData.session.memberStatus, 'active');
@@ -148,20 +161,22 @@ const responseStillUnknown = createHarness({
   refreshes: [visitor, visitor, active],
   submit: async () => { throw { kind: 'timeout' }; },
 });
-await responseStillUnknown.page.onLoad({ from: 'my' });
+await responseStillUnknown.page.onLoad({ from: 'my', clubId: 'club-test' });
 await responseStillUnknown.page.onSubmit();
 assert.equal(responseStillUnknown.page.data.status, 'uncertain');
 assert.match(responseStillUnknown.page.data.statusReason, /不要重复提交邀请码/);
 await responseStillUnknown.page.onRefreshStatus();
 assert.equal(responseStillUnknown.page.data.status, 'active');
 assert.equal(responseStillUnknown.submitCalls.length, 1, 'retrying an unknown outcome only re-reads the session');
+assert.ok(responseStillUnknown.applicationCalls.length > 0);
+assert.ok(responseStillUnknown.applicationCalls.every((clubId) => clubId === 'club-test'), 'membership application reads stay scoped to the selected club');
 
 const removedMember = createHarness({
   refreshes: [{ ...visitor, memberStatus: 'removed' }, { ...visitor, memberStatus: 'removed' }],
   submit: async () => ({ state: 'pending' }),
   application: { state: 'pending' },
 });
-await removedMember.page.onLoad({ from: 'club' });
+await removedMember.page.onLoad({ from: 'club', clubId: 'club-test' });
 removedMember.page.onPendingReapply();
 await removedMember.page.onSubmit();
 assert.equal(removedMember.page.data.status, 'pending');
@@ -177,7 +192,7 @@ const invalidInvite = createHarness({
   refreshes: [visitor],
   submit: async () => { throw { kind: 'invalid_input', detail: { field: 'inviteCode' }, message: '邀请码无效或已过期' }; },
 });
-await invalidInvite.page.onLoad({ from: 'my' });
+await invalidInvite.page.onLoad({ from: 'my', clubId: 'club-test' });
 await invalidInvite.page.onSubmit();
 assert.equal(invalidInvite.page.data.status, 'invalid_code');
 assert.equal(invalidInvite.page.data.submitting, false);
@@ -187,7 +202,7 @@ const applicationCannotPromote = createHarness({
   submit: async () => ({ state: 'active' }),
   application: { state: 'active' },
 });
-await applicationCannotPromote.page.onLoad({ from: 'my' });
+await applicationCannotPromote.page.onLoad({ from: 'my', clubId: 'club-test' });
 assert.equal(applicationCannotPromote.page.data.status, 'uncertain');
 assert.notEqual(applicationCannotPromote.page.data.status, 'active');
 

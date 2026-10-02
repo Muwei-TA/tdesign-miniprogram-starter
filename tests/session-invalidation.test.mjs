@@ -29,9 +29,10 @@ function loadApp() {
       'const fetchUnreadCount = __fetchUnreadCount;',
     )
     .replace(
-      "import { bootstrapSession, refreshSessionFromServer, clearAccountScope } from './services/session';",
-      'const bootstrapSession = __bootstrapSession; const refreshSessionFromServer = __refreshSessionFromServer; const clearAccountScope = __clearAccountScope;',
-    );
+      /import \{[\s\S]*?\} from '\.\/services\/session';/,
+      'const { bootstrapSession, refreshSessionFromServer, refreshSessionForClub, setCurrentSession, setSessionWithoutClub, clearAccountScope } = __session;',
+    )
+    .replace("import { fetchMyClubs } from './services/clubs';", 'const { fetchMyClubs } = __clubs;');
 
   const holder = {};
   const eventCalls = [];
@@ -50,10 +51,16 @@ function loadApp() {
     __config: {},
     __createBus: () => bus,
     __fetchUnreadCount: async () => 0,
-    __bootstrapSession: async () => guestSession,
-    __refreshSessionFromServer: async () => guestSession,
-    __clearAccountScope: () => guestSession,
-    wx: {},
+    __session: {
+      bootstrapSession: async () => guestSession,
+      refreshSessionFromServer: async () => guestSession,
+      refreshSessionForClub: async () => guestSession,
+      setCurrentSession: (value) => value,
+      setSessionWithoutClub: (value) => ({ ...value, role: 'guest', memberStatus: 'none', club: null }),
+      clearAccountScope: () => guestSession,
+    },
+    __clubs: { fetchMyClubs: async () => [] },
+    wx: { getStorageSync() { return ''; }, setStorageSync() {}, removeStorageSync() {}, navigateTo() {} },
     console,
     eventCalls,
   };
@@ -120,6 +127,13 @@ app.invalidateSession = function invalidateSessionForTest() {
 };
 
 const { request, setCloudBehavior, cloudCalls } = loadRequest(app);
+const selectedSession = {
+  role: 'member',
+  memberStatus: 'active',
+  user: { id: 'member-a' },
+  club: { id: 'club-a' },
+};
+app.globalData.session = selectedSession;
 
 setCloudBehavior(() =>
   Promise.resolve({
@@ -137,6 +151,9 @@ await assert.rejects(request('/session/me'), (error) => {
   return true;
 });
 assert.equal(invalidations, 1, 'unauthenticated must invalidate the app session exactly once');
+assert.equal(app.globalData.session.memberStatus, 'none');
+
+app.publishSession(selectedSession);
 
 setCloudBehavior(() =>
   Promise.resolve({
@@ -148,23 +165,26 @@ await assert.rejects(request('/posts'), (error) => {
   assert.equal(error.message, '成员资格原始错误');
   return true;
 });
-assert.equal(invalidations, 2, 'membership_invalid must invalidate the app session');
+assert.equal(invalidations, 1, 'membership_invalid revokes the selected club context without logging out the account');
+assert.equal(app.globalData.session.club, null);
+
+app.publishSession(selectedSession);
 
 setCloudBehavior(() => Promise.reject({ errMsg: 'request:fail socket closed' }));
 await assert.rejects(request('/session/me'), (error) => {
   assert.equal(error.kind, 'network');
   return true;
 });
-assert.equal(invalidations, 2, 'network errors must not invalidate the app session');
+assert.equal(invalidations, 1, 'network errors must not invalidate the app session');
 
 setCloudBehavior(() => new Promise(() => {}));
 await assert.rejects(request('/session/me', { timeout: 5 }), (error) => {
   assert.equal(error.kind, 'timeout');
   return true;
 });
-assert.equal(invalidations, 2, 'timeouts must not invalidate the app session');
+assert.equal(invalidations, 1, 'timeouts must not invalidate the app session');
 
-assert.equal(app.globalData.session, guestSession);
+assert.equal(app.globalData.session, selectedSession);
 assert.equal(app.globalData.unreadCount, 0);
 assert.ok(eventCalls.some(([name]) => name === 'session-changed'));
 assert.ok(eventCalls.some(([name, value]) => name === 'notice-unread-change' && value === 0));

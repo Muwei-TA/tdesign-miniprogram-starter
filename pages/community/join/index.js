@@ -1,7 +1,9 @@
 import {
   fetchMyMembershipApplication,
   submitMembershipApplication,
+  fetchMembershipSession,
 } from '../membership';
+import { fetchClub } from '~/services/clubs';
 import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();
@@ -114,9 +116,12 @@ Page({
   },
 
   onLoad(options) {
-    this.setData({ from: options.from || '' });
+    const clubId = options.clubId || (app.globalData.session && app.globalData.session.club
+      && app.globalData.session.club.id) || '';
+    this.setData({ from: options.from || '', clubId });
     this.awaitingMembershipRefresh = false;
     this.onSessionChanged = (session) => {
+      if (session && (!session.club || session.club.id !== this.data.clubId)) return;
       if (this.awaitingMembershipRefresh && session && session.memberStatus !== 'active') {
         this.setData({ session });
         return;
@@ -132,13 +137,25 @@ Page({
   },
 
   async loadPage() {
+    if (!this.data.clubId) {
+      this.setData({ loading: false });
+      navigateTo('/pages/community/clubs/index');
+      return;
+    }
     this.setData({ loading: true, loadError: '' });
     try {
-      const snapshot = await app.refreshSession();
+      const [club, snapshot] = await Promise.all([
+        fetchClub(this.data.clubId),
+        fetchMembershipSession(this.data.clubId),
+      ]);
+      if (!club || club.id !== this.data.clubId) throw new Error('社团暂时无法读取');
+      this.setData({ club });
       this.applySession(snapshot);
 
       if (snapshot && snapshot.user && snapshot.memberStatus !== 'active') {
         await this.loadApplication();
+      } else if (snapshot && snapshot.memberStatus === 'active') {
+        await app.activateJoinedClub(snapshot);
       }
       this.setData({ loading: false });
     } catch (err) {
@@ -150,7 +167,7 @@ Page({
     if (!session) return;
     const nextStatus = normalizeStatus(session.memberStatus);
     if (nextStatus === 'active') this.awaitingMembershipRefresh = false;
-    const club = session.club || this.data.club;
+    const club = session.club ? { ...(this.data.club || {}), ...session.club } : this.data.club;
     this.setData({
       session,
       club,
@@ -189,7 +206,7 @@ Page({
 
   async loadApplication() {
     try {
-      const application = await fetchMyMembershipApplication();
+      const application = await fetchMyMembershipApplication(this.data.clubId);
       return this.applyApplication(application);
     } catch (err) {
       // 访客可能还没有可查询的账号；此时仍允许阅读介绍并开始授权流程。
@@ -222,7 +239,7 @@ Page({
 
   onRulesTap() {
     // 表单只存在当前页面内；navigateTo 返回时不会重建本页，输入自然保留。
-    navigateTo('/pages/community/rules/index?from=join');
+    navigateTo(`/pages/community/rules/index?from=join&clubId=${encodeURIComponent(this.data.clubId)}`);
   },
 
   onPrivacyTap() {
@@ -237,7 +254,7 @@ Page({
 
   async ensureSession() {
     if (this.data.session && this.data.session.user) return this.data.session;
-    const session = await app.refreshSession();
+    const session = await fetchMembershipSession(this.data.clubId);
     this.applySession(session);
     return session;
   },
@@ -298,7 +315,7 @@ Page({
       result = await submitMembershipApplication({
         ...form,
         rulesVersion: this.data.rulesVersion,
-      });
+      }, this.data.clubId);
     } catch (err) {
       const errorStatus = statusForSubmitError(err);
       if (errorStatus === 'invalid_code') {
@@ -336,14 +353,17 @@ Page({
     });
 
     try {
-      const session = await app.refreshSession();
+      const session = await fetchMembershipSession(this.data.clubId);
       this.awaitingMembershipRefresh = false;
       this.applySession(session);
 
-      if (session && session.memberStatus === 'active') return 'active';
+      if (session && session.memberStatus === 'active' && session.club && session.club.id === this.data.clubId) {
+        await app.activateJoinedClub(session);
+        return 'active';
+      }
 
       if (session && session.user) {
-        const application = await fetchMyMembershipApplication();
+        const application = await fetchMyMembershipApplication(this.data.clubId);
         const applicationStatus = this.applyApplication(application);
         if (applicationStatus && applicationStatus !== 'uncertain') return applicationStatus;
       }
@@ -413,6 +433,6 @@ Page({
   },
 
   onClubTap() {
-    navigateTo('/pages/community/club/index');
+    navigateTo(`/pages/community/club/index?clubId=${encodeURIComponent(this.data.clubId)}`);
   },
 });

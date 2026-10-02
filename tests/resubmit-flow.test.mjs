@@ -7,7 +7,7 @@ import vm from 'node:vm';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const source = readFileSync(join(root, 'pages/community/resubmit/index.js'), 'utf8')
   .replace("import { fetchPostDetail, resubmitRejectedPost } from '~/services/posts';", 'const fetchPostDetail = __fetchPostDetail; const resubmitRejectedPost = __resubmitRejectedPost;')
-  .replace("import { bootstrapSession, scopedKey } from '~/services/session';", 'const bootstrapSession = __bootstrapSession; const scopedKey = __scopedKey;')
+  .replace("import { scopedKey } from '~/services/session';", 'const scopedKey = __scopedKey;')
   .replace("import { createIdempotencyKey } from '~/utils/idempotency';", 'const createIdempotencyKey = __createIdempotencyKey;');
 
 const storage = new Map();
@@ -27,7 +27,6 @@ vm.runInNewContext(source, {
     return { id, state: 'pending', version: 5 };
   },
   __scopedKey: (name) => `hg:user:${name}`,
-  __bootstrapSession: async () => ({ memberStatus: 'active' }),
   __createIdempotencyKey: () => 'resubmit-key',
   wx: {
     getStorageSync: (key) => storage.get(key),
@@ -39,7 +38,7 @@ vm.runInNewContext(source, {
   },
   encodeURIComponent,
   getApp: () => ({
-    globalData: { session: { memberStatus: 'active', user: { id: 'user' } } },
+    globalData: { session: { memberStatus: 'active', user: { id: 'user' }, club: { id: 'club-a' } } },
     eventBus: { on() {}, off() {} },
   }),
 });

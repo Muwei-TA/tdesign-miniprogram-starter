@@ -103,6 +103,13 @@ assert.deepEqual(plain(resolveTransport('/session/wechat', 'POST', { code: 'igno
   action: 'session/me',
   payload: {},
 });
+assert.deepEqual(plain(resolveTransport('/clubs', 'GET')), { action: 'clubs/list', payload: {} });
+assert.deepEqual(plain(resolveTransport('/clubs/mine', 'GET')), { action: 'clubs/mine', payload: {} });
+assert.deepEqual(plain(resolveTransport('/clubs/club-b', 'GET')), {
+  action: 'clubs/detail',
+  payload: { id: 'club-b' },
+});
+assert.deepEqual(plain(resolveTransport('/account/me', 'GET')), { action: 'account/me', payload: {} });
 assert.deepEqual(plain(resolveTransport('/me/levels', 'GET', {})), {
   action: 'me/levels',
   payload: {},
@@ -140,6 +147,7 @@ assert.doesNotMatch(requestSource, /SESSION_TOKEN_KEY|Idempotency-Key/);
 // 加载实际 request.js（去掉小程序 alias import），验证 CloudBase 请求的运行行为。
 const requestModule = { exports: {} };
 const runtimeConfig = { transport: 'cloudbase', cloudFunctionName: 'api' };
+const cloudApp = { globalData: { session: { club: { id: 'club-a' } }, clubContextVersion: 0, clubSwitching: false } };
 const runtime = {
   module: requestModule,
   exports: requestModule.exports,
@@ -147,6 +155,7 @@ const runtime = {
   resolveTransport,
   withIdempotency,
   wx: { cloud: {} },
+  getApp: () => cloudApp,
   setTimeout,
   clearTimeout,
 };
@@ -172,15 +181,21 @@ assert.deepEqual(
 );
 assert.deepEqual(plain(cloudCalls[0]), {
   name: 'api',
-  data: { action: 'posts/create', payload: { body: 'draft', idempotencyKey: 'post-key-2' } },
+  data: { action: 'posts/create', payload: { body: 'draft', idempotencyKey: 'post-key-2' }, clubId: 'club-a' },
 });
 await request('/session/me');
 await request('/posts?cursor=next-page');
 assert.equal(cloudCalls[1].data.action, 'session/me');
+assert.equal(cloudCalls[1].data.clubId, 'club-a');
 assert.deepEqual(plain(cloudCalls[2].data), {
   action: 'posts/list',
   payload: { cursor: 'next-page' },
+  clubId: 'club-a',
 });
+await request('/clubs');
+assert.deepEqual(plain(cloudCalls[3].data), { action: 'clubs/list', payload: {} });
+await request('/account/me');
+assert.deepEqual(plain(cloudCalls[4].data), { action: 'account/me', payload: {} });
 
 runtime.wx.cloud.callFunction = () => Promise.resolve({
   result: { code: 'not_accessible', message: '内部差异不应暴露' },
@@ -200,6 +215,11 @@ await assert.rejects(request('/session/me', { timeout: 1 }), (error) => {
 // Load the same request implementation with the isolated NAS LAN profile.
 const nasModule = { exports: {} };
 let invalidations = 0;
+const nasApp = {
+  globalData: { session: { club: { id: 'club-a' } }, clubContextVersion: 0, clubSwitching: false },
+  invalidateSession() { invalidations += 1; },
+  invalidateClubSelection() { invalidations += 1; },
+};
 const nasRuntime = {
   module: nasModule,
   exports: nasModule.exports,
@@ -213,7 +233,7 @@ const nasRuntime = {
   wx: { cloud: {} },
   setTimeout,
   clearTimeout,
-  getApp: () => ({ invalidateSession: () => { invalidations += 1; } }),
+  getApp: () => nasApp,
 };
 vm.runInNewContext(requestSourceForNode, nasRuntime);
 
@@ -260,11 +280,13 @@ assert.equal(httpCalls[1].header.Authorization, 'Bearer nas-token-1');
 assert.deepEqual(plain(httpCalls[1].data), {
   action: 'posts/create',
   payload: { body: 'draft', idempotencyKey: 'nas-post-key' },
+  clubId: 'club-a',
 });
 
 await nasRequest('/boards?cursor=c1');
 assert.equal(loginCount, 1, 'a live in-memory token is reused');
 assert.equal(httpCalls[2].data.action, 'boards/list');
+assert.equal(httpCalls[2].data.clubId, 'club-a');
 
 queuedResponses.push({
   statusCode: 401,
@@ -276,6 +298,7 @@ await assert.rejects(nasRequest('/session/me'), (error) => {
   assert.equal(invalidations, 1);
   return true;
 });
+assert.equal(httpCalls[3].data.clubId, 'club-a');
 
 await nasRequest('/session/me');
 assert.equal(loginCount, 2, '401 clears the old token so the next action logs in again');

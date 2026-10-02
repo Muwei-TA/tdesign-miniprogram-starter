@@ -45,6 +45,13 @@ notifyType:    comment | reply | reaction_digest | system_review | system_report
 - HTTP 200 + `code = 0` 视为成功；其余按 `04.6` 错误码映射。
 - 列表统一：`{ "items": [], "nextCursor": null }`；`nextCursor` 为 `null` 表示无更多。
 
+### 多社团请求上下文
+
+- `GET /account/me` 返回全局账号/访客会话，`club` 固定为空；客户端不得借它或 `/session/me` 的默认值选择社团。
+- `GET /clubs/mine` 返回当前账号在各社团的状态，包含 `active/pending/rejected/removed`；`GET /clubs` 只返回可发现目录。已知邀请码或深链中的社团可通过 `GET /clubs/{clubId}` 读取最小名片，不因此授予内容访问权。
+- `GET /session/me` 必须带顶层 `clubId`，后端只按该社团计算 `role`、`memberStatus` 与能力。成员业务请求同样以顶层 `clubId` 选定鉴权上下文；CloudBase action 映射为 `{ action, payload, clubId }`，NAS action 映射为 `/v1/action` 顶层 `clubId`。不得把 `clubId` 混进业务 `payload`，也不得接受客户端 payload 中的角色或能力作为授权。
+- 账号、社团目录、目标社团名片等身份/入社准备请求可在未选定社团时调用；其他成员业务 action 没有有效的顶层 `clubId` 时必须 fail closed。
+
 ## 4.3 展示 DTO（前端渲染唯一依据）
 
 ### PostCardDTO（列表用）

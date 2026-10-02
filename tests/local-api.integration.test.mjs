@@ -37,7 +37,10 @@ function loadEndpoints() {
   return module.exports;
 }
 
-function loadRequest(callFunction, app = { invalidateSession() {} }) {
+function loadRequest(callFunction, app = {
+  invalidateSession() {},
+  globalData: { session: { memberStatus: 'active', club: { id: 'heiguang' } }, clubSwitching: false, clubContextVersion: 0 },
+}) {
   const source = readFileSync(join(FRONT_ROOT, 'api/request.js'), 'utf8')
     .replace("import config from '~/config';", 'const config = __config;')
     .replace(
@@ -48,7 +51,7 @@ function loadRequest(callFunction, app = { invalidateSession() {} }) {
     .replace('export default function request', 'function request')
     .replace(/export function /g, 'function ')
     .replace('export { DEFAULT_MESSAGE };', '')
-    .concat('\nmodule.exports = { request, ApiError, withPath, withQuery };');
+    .concat('\nmodule.exports = { request, requestForClub, ApiError, withPath, withQuery };');
   const module = { exports: {} };
   const runtime = {
     module,
@@ -67,8 +70,8 @@ function loadRequest(callFunction, app = { invalidateSession() {} }) {
 function loadPostsService(requestModule) {
   const source = readFileSync(join(FRONT_ROOT, 'services/posts.js'), 'utf8')
     .replace(
-      "import request, { withPath, withQuery } from '~/api/request';",
-      'const { request, withPath, withQuery } = __request;',
+      "import request, { requestForClub, withPath, withQuery } from '~/api/request';",
+      'const { request, requestForClub, withPath, withQuery } = __request;',
     )
     .replace("import endpoints from '~/api/endpoints';", 'const endpoints = __endpoints;')
     .replace(

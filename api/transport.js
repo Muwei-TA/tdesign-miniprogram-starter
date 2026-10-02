@@ -6,7 +6,16 @@
 
 const ROUTES = [
   // 会话与成员资格。小程序原生身份不再交换 session token。
+  { method: 'GET', pattern: '/platform/clubs', action: 'platform/clubs/list' },
+  { method: 'POST', pattern: '/platform/clubs', action: 'platform/clubs/create' },
+  { method: 'POST', pattern: '/platform/clubs/update', action: 'platform/clubs/update' },
+  { method: 'POST', pattern: '/platform/clubs/status', action: 'platform/clubs/set-status' },
+  { method: 'POST', pattern: '/platform/clubs/moderator', action: 'platform/clubs/set-moderator' },
+  { method: 'GET', pattern: '/account/me', action: 'account/me' },
   { method: 'GET', pattern: '/session/me', action: 'session/me' },
+  { method: 'GET', pattern: '/clubs', action: 'clubs/list' },
+  { method: 'GET', pattern: '/clubs/mine', action: 'clubs/mine' },
+  { method: 'GET', pattern: '/clubs/:id', action: 'clubs/detail', map: ({ params }) => ({ id: params.id }) },
   { method: 'POST', pattern: '/session/wechat', action: 'session/me', map: () => ({}) },
   { method: 'POST', pattern: '/membership/applications', action: 'membership/apply' },
   { method: 'GET', pattern: '/membership/applications/mine', action: 'membership/mine' },

@@ -138,13 +138,13 @@ function withTimeout(promise, timeout) {
   return Promise.race([Promise.resolve(promise), timeoutPromise]).finally(() => clearTimeout(timer));
 }
 
-function requestCloud(url, { method, data, timeout }) {
+function requestCloud(url, { method, data, timeout, clubId }) {
   let call;
   try {
     const { action, payload } = resolveTransport(url, method, data);
     call = wx.cloud.callFunction({
       name: cloudFunctionName,
-      data: { action, payload },
+      data: { action, payload, ...(clubId ? { clubId } : {}) },
     });
   } catch (err) {
     if (err && err.code === 'invalid_input') {
@@ -288,10 +288,10 @@ export function clearAuthToken() {
   authPromise = null;
 }
 
-function requestAction(action, payload, { timeout }) {
+function requestAction(action, payload, { timeout, clubId }) {
   return ensureAuthToken(timeout).then((token) => withTimeout(nativeRequest({
     url: apiUrl('/v1/action'),
-    data: { action, payload },
+    data: { action, payload, ...(clubId ? { clubId } : {}) },
     timeout,
     header: { Authorization: `Bearer ${token}` },
   }), timeout).then((response) => resolveResponse(
@@ -300,7 +300,7 @@ function requestAction(action, payload, { timeout }) {
   )));
 }
 
-function requestNas(url, { method, data, timeout }) {
+function requestNas(url, { method, data, timeout, clubId }) {
   let transport;
   try {
     transport = resolveTransport(url, method, data);
@@ -316,8 +316,118 @@ function requestNas(url, { method, data, timeout }) {
     }
     return Promise.reject(buildTransportError(err));
   }
-  return requestAction(transport.action, transport.payload, { timeout })
+  return requestAction(transport.action, transport.payload, { timeout, clubId })
     .catch((err) => { throw buildTransportError(err); });
+}
+
+function independentClubPath(url) {
+  const path = String(url || '').split('?')[0].replace(/\/+$/, '') || '/';
+  return path.startsWith('/platform/') || path === '/account/me' || path === '/clubs' || path === '/clubs/mine' || path === '/me/account';
+}
+
+function requestContext(url, explicitClubId) {
+  const app = typeof getApp === 'function' ? getApp() : null;
+  const globalData = app && app.globalData;
+  const sessionClubId = globalData && globalData.session && globalData.session.club
+    ? globalData.session.club.id
+    : '';
+  const isIndependent = independentClubPath(url);
+  const clubId = explicitClubId || (isIndependent ? '' : sessionClubId) || '';
+  if (!clubId && !isIndependent) {
+    throw new ApiError({
+      kind: 'forbidden',
+      httpStatus: 403,
+      code: 'club_required',
+      message: '请先选择社团',
+    });
+  }
+  if (!explicitClubId && globalData && globalData.clubSwitching && !isIndependent) {
+    throw new ApiError({
+      kind: 'conflict',
+      httpStatus: 409,
+      code: 'club_context_changed',
+      message: '社团正在切换，请稍后重试',
+    });
+  }
+  return {
+    app,
+    clubId,
+    contextVersion: globalData && globalData.clubContextVersion || 0,
+    explicit: !!explicitClubId,
+    independent: isIndependent,
+    checkCurrent: !!clubId && !explicitClubId,
+  };
+}
+
+function assertRequestContext(context) {
+  const globalData = context.app && context.app.globalData;
+  if (!globalData) return;
+  if (context.independent) return;
+  if (globalData.clubContextVersion !== context.contextVersion) {
+    throw new ApiError({
+      kind: 'conflict',
+      httpStatus: 409,
+      code: 'club_context_changed',
+      message: '社团已切换，请刷新当前内容',
+    });
+  }
+  if (context.checkCurrent) {
+    const currentClubId = globalData.session && globalData.session.club && globalData.session.club.id;
+    if (context.clubId && currentClubId !== context.clubId) {
+      throw new ApiError({
+        kind: 'conflict',
+        httpStatus: 409,
+        code: 'club_context_changed',
+        message: '社团已切换，请刷新当前内容',
+      });
+    }
+  }
+}
+
+function executeRequest(url, options, explicitClubId = '') {
+  const { method = 'GET', data = {}, timeout = 10000, idempotencyKey } = options;
+  let context;
+  try {
+    context = requestContext(url, explicitClubId);
+  } catch (err) {
+    return Promise.reject(err);
+  }
+  const payload = withIdempotency(data, idempotencyKey);
+  delete payload.clubId;
+  const call = config.transport === 'nas'
+    ? requestNas(url, { method, data: payload, timeout, clubId: context.clubId })
+    : requestCloud(url, { method, data: payload, timeout, clubId: context.clubId });
+
+  return Promise.resolve(call).then((result) => {
+    assertRequestContext(context);
+    return result;
+  }).catch((err) => {
+    const apiError = buildTransportError(err);
+    const globalData = context.app && context.app.globalData;
+    const contextChanged = !context.independent && globalData
+      && globalData.clubContextVersion !== context.contextVersion;
+    if (contextChanged && apiError.kind === 'membership_invalid') {
+      throw new ApiError({
+        kind: 'conflict',
+        httpStatus: 409,
+        code: 'club_context_changed',
+        message: '社团已切换，请刷新当前内容',
+      });
+    }
+    if (apiError.kind === 'unauthenticated') {
+      if (config.transport === 'nas') clearAuthToken();
+      const app = typeof getApp === 'function' ? getApp() : null;
+      if (app && app.invalidateSession) app.invalidateSession();
+    } else if (apiError.kind === 'membership_invalid') {
+      const app = typeof getApp === 'function' ? getApp() : null;
+      const activeClubId = app && app.globalData && app.globalData.session
+        && app.globalData.session.club && app.globalData.session.club.id;
+      if (app && app.invalidateClubSelection && activeClubId === context.clubId) {
+        app.invalidateClubSelection();
+      }
+    }
+    throw apiError;
+  });
 }
 
 /**
@@ -326,21 +436,20 @@ function requestNas(url, { method, data, timeout }) {
  * @returns {Promise<any>} 成功时 resolve 业务 data
  */
 export default function request(url, options = {}) {
-  const { method = 'GET', data = {}, timeout = 10000, idempotencyKey } = options;
-  const payload = withIdempotency(data, idempotencyKey);
-  const call = config.transport === 'nas'
-    ? requestNas(url, { method, data: payload, timeout })
-    : requestCloud(url, { method, data: payload, timeout });
+  return executeRequest(url, options);
+}
 
-  return Promise.resolve(call).catch((err) => {
-    const apiError = buildTransportError(err);
-    if (apiError.kind === 'unauthenticated' || apiError.kind === 'membership_invalid') {
-      if (config.transport === 'nas') clearAuthToken();
-      const app = typeof getApp === 'function' ? getApp() : null;
-      if (app && app.invalidateSession) app.invalidateSession();
-    }
-    throw apiError;
-  });
+/** 对加入流程与社团详情显式请求目标社团；权限仍由服务端按目标社团重新计算。 */
+export function requestForClub(url, clubId, options = {}) {
+  if (typeof clubId !== 'string' || !clubId.trim()) {
+    return Promise.reject(new ApiError({
+      kind: 'invalid_input',
+      httpStatus: 422,
+      code: 'club_required',
+      message: '社团信息缺失',
+    }));
+  }
+  return executeRequest(url, options, clubId.trim());
 }
 
 /** 把 /posts/:id 这类模板路径替换为实际路径 */

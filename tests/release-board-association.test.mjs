@@ -21,7 +21,10 @@ const submittedPosts = [];
 const savedDrafts = [];
 const eventCalls = [];
 const redirects = [];
-const app = { eventBus: { on() {}, off() {}, emit: (event, data) => eventCalls.push({ event, data }) } };
+const app = {
+  globalData: { session: { memberStatus: 'active', club: { id: 'club-a' } }, clubSwitching: false },
+  eventBus: { on() {}, off() {}, emit: (event, data) => eventCalls.push({ event, data }) },
+};
 
 vm.runInNewContext(pageSource, {
   Page(definition) { pageDefinition = definition; },
@@ -60,7 +63,10 @@ vm.runInNewContext(pageSource, {
 
 assert.ok(pageDefinition, 'release page must register');
 const page = Object.assign(Object.create(pageDefinition), {
-  data: JSON.parse(JSON.stringify(pageDefinition.data)),
+  data: {
+    ...JSON.parse(JSON.stringify(pageDefinition.data)),
+    session: { memberStatus: 'active', club: { id: 'club-a' }, capabilities: { publishing: true } },
+  },
   setData(patch, callback) {
     Object.assign(this.data, patch);
     if (callback) callback();

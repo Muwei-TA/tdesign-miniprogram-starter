@@ -1,0 +1,85 @@
+@import '/styles/tokens.less';
+
+.hg-clubs {
+  padding-bottom: 48rpx;
+
+  &__intro {
+    margin: 12rpx @hg-page-x 28rpx;
+    color: @hg-ink-3;
+    font-size: @hg-fs-xs;
+    line-height: @hg-lh-base;
+  }
+
+  &__state,
+  &__empty {
+    padding: 28rpx 0;
+    color: @hg-ink-4;
+    font-size: @hg-fs-xs;
+    line-height: @hg-lh-base;
+  }
+
+  &__section {
+    margin: 0 @hg-page-x 36rpx;
+  }
+
+  &__heading {
+    margin-bottom: 12rpx;
+    color: @hg-ink-2;
+    font-family: @hg-font-serif;
+    font-size: @hg-fs-h3;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    min-height: 112rpx;
+    padding: 18rpx 20rpx;
+    margin-bottom: 12rpx;
+    border: 1rpx solid @hg-line;
+    border-radius: @hg-radius-lg;
+    background: @hg-surface;
+  }
+
+  &__row--current {
+    border-color: @hg-green-muted;
+    background: @hg-green-soft;
+  }
+
+  &__row-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__name {
+    color: @hg-ink;
+    font-size: @hg-fs-sm;
+    font-weight: 600;
+  }
+
+  &__description {
+    margin-top: 8rpx;
+    color: @hg-ink-3;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+  }
+
+  &__badge {
+    flex-shrink: 0;
+    color: @hg-green;
+    font-size: @hg-fs-2xs;
+  }
+
+  &__row-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10rpx;
+  }
+
+  &__history {
+    color: @hg-ink-3;
+    font-size: @hg-fs-2xs;
+    text-decoration: underline;
+  }
+}

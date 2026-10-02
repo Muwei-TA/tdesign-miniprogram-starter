@@ -18,7 +18,12 @@ function loadPage(relativePath, replacements, globals = {}) {
     Page(value) {
       definition = value;
     },
-    getApp: () => ({ setUnreadCount() {} }),
+    getApp: () => ({
+      globalData: { session: { role: 'member', memberStatus: 'active', club: { id: 'club-a' } } },
+      eventBus: { on() {}, off() {}, emit() {} },
+      setUnreadCount() {},
+      refreshUnreadCount: async () => {},
+    }),
     wx: { stopPullDownRefresh() {} },
     setTimeout,
     clearTimeout,
@@ -69,11 +74,11 @@ const topicsPage = loadPage(
       toggleFollow() {},
       TOPIC_CATEGORIES: [],
     },
-    __session: { getSession: () => ({ memberStatus: 'active' }) },
+    __session: { getSession: () => ({ role: 'member', memberStatus: 'active', club: { id: 'club-a' } }) },
     __navigation: { navigateTo() {} },
   },
 );
-const topics = pageContext(topicsPage, { list: [{ id: 'topic-old' }] });
+const topics = pageContext(topicsPage, { list: [{ id: 'topic-old' }], isMember: true });
 await topicsPage.loadTopics.call(topics);
 assert.deepEqual(topics.data.list.map((item) => item.id), ['topic-old']);
 assert.equal(topics.data.stale, true);

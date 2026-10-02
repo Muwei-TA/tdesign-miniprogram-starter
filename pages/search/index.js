@@ -2,6 +2,12 @@ import { search, fetchSuggestions } from './search';
 import { navigateTo } from '~/utils/navigate';
 import { createSearchController } from './controller';
 
+const app = getApp();
+
+function sessionScope(session) {
+  return session ? [session.user && session.user.id, session.club && session.club.id, session.role, session.memberStatus].join(':') : '';
+}
+
 /** 搜索会话绑定关键词和范围；新首页完成前禁止使用旧游标追加。 */
 const SCOPES = [
   { value: 'post', label: '内容' },
@@ -26,6 +32,15 @@ Page({
   },
 
   onLoad(options) {
+    this.sessionScope = sessionScope(app.globalData.session);
+    this.onSessionChanged = (session) => {
+      const changed = this.sessionScope !== sessionScope(session);
+      this.sessionScope = sessionScope(session);
+      if (!changed) return;
+      this.resetQuery({ keyword: '', suggestions: [] });
+      if (session && session.memberStatus === 'active' && session.club) this.loadSuggestions();
+    };
+    app.eventBus.on('session-changed', this.onSessionChanged);
     this.loadSuggestions();
     if (options.keyword) this.setData({ keyword: options.keyword }, () => this.runSearch());
   },
@@ -37,6 +52,7 @@ Page({
   onUnload() {
     this.clearSearchTimer();
     this.searchRequestId = (this.searchRequestId || 0) + 1;
+    app.eventBus.off('session-changed', this.onSessionChanged);
   },
 
   onReachBottom() {

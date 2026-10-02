@@ -15,7 +15,7 @@ const MEMBER_STATUS_TEXT = {
     action: '查看申请状态',
   },
   active: {
-    title: '你已加入黑光文学社',
+    title: '你已加入当前社团',
     desc: '社内内容只对当前有效成员开放。',
     action: '',
   },
@@ -54,7 +54,16 @@ Page({
   },
 
   onLoad() {
+    this.clubId = (app.globalData.session && app.globalData.session.club
+      && app.globalData.session.club.id) || '';
     this.onSessionChanged = (session) => {
+      const nextClubId = session && session.club && session.club.id;
+      if (this.clubId !== nextClubId) {
+        this.clubRequestId = (this.clubRequestId || 0) + 1;
+        this.setData({ club: null, loading: !!nextClubId, loadError: '' });
+        if (nextClubId) this.loadClub();
+      }
+      this.clubId = nextClubId || '';
       const memberStatus = statusFromSession(session);
       this.setData({
         session,
@@ -67,6 +76,7 @@ Page({
   },
 
   onUnload() {
+    this.clubRequestId = (this.clubRequestId || 0) + 1;
     app.eventBus.off('session-changed', this.onSessionChanged);
   },
 
@@ -75,9 +85,12 @@ Page({
   },
 
   async loadClub({ silent = false } = {}) {
+    const requestId = (this.clubRequestId || 0) + 1;
+    this.clubRequestId = requestId;
     if (!silent) this.setData({ loading: true, loadError: '' });
     try {
       const session = await fetchMembershipSession();
+      if (requestId !== this.clubRequestId) return;
       const memberStatus = statusFromSession(session);
       this.setData({
         session,
@@ -104,6 +117,7 @@ Page({
         }
       }
     } catch (err) {
+      if (requestId !== this.clubRequestId) return;
       this.setData({ loading: false, loadError: errorTextForLoad(err) });
     }
   },

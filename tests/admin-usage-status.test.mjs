@@ -137,7 +137,7 @@ const adminPage = loadAdminPage(async () => {
   return readStatus();
 });
 const moderator = pageContext(adminPage, {
-  session: { role: 'moderator', memberStatus: 'active' },
+  session: { role: 'moderator', memberStatus: 'active', club: { id: 'club-a' } },
   accessState: 'allowed',
 });
 

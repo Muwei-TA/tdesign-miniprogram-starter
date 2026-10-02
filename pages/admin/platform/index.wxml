@@ -1,0 +1,28 @@
+<view class="platform">
+  <text class="title">开发者 · 社团管理</text>
+  <text>管理社团配置与负责人；内容治理仍需对应社团资格。</text>
+  <view wx:if="{{ loading }}">读取中…</view>
+  <view wx:if="{{ error }}" role="alert">{{ error }}</view>
+  <button bindtap="load" disabled="{{ busy }}">刷新</button>
+  <block wx:if="{{ allowed }}">
+    <view wx:for="{{ clubs }}" wx:key="id" class="club" data-id="{{ item.id }}" bindtap="onSelect" aria-role="button" aria-label="编辑{{ item.name }}">
+      <text>{{ item.name }} · {{ item.status === 'active' ? '运行中' : '已暂停' }}</text><text>{{ item.id }}</text>
+    </view>
+    <button bindtap="onNew" disabled="{{ busy }}">新建社团</button>
+    <text>{{ selected ? '编辑社团' : '新建社团' }}</text>
+    <label>社团 ID<input value="{{ id }}" disabled="{{ selected || busy }}" data-field="id" bindinput="onInput" maxlength="64" placeholder="小写字母、数字、下划线或连字符" /></label>
+    <label>名称<input value="{{ name }}" data-field="name" bindinput="onInput" maxlength="60" /></label>
+    <label>简介<textarea value="{{ description }}" data-field="description" bindinput="onInput" maxlength="300" /></label>
+    <label>可在社团目录发现<switch checked="{{ discoverable }}" data-field="discoverable" bindchange="onSwitch" /></label>
+    <label>允许发布<switch checked="{{ publishing }}" data-field="publishing" bindchange="onSwitch" /></label>
+    <label>允许上传<switch checked="{{ uploads }}" data-field="uploads" bindchange="onSwitch" /></label>
+    <label>负责人账号 ID<input value="{{ moderatorUserId }}" data-field="moderatorUserId" bindinput="onInput" maxlength="256" placeholder="本人账号设置页可复制" /></label>
+    <text>指定负责人将授予本社负责人权限；原有管理成员保留权限，暂停或移除的成员不能由此恢复。</text>
+    <label>操作理由<textarea value="{{ reason }}" data-field="reason" bindinput="onInput" maxlength="500" placeholder="至少10字，写明目的与影响" /></label>
+    <button data-action="{{ selected ? 'update' : 'create' }}" bindtap="onAction" disabled="{{ busy }}">{{ selected ? '保存基础配置' : '创建并指定负责人' }}</button>
+    <block wx:if="{{ selected }}">
+      <button data-action="moderator" bindtap="onAction" disabled="{{ busy }}">指定负责人</button>
+      <button data-action="status" bindtap="onAction" disabled="{{ busy }}">{{ selected.status === 'active' ? '暂停社团' : '恢复社团' }}</button>
+    </block>
+  </block>
+</view>

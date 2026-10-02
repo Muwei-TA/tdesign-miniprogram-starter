@@ -3,6 +3,10 @@ import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();
 
+function sessionScope(session) {
+  return session ? [session.user && session.user.id, session.club && session.club.id, session.role, session.memberStatus].join(':') : '';
+}
+
 const TABS = [
   { value: 'reply', label: '回应' },
   { value: 'system', label: '系统' },
@@ -25,7 +29,23 @@ Page({
 
   onLoad() {
     this.hasShownOnce = false;
+    this.sessionScope = sessionScope(app.globalData.session);
+    this.onSessionChanged = (session) => {
+      const changed = this.sessionScope !== sessionScope(session);
+      this.sessionScope = sessionScope(session);
+      if (!changed) return;
+      this.listRequestId = (this.listRequestId || 0) + 1;
+      this.messageFirstPageLoading = false;
+      this.setData({ list: [], nextCursor: null, hasMore: false, loading: false, loadingMore: false, stale: false, errorText: '' });
+      if (session && session.memberStatus === 'active' && session.club) this.loadList();
+    };
+    app.eventBus.on('session-changed', this.onSessionChanged);
     this.loadList();
+  },
+
+  onUnload() {
+    this.listRequestId = (this.listRequestId || 0) + 1;
+    app.eventBus.off('session-changed', this.onSessionChanged);
   },
 
   onShow() {
@@ -48,6 +68,11 @@ Page({
   },
 
   async loadList({ append = false } = {}) {
+    const { session } = app.globalData;
+    if (!session || session.memberStatus !== 'active' || !session.club) {
+      this.setData({ list: [], nextCursor: null, hasMore: false, loading: false, loadingMore: false });
+      return;
+    }
     if (append && (this.data.loading || this.messageFirstPageLoading || this.data.loadingMore || !this.data.hasMore)) return;
     const requestId = (this.listRequestId || 0) + 1;
     this.listRequestId = requestId;

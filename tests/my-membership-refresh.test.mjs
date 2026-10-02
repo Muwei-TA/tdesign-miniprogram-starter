@@ -19,19 +19,20 @@ function deferred() {
 
 function loadSessionService(request) {
   const source = read('services/session.js')
-    .replace("import request, { clearAuthToken } from '~/api/request';", 'const request = __request;\nconst clearAuthToken = __clearAuthToken;')
+    .replace("import request, { clearAuthToken, requestForClub } from '~/api/request';", 'const request = __request; const clearAuthToken = __clearAuthToken; const requestForClub = __requestForClub;')
     .replace("import endpoints from '~/api/endpoints';", 'const endpoints = __endpoints;')
     .replace(/export function /g, 'function ')
     .replace(/export async function /g, 'async function ')
     .replace(/export default \{[\s\S]*?\};\s*$/, '')
-    .concat('\nmodule.exports = { bootstrapSession, refreshSessionFromServer, getSession, clearAccountScope };');
+    .concat('\nmodule.exports = { bootstrapSession, refreshSessionFromServer, refreshSessionForClub, fetchInitialSession, setCurrentSession, setSessionWithoutClub, getSession, clearAccountScope };');
   const module = { exports: {} };
   vm.runInNewContext(source, {
     module,
     exports: module.exports,
     __request: request,
+    __requestForClub: (url, clubId) => request(url, clubId),
     __clearAuthToken: () => { tokenClearCount += 1; },
-    __endpoints: { sessionMe: '/session/me' },
+    __endpoints: { accountMe: '/account/me', sessionMe: '/session/me' },
     wx: { getStorageInfoSync: () => ({ keys: [] }), removeStorageSync() {} },
   });
   return module.exports;
@@ -48,7 +49,7 @@ const sessionService = loadSessionService((url) => {
 
 const olderRefresh = sessionService.refreshSessionFromServer();
 const newerRefresh = sessionService.refreshSessionFromServer();
-const activeSession = { role: 'member', memberStatus: 'active', user: { id: 'member-1', displayName: '成员' } };
+const activeSession = { role: 'member', memberStatus: 'active', user: { id: 'member-1', displayName: '成员' }, club: { id: 'club-a' } };
 responses[1].resolve(activeSession);
 await newerRefresh;
 responses[0].resolve({ role: 'guest', memberStatus: 'none', user: null });
@@ -68,10 +69,8 @@ function loadApp(refreshSessionFromServer, bootstrapSession = async () => guestS
     .replace("import config from './config';", 'const config = __config;')
     .replace("import createBus from './utils/eventBus';", 'const createBus = __createBus;')
     .replace("import { fetchUnreadCount } from './services/notifications';", 'const fetchUnreadCount = __fetchUnreadCount;')
-    .replace(
-      /import \{[\s\S]*?\} from '\.\/services\/session';/,
-      'const { bootstrapSession, refreshSessionFromServer, clearAccountScope } = __session;',
-    );
+    .replace(/import \{[\s\S]*?\} from '\.\/services\/session';/, 'const { bootstrapSession, refreshSessionFromServer, refreshSessionForClub, setCurrentSession, setSessionWithoutClub, clearAccountScope } = __session;')
+    .replace("import { fetchMyClubs } from './services/clubs';", 'const { fetchMyClubs } = __clubs;');
   let definition;
   const events = [];
   const bus = {
@@ -87,15 +86,20 @@ function loadApp(refreshSessionFromServer, bootstrapSession = async () => guestS
     __session: {
       bootstrapSession,
       refreshSessionFromServer,
+      refreshSessionForClub: async (clubId) => ({ ...activeSession, club: { id: clubId } }),
+      setCurrentSession: (value) => value,
+      setSessionWithoutClub: (value) => ({ ...value, role: 'guest', memberStatus: 'none', club: null }),
       clearAccountScope: () => guestSession,
     },
-    wx: {},
+    __clubs: { fetchMyClubs: async () => [{ id: 'club-a', status: 'active', memberStatus: 'active' }] },
+    wx: { getStorageSync() { return ''; }, setStorageSync() {}, removeStorageSync() {} },
   });
   const app = { ...definition, globalData: { ...definition.globalData }, eventBus: bus };
   return { app, events };
 }
 
 const appHarness = loadApp(async () => activeSession);
+appHarness.app.globalData.session = activeSession;
 assert.equal(await appHarness.app.refreshSession(), activeSession);
 assert.equal(appHarness.app.globalData.session, activeSession);
 assert.ok(appHarness.events.some(([name, session]) => name === 'session-changed' && session === activeSession));

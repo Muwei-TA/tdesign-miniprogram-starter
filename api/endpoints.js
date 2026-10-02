@@ -5,6 +5,14 @@
 export default {
   sessionWechat: '/session/wechat',
   sessionMe: '/session/me',
+  platformClubs: '/platform/clubs',
+  platformClubUpdate: '/platform/clubs/update',
+  platformClubStatus: '/platform/clubs/status',
+  platformClubModerator: '/platform/clubs/moderator',
+  accountMe: '/account/me',
+  clubs: '/clubs',
+  myClubs: '/clubs/mine',
+  clubDetail: '/clubs/:id',
   myLevels: '/me/levels',
   myCheckIn: '/me/check-in',
 

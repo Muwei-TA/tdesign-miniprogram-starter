@@ -44,6 +44,7 @@ Page({
     recommendationCards: [],
     recommendationState: 'loading',
     club: null,
+    clubName: '',
     loading: true,
     // stale：请求失败但保留了已加载数据，顶部提示"未更新"
     stale: false,
@@ -57,11 +58,25 @@ Page({
   },
 
   onLoad() {
-    this.syncSession(getSession());
-    this.loadFeed();
-
+    this.syncSession(app.globalData.session || getSession());
     this.onSessionChanged = (session) => {
+      const clubId = session && session.club && session.club.id;
+      const nextScope = session
+        ? [session.user && session.user.id, session.club && session.club.id, session.role, session.memberStatus].join(':')
+        : '';
+      const changedClub = this.sessionScope !== nextScope;
       this.syncSession(session);
+      if (changedClub) {
+        this.feedRequestId = (this.feedRequestId || 0) + 1;
+        this.recommendationRequestId = (this.recommendationRequestId || 0) + 1;
+        this.feedFirstPageLoading = false;
+        this.setData({
+          selectedBoardId: '', list: [], nextCursor: null, hasMore: false,
+          loading: !!clubId, loadingMore: false, stale: false, errorText: '',
+          recommendationCards: [], recommendationState: clubId ? 'loading' : 'guest',
+        });
+        if (clubId) this.loadFeed();
+      }
       this.loadRecommendations(session);
     };
     this.onUnreadChanged = (count) => this.setUnread(count);
@@ -71,6 +86,7 @@ Page({
     app.eventBus.on('notice-unread-change', this.onUnreadChanged);
     app.eventBus.on('post-changed', this.onPostChanged);
     app.eventBus.on('post-created', this.onPostChanged);
+    this.loadFeed();
     this.loadRecommendations(getSession());
   },
 
@@ -109,8 +125,12 @@ Page({
     if (!session) return;
     this.setData({
       isMember: session.memberStatus === 'active',
+      club: session.club || null,
+      clubName: (session.club && session.club.name) || '',
       capabilities: getCapabilities(),
     });
+    this.sessionClubId = (session.club && session.club.id) || '';
+    this.sessionScope = [session.user && session.user.id, this.sessionClubId, session.role, session.memberStatus].join(':');
   },
 
   setUnread(count) {
@@ -145,6 +165,10 @@ Page({
     wx.navigateTo({ url: '/pages/message/index' });
   },
 
+  onClubSwitchTap() {
+    navigateTo('/pages/community/clubs/index');
+  },
+
   onRecommendationTap(e) {
     return getHomeFeed().onRecommendationTap.call(this, e);
   },
@@ -159,7 +183,7 @@ Page({
   },
 
   onTapBody(e) {
-    wx.navigateTo({ url: `/pages/community/post/index?id=${e.detail.id}&from=feed` });
+    navigateTo(`/pages/community/post/index?id=${e.detail.id}&from=feed`);
   },
 
   onTapMedia(e) {
@@ -169,7 +193,7 @@ Page({
       return;
     }
     // 视频统一在详情页播放，列表不自动播放
-    wx.navigateTo({ url: `/pages/community/post/index?id=${id}&from=feed` });
+    navigateTo(`/pages/community/post/index?id=${id}&from=feed`);
   },
 
   onTapTopic(e) {
@@ -230,6 +254,10 @@ Page({
   },
 
   onCompose() {
-    wx.navigateTo({ url: '/pages/release/index' });
+    if (!this.data.isMember) {
+      navigateTo('/pages/community/clubs/index');
+      return;
+    }
+    navigateTo('/pages/release/index');
   },
 });

@@ -25,14 +25,14 @@ function loadPage(path, services = {}) {
     .replace(/import[\s\S]*?from ['"][^'"]+['"];?/g, '');
   let page;
   const app = {
-    globalData: { session: { role: 'member' }, unreadCount: 0 },
+    globalData: { session: { role: 'member', memberStatus: 'active', club: { id: 'club-a' } }, unreadCount: 0 },
     eventBus: { on() {}, off() {}, emit() {} },
     refreshUnreadCount: async () => {},
   };
   vm.runInNewContext(source, {
     Page: (value) => { page = value; },
     getApp: () => app,
-    getSession: () => ({ user: { id: 'u1' }, memberStatus: 'active' }),
+    getSession: () => ({ user: { id: 'u1' }, memberStatus: 'active', club: { id: 'club-a' } }),
     getCapabilities: () => ({}),
     fetchProfile: async () => ({ user: { id: 'u1' }, items: [] }),
     fetchTopicDetail: async () => ({ topic: { id: 't1' }, items: [] }),

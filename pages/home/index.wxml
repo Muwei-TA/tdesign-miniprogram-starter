@@ -9,6 +9,12 @@
     </view>
   </hg-nav>
 
+  <view class="hg-home__club-switch" bindtap="onClubSwitchTap" aria-role="button" aria-label="切换社团">
+    <text class="hg-home__club-name">{{ clubName || '选择社团' }}</text>
+    <text class="hg-home__club-action">{{ clubName ? '切换' : '加入社团' }}</text>
+    <t-icon name="chevron-right" size="28rpx" />
+  </view>
+
   <!-- 只展示服务端返回的 active 板块；空状态不填充示例卡 -->
   <view class="hg-home__recommend">
     <view class="hg-home__recommend-head">
@@ -50,7 +56,7 @@
       </view>
     </scroll-view>
     <view wx:elif="{{ recommendationState === 'empty' }}" class="hg-home__recommend-empty">暂时没有已审核的板块</view>
-    <view wx:elif="{{ recommendationState === 'guest' }}" class="hg-home__recommend-empty">加入文学社后，可以查看社内板块</view>
+    <view wx:elif="{{ recommendationState === 'guest' }}" class="hg-home__recommend-empty">选择并加入社团后，可以查看社内板块</view>
     <view wx:elif="{{ recommendationState === 'error' }}" class="hg-home__recommend-empty">板块暂时没加载出来，前往板块页重试</view>
   </view>
 

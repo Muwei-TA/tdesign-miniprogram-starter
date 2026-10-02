@@ -1,4 +1,5 @@
-import { scopedKey } from '~/services/session';
+import { getSession, scopedKey } from '~/services/session';
+import { migrateLegacyDraft, migrateLegacyDraftIndex, removeLegacyDraft } from '~/services/legacy-drafts';
 import { createIdempotencyKey } from '~/utils/idempotency';
 
 /**
@@ -45,10 +46,15 @@ function chooseIdempotencyKey(draft, previous, sameContent) {
 }
 
 export function getDraft(id) {
-  return wx.getStorageSync(scopedKey(`draft:${id}`)) || null;
+  const draft = wx.getStorageSync(scopedKey(`draft:${id}`)) || migrateLegacyDraft(id);
+  const clubId = getSession().club && getSession().club.id;
+  return draft && draft.clubId === clubId ? draft : null;
 }
 
 export function saveDraft(draft) {
+  const session = getSession();
+  const clubId = session.club && session.club.id;
+  if (!clubId || (draft.clubId && draft.clubId !== clubId)) return null;
   const id = draft.id || `draft-${Date.now().toString(36)}`;
   const previous = draft.id ? getDraft(draft.id) : null;
   const fingerprint = draftFingerprint(draft);
@@ -57,6 +63,7 @@ export function saveDraft(draft) {
   const payload = {
     ...draft,
     id,
+    clubId,
     idempotencyKey: chooseIdempotencyKey(draft, previous, sameContent),
     draftFingerprint: fingerprint,
     // 视频的本地临时路径不保证跨会话可用，标记后在恢复时提示重选
@@ -78,12 +85,13 @@ export function saveDraft(draft) {
 }
 
 export function listDrafts() {
-  return readIndex();
+  return migrateLegacyDraftIndex();
 }
 
 export function removeDraft(id) {
   wx.removeStorageSync(scopedKey(`draft:${id}`));
   writeIndex(readIndex().filter((item) => item.id !== id));
+  removeLegacyDraft(id);
 }
 
 export default { saveDraft, getDraft, listDrafts, removeDraft };

@@ -3,6 +3,10 @@ import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();
 
+function sessionScope(session) {
+  return session ? [session.user && session.user.id, session.club && session.club.id, session.role, session.memberStatus].join(':') : '';
+}
+
 Page({
   data: {
     session: null,
@@ -37,19 +41,31 @@ Page({
 
   applySession(session) {
     if (!session) return;
-    const allowed = !!session.user;
-    this.setData({ session, accessState: allowed ? 'allowed' : 'denied' }, () => {
+    const scope = sessionScope(session);
+    const changed = this.sessionScope !== scope;
+    this.sessionScope = scope;
+    const allowed = !!session.user && session.memberStatus === 'active' && !!session.club;
+    if (changed) this.appealRequestId = (this.appealRequestId || 0) + 1;
+    this.setData({
+      session,
+      accessState: allowed ? 'allowed' : 'denied',
+      ...(changed ? { appeals: [], loading: false, errorText: '' } : {}),
+    }, () => {
       if (allowed && !this.data.loading) this.loadAppeals();
     });
   },
 
   async loadAppeals({ silent = false } = {}) {
     if (this.data.accessState !== 'allowed') return;
+    const requestId = (this.appealRequestId || 0) + 1;
+    this.appealRequestId = requestId;
     this.setData({ loading: true, ...(silent ? {} : { errorText: '' }) });
     try {
       const result = await fetchMyAppeals({ limit: 50 });
+      if (requestId !== this.appealRequestId) return;
       this.setData({ appeals: result.items || [], loading: false, errorText: '' });
     } catch (err) {
+      if (requestId !== this.appealRequestId) return;
       this.setData({ loading: false, errorText: err.message || '申诉记录暂时无法读取。' });
       if (err.kind === 'unauthenticated') this.setData({ accessState: 'denied' });
     }

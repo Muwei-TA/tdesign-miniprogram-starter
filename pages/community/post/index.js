@@ -35,6 +35,8 @@ function mergeCommentPages(previous, incoming) {
 Page({
   data: {
     id: '',
+    clubId: '',
+    historyOnly: false,
     from: 'feed',
     post: null,
     comments: [],
@@ -69,19 +71,80 @@ Page({
     this.setData({
       id: options.id || '',
       from: options.from || 'feed',
+      clubId: options.clubId || (app.globalData.session && app.globalData.session.club
+        && app.globalData.session.club.id) || '',
+      historyOnly: options.historyOnly === '1' && !!options.clubId,
       capabilities: getCapabilities(),
       fontIndex: typeof readingPrefs.fontIndex === 'number' ? readingPrefs.fontIndex : 1,
       fontSize: FONT_SIZES[typeof readingPrefs.fontIndex === 'number' ? readingPrefs.fontIndex : 1],
       nightMode: !!readingPrefs.nightMode,
     });
-    this.loadDetail();
+    this.onSessionChanged = (session) => {
+      if (this.data.historyOnly) {
+        const userId = session && session.user && session.user.id;
+        if (userId && userId === this.historyUserId) {
+          this.commentsRequestId = (this.commentsRequestId || 0) + 1;
+          this.setData({ post: null, comments: [], loading: true, notAccessible: false });
+          this.loadDetail();
+        } else {
+          this.commentsRequestId = (this.commentsRequestId || 0) + 1;
+          this.setData({ post: null, comments: [], loading: false, notAccessible: true });
+        }
+        return;
+      }
+      const nextClubId = session && session.club && session.club.id;
+      if (nextClubId !== this.data.clubId) {
+        this.commentsRequestId = (this.commentsRequestId || 0) + 1;
+        this.setData({ post: null, comments: [], commentsCursor: null, commentsHasMore: false, loading: false, notAccessible: true });
+        return;
+      }
+      if (session.memberStatus === 'active') this.loadDetail();
+    };
+    app.eventBus.on('session-changed', this.onSessionChanged);
+    this.loadForClub();
+  },
+
+  onUnload() {
+    this.commentsRequestId = (this.commentsRequestId || 0) + 1;
+    if (this.onSessionChanged) app.eventBus.off('session-changed', this.onSessionChanged);
+  },
+
+  async loadForClub() {
+    const { clubId } = this.data;
+    if (!clubId) {
+      this.setData({ loading: false, notAccessible: true });
+      navigateTo('/pages/community/clubs/index');
+      return;
+    }
+    if (this.data.historyOnly) {
+      const { session } = app.globalData;
+      if (!session || !session.user || !session.user.id) {
+        this.setData({ loading: false, notAccessible: true });
+        return;
+      }
+      this.historyUserId = session.user.id;
+      this.loadDetail();
+      return;
+    }
+    try {
+      const member = await app.resolveClubLink(clubId);
+      if (!member) {
+        wx.redirectTo({
+          url: `/pages/community/join/index?clubId=${encodeURIComponent(clubId)}&from=share`,
+        });
+        return;
+      }
+      this.loadDetail();
+    } catch (err) {
+      this.setData({ loading: false, errorText: err.message || '社团暂时无法切换' });
+    }
   },
 
   /** 详情必须按 id 重新请求，不复用列表数据 */
   async loadDetail() {
     this.setData({ loading: true, errorText: '', notAccessible: false });
     try {
-      const post = await fetchPostDetail(this.data.id);
+      const post = await fetchPostDetail(this.data.id, this.data.historyOnly ? this.data.clubId : '');
       const commentIdentityMode = post.viewer.isOwner && post.identityMode === 'anonymous' ? 'anonymous' : 'named';
       this.setData({ post, loading: false, commentIdentityMode });
       if (post.commentsEnabled || post.counters.comments > 0) this.loadComments();
@@ -115,9 +178,11 @@ Page({
       commentsLoading: true, commentsLoadingMore: false, commentsError: '', commentsHasMore: false,
     });
     try {
-      const data = await fetchComments(this.data.id, cursor);
+      const data = await fetchComments(this.data.id, cursor, this.data.historyOnly ? this.data.clubId : '');
       if (requestId !== this.commentsRequestId) return;
-      const items = data.items || [];
+      const items = (data.items || []).map((item) => this.data.historyOnly
+        ? { ...item, viewer: { ...(item.viewer || {}), canDelete: false, reacted: false } }
+        : item);
       this.markCommentSnapshots(items);
       this.setData({
         comments: append ? mergeCommentPages(this.data.comments, items) : items,
@@ -167,12 +232,17 @@ Page({
 
   // ---------- 媒体 ----------
   onPreviewImage(e) {
+    if (this.data.historyOnly) {
+      wx.showToast({ title: '退出社团后无法打开历史图片', icon: 'none' });
+      return;
+    }
     const { index } = e.currentTarget.dataset;
     previewPostImage(this.data.id, index);
   },
 
   // ---------- 互动 ----------
   async onReact() {
+    if (this.data.historyOnly) return;
     this.interactionBusy = this.interactionBusy || {};
     if (this.interactionBusy.react) return;
     this.interactionBusy.react = true;
@@ -195,6 +265,7 @@ Page({
   },
 
   async onBookmark() {
+    if (this.data.historyOnly) return;
     this.interactionBusy = this.interactionBusy || {};
     if (this.interactionBusy.bookmark) return;
     this.interactionBusy.bookmark = true;
@@ -217,6 +288,7 @@ Page({
   },
 
   onCommentSubmit(e) {
+    if (this.data.historyOnly) return;
     if (this.data.commentSubmitting) return;
     const body = String(e.detail.body || '').trim();
     const replyToId = e.detail.replyToId || '';
@@ -335,6 +407,7 @@ Page({
   },
 
   async onCommentReact(e) {
+    if (this.data.historyOnly) return;
     const { id } = e.detail;
     const located = this.findCommentPath(id);
     if (!located || located.item.deleted || located.item.status !== 'published') return;
@@ -373,6 +446,7 @@ Page({
   },
 
   onCommentDelete(e) {
+    if (this.data.historyOnly) return;
     const { id } = e.detail;
     const located = this.findCommentPath(id);
     if (!located) return;
@@ -441,6 +515,7 @@ Page({
   },
 
   onTapAuthor() {
+    if (this.data.historyOnly) return;
     const author = this.data.post.author || {};
     if (author.isAnonymous || !author.userId) {
       wx.showModal({
@@ -456,6 +531,7 @@ Page({
   },
 
   onTapTopic() {
+    if (this.data.historyOnly) return;
     const { topic } = this.data.post;
     if (topic) navigateTo(`/pages/community/topic/index?id=${topic.id}`);
   },
@@ -470,6 +546,7 @@ Page({
   },
 
   onReport() {
+    if (this.data.historyOnly) return;
     this.setData({ moreVisible: false });
     wx.showModal({
       title: '举报这条内容',
@@ -514,7 +591,7 @@ Page({
       success: async (res) => {
         if (!res.confirm) return;
         try {
-          await shrinkVisibility(this.data.id, value, this.data.post.version);
+          await shrinkVisibility(this.data.id, value, this.data.post.version, this.data.historyOnly ? this.data.clubId : '');
           this.setData({ 'post.visibility': value });
           app.eventBus.emit('post-changed', { id: this.data.id, action: 'visibility' });
           wx.showToast({ title: '已更新可见范围', icon: 'none' });
@@ -535,7 +612,7 @@ Page({
       success: async (res) => {
         if (!res.confirm) return;
         try {
-          await deletePost(this.data.id, this.data.post.version);
+          await deletePost(this.data.id, this.data.post.version, this.data.historyOnly ? this.data.clubId : '');
           app.eventBus.emit('post-changed', { id: this.data.id, action: 'delete' });
           wx.navigateBack();
         } catch (err) {

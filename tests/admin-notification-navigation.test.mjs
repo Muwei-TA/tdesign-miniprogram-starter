@@ -42,7 +42,8 @@ let delayNotificationFetches = false;
 const pendingNotificationFetches = [];
 let messageUnreadRefreshes = 0;
 const messageApp = {
-  globalData: { session: { role: 'member', memberStatus: 'active' } },
+  globalData: { session: { role: 'member', memberStatus: 'active', club: { id: 'club-a' } } },
+  eventBus: { on() {}, off() {}, emit() {} },
   setUnreadCount() {},
   refreshUnreadCount() {
     messageUnreadRefreshes += 1;
@@ -155,7 +156,7 @@ const adminPage = loadPage(
     __usage: { fetchUsageStatus: async () => ({}) },
     __navigation: { navigateTo: (url) => adminNavigations.push(url) },
     getApp: () => ({ eventBus: appBus, globalData: { session: null } }),
-    wx: {},
+    wx: { getStorageSync() { return ''; }, setStorageSync() {}, removeStorageSync() {}, navigateTo() {} },
   },
 );
 const admin = pageContext(adminPage);
@@ -171,10 +172,12 @@ function loadApp(session, fetchUnreadCount = null) {
     .replace("import config from './config';", 'const config = __config;')
     .replace("import createBus from './utils/eventBus';", 'const createBus = __createBus;')
     .replace("import { fetchUnreadCount } from './services/notifications';", 'const fetchUnreadCount = __fetchUnreadCount;')
-    .replace(
-      /import \{[\s\S]*?\} from '\.\/services\/session';/,
-      'const { bootstrapSession, refreshSessionFromServer, clearAccountScope } = __session;',
-    );
+    .replace(/import \{[\s\S]*?\} from '\.\/services\/session';/, 'const { bootstrapSession, refreshSessionFromServer, refreshSessionForClub, setCurrentSession, setSessionWithoutClub, clearAccountScope } = __session;')
+    .replace("import { fetchMyClubs } from './services/clubs';", 'const { fetchMyClubs } = __clubs;');
+  const selectedClub = session && session.club;
+  const accountSession = session && session.user
+    ? { ...session, role: 'guest', memberStatus: 'none', club: null }
+    : session;
   vm.runInNewContext(source, {
     App(value) { definition = value; },
     __config: {},
@@ -184,17 +187,21 @@ function loadApp(session, fetchUnreadCount = null) {
       return fetchUnreadCount ? fetchUnreadCount(unreadCalls) : Promise.resolve(unreadCalls);
     },
     __session: {
-      bootstrapSession: async () => session,
+      bootstrapSession: async () => accountSession,
       refreshSessionFromServer: async () => session,
+      refreshSessionForClub: async () => session,
+      setCurrentSession: (value) => value,
+      setSessionWithoutClub: (value) => ({ ...value, role: 'guest', memberStatus: 'none', club: null }),
       clearAccountScope: () => ({ role: 'guest', memberStatus: 'none' }),
     },
-    wx: {},
+    __clubs: { fetchMyClubs: async () => selectedClub ? [{ ...selectedClub, status: 'active', memberStatus: 'active' }] : [] },
+    wx: { getStorageSync() { return ''; }, setStorageSync() {}, removeStorageSync() {}, navigateTo() {} },
   });
   const app = { ...definition, globalData: { ...definition.globalData } };
   return { app, events, unreadCalls: () => unreadCalls };
 }
 
-const activeApp = loadApp({ role: 'member', memberStatus: 'active', user: { id: 'member-a' } });
+const activeApp = loadApp({ role: 'member', memberStatus: 'active', user: { id: 'member-a' }, club: { id: 'club-a' } });
 await activeApp.app.initSession();
 await activeApp.app.unreadCountRefreshPromise;
 assert.equal(activeApp.unreadCalls(), 1, 'cold start should keep its existing post-session unread fetch');
@@ -214,10 +221,10 @@ assert.equal(guestApp.unreadCalls(), 0, 'guest sessions must not request an unre
 let resolveUnreadCount;
 const pendingUnreadCount = new Promise((resolve) => { resolveUnreadCount = resolve; });
 const coalescedApp = loadApp(
-  { role: 'member', memberStatus: 'active', user: { id: 'member-a' } },
+  { role: 'member', memberStatus: 'active', user: { id: 'member-a' }, club: { id: 'club-a' } },
   () => pendingUnreadCount,
 );
-coalescedApp.app.publishSession({ role: 'member', memberStatus: 'active', user: { id: 'member-a' } });
+coalescedApp.app.publishSession({ role: 'member', memberStatus: 'active', user: { id: 'member-a' }, club: { id: 'club-a' } });
 const firstUnreadRefresh = coalescedApp.app.refreshUnreadCount();
 const overlappingUnreadRefresh = coalescedApp.app.refreshUnreadCount();
 assert.equal(coalescedApp.unreadCalls(), 1, 'overlapping lifecycle refreshes should share one request');
@@ -228,7 +235,7 @@ assert.equal(coalescedApp.app.globalData.unreadCount, 7);
 let resolveOldAccountCount;
 const oldAccountCount = new Promise((resolve) => { resolveOldAccountCount = resolve; });
 const logoutRaceApp = loadApp(
-  { role: 'member', memberStatus: 'active', user: { id: 'member-a' } },
+  { role: 'member', memberStatus: 'active', user: { id: 'member-a' }, club: { id: 'club-a' } },
   (call) => (call === 1 ? oldAccountCount : Promise.resolve(6)),
 );
 await logoutRaceApp.app.initSession();
@@ -240,7 +247,7 @@ resolveOldAccountCount(12);
 await oldAccountRefresh;
 assert.equal(logoutRaceApp.app.globalData.unreadCount, 0, 'a late pre-logout response must not restore the old account badge');
 
-logoutRaceApp.app.publishSession({ role: 'member', memberStatus: 'active', user: { id: 'member-b' } });
+logoutRaceApp.app.publishSession({ role: 'member', memberStatus: 'active', user: { id: 'member-b' }, club: { id: 'club-a' } });
 await logoutRaceApp.app.refreshUnreadCount();
 assert.equal(logoutRaceApp.unreadCalls(), 2, 'a new account should start a fresh unread request');
 assert.equal(logoutRaceApp.app.globalData.unreadCount, 6, 'the new account response should update the badge');
@@ -248,19 +255,20 @@ assert.equal(logoutRaceApp.app.globalData.unreadCount, 6, 'the new account respo
 let resolveRevokedSessionCount;
 const revokedSessionCount = new Promise((resolve) => { resolveRevokedSessionCount = resolve; });
 const revocationRaceApp = loadApp(
-  { role: 'moderator', memberStatus: 'active', user: { id: 'moderator-a' } },
+  { role: 'moderator', memberStatus: 'active', user: { id: 'moderator-a' }, club: { id: 'club-a' } },
   (call) => (call === 1 ? revokedSessionCount : Promise.resolve(3)),
 );
 await revocationRaceApp.app.initSession();
 const revokedSessionRefresh = revocationRaceApp.app.unreadCountRefreshPromise;
 revocationRaceApp.app.setUnreadCount(4);
-revocationRaceApp.app.publishSession({ role: 'member', memberStatus: 'removed', user: { id: 'moderator-a' } });
+revocationRaceApp.app.publishSession({ role: 'member', memberStatus: 'removed', user: { id: 'moderator-a' }, club: { id: 'club-a' } });
 const currentSessionRefresh = revocationRaceApp.app.unreadCountRefreshPromise;
 assert.equal(revocationRaceApp.app.globalData.unreadCount, 0, 'a role or membership change should clear the previous badge immediately');
 resolveRevokedSessionCount(15);
 await revokedSessionRefresh;
 await currentSessionRefresh;
-assert.equal(revocationRaceApp.app.globalData.unreadCount, 3, 'only the fresh request for the new session may set the badge');
+assert.equal(revocationRaceApp.unreadCalls(), 1, 'a removed member cannot start another club unread request');
+assert.equal(revocationRaceApp.app.globalData.unreadCount, 0, 'a removed member cannot restore the badge');
 
 const homeApp = {
   globalData: { session: { role: 'member', memberStatus: 'active' } },

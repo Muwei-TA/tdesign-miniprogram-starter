@@ -4,6 +4,10 @@ import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();
 
+function sessionScope(session) {
+  return session ? [session.user && session.user.id, session.club && session.club.id, session.role, session.memberStatus].join(':') : '';
+}
+
 Page({
   data: {
     categories: TOPIC_CATEGORIES,
@@ -40,8 +44,16 @@ Page({
     const safeAreaBottom = windowInfo.safeArea ? windowInfo.safeArea.bottom : editorWindowHeight;
     const editorBottomInset = Math.max(editorWindowHeight - safeAreaBottom, 0);
     this.setData({ editorTopInset, editorWindowHeight, editorBottomInset });
-    this.syncSession(getSession());
-    this.onSessionChanged = (session) => this.syncSession(session);
+    this.syncSession(app.globalData.session || getSession());
+    this.onSessionChanged = (session) => {
+      const changed = this.sessionScope !== sessionScope(session);
+      this.syncSession(session);
+      if (!changed) return;
+      this.listRequestId = (this.listRequestId || 0) + 1;
+      this.topicsFirstPageLoading = false;
+      this.setData({ list: [], nextCursor: null, hasMore: false, loadingMore: false, loading: !!this.data.isMember, stale: false, errorText: '' });
+      if (this.data.isMember) this.loadTopics();
+    };
     app.eventBus.on('session-changed', this.onSessionChanged);
     this.loadTopics();
   },
@@ -61,6 +73,7 @@ Page({
   syncSession(session) {
     if (!session) return;
     this.setData({ isMember: session.memberStatus === 'active' });
+    this.sessionScope = sessionScope(session);
   },
 
   onPullDownRefresh() {
@@ -73,6 +86,10 @@ Page({
   },
 
   async loadTopics({ append = false } = {}) {
+    if (!this.data.isMember) {
+      this.setData({ list: [], nextCursor: null, hasMore: false, loading: false, loadingMore: false });
+      return;
+    }
     if (append && (this.data.loading || this.topicsFirstPageLoading || this.data.loadingMore || !this.data.hasMore)) return;
     const requestId = (this.listRequestId || 0) + 1;
     this.listRequestId = requestId;

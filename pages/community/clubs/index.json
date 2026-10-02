@@ -1,0 +1,9 @@
+{
+  "navigationStyle": "custom",
+  "backgroundTextStyle": "dark",
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "hg-nav": "/components/hg-nav/index",
+    "empty-state": "/components/empty-state/index"
+  }
+}

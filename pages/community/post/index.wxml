@@ -4,6 +4,8 @@
     theme="{{ nightMode && post.kind === 'article' ? 'dark' : 'paper' }}"
   />
 
+  <view wx:if="{{ historyOnly }}" class="hg-detail__history-note">这里只显示你在该社团发布的历史内容；互动与媒体访问已关闭。</view>
+
   <!-- 统一不可访问态：不显示标题 -->
   <empty-state
     wx:if="{{ notAccessible }}"
@@ -150,7 +152,7 @@
     </block>
 
     <!-- 互动条：private 不展示 -->
-    <view wx:if="{{ post.visibility !== 'private' && post.status === 'published' }}" class="hg-detail__actions">
+    <view wx:if="{{ !historyOnly && post.visibility !== 'private' && post.status === 'published' }}" class="hg-detail__actions">
       <view
         class="hg-detail__action {{ post.viewer.reacted ? 'hg-detail__action--on' : '' }}"
         bindtap="onReact"
@@ -227,7 +229,7 @@
         </view>
       </view>
 
-      <view wx:if="{{ post.viewer.canReport }}" class="hg-sheet__option" bindtap="onReport" aria-role="button">
+      <view wx:if="{{ post.viewer.canReport && !historyOnly }}" class="hg-sheet__option" bindtap="onReport" aria-role="button">
         <t-icon name="flag" size="36rpx" />
         <view class="hg-sheet__option-main">
           <view class="hg-sheet__option-title">举报这条内容</view>

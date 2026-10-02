@@ -1,4 +1,4 @@
-import request, { clearAuthToken } from '~/api/request';
+import request, { clearAuthToken, requestForClub } from '~/api/request';
 import endpoints from '~/api/endpoints';
 
 /**
@@ -7,6 +7,7 @@ import endpoints from '~/api/endpoints';
  */
 
 const GUEST_SESSION = {
+  platformRole: 'none',
   role: 'guest',
   memberStatus: 'none',
   user: null,
@@ -27,6 +28,7 @@ let sessionRequestVersion = 0;
 function normalize(payload) {
   if (!payload) return { ...GUEST_SESSION };
   return {
+    platformRole: payload.platformRole === 'developer' ? 'developer' : 'none',
     role: payload.role || 'guest',
     memberStatus: payload.memberStatus || 'none',
     user: payload.user || null,
@@ -43,11 +45,11 @@ function normalize(payload) {
   };
 }
 
-async function loadSession({ failClosed }) {
+async function loadSession({ failClosed, endpoint = endpoints.sessionMe }) {
   sessionRequestVersion += 1;
   const requestVersion = sessionRequestVersion;
   try {
-    const payload = await request(endpoints.sessionMe);
+    const payload = await request(endpoint);
     if (requestVersion === sessionRequestVersion) current = normalize(payload);
   } catch (err) {
     if (!failClosed) throw err;
@@ -56,9 +58,42 @@ async function loadSession({ failClosed }) {
   return current;
 }
 
+export function fetchInitialSession() {
+  return request(endpoints.accountMe).then(normalize);
+}
+
+export function refreshSessionForClub(clubId) {
+  return requestForClub(endpoints.sessionMe, clubId).then(normalize);
+}
+
+export function setCurrentSession(session) {
+  sessionRequestVersion += 1;
+  current = normalize(session);
+  return current;
+}
+
+export function setSessionWithoutClub(session) {
+  sessionRequestVersion += 1;
+  current = {
+    ...normalize(session),
+    role: 'guest',
+    memberStatus: 'none',
+    club: null,
+    capabilities: {
+      publishing: false,
+      uploads: false,
+      publicScope: false,
+      video: false,
+      anthology: false,
+      export: false,
+    },
+  };
+  return current;
+}
+
 /** 冷启动恢复会话；任何失败都降级为访客，不抛出以避免阻塞启动 */
 export function bootstrapSession() {
-  return loadSession({ failClosed: true });
+  return loadSession({ failClosed: true, endpoint: endpoints.accountMe });
 }
 
 /** 页面重新显示时向服务端刷新；网络错误保留最后一次会话并交由页面显示错误态 */
@@ -113,11 +148,18 @@ export function clearAccountScope() {
 
 /** 账号作用域的 storage key，防止上一账号数据留给下一账号 */
 export function scopedKey(name) {
-  const userId = (current.user && current.user.id) || 'guest';
-  return `hg:${userId}:${name}`;
+  const app = typeof getApp === 'function' ? getApp() : null;
+  const scope = app && app.globalData ? app.globalData.session : current;
+  const userId = (scope && scope.user && scope.user.id) || 'guest';
+  const clubId = (scope && scope.club && scope.club.id) || 'none';
+  return `hg:${userId}:${clubId}:${name}`;
 }
 
 export default {
+  fetchInitialSession,
+  refreshSessionForClub,
+  setCurrentSession,
+  setSessionWithoutClub,
   bootstrapSession,
   refreshSessionFromServer,
   getSession,

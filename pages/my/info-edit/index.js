@@ -1,4 +1,4 @@
-import { bootstrapSession, getSession } from '~/services/session';
+import { getSession } from '~/services/session';
 import { updateMyProfile } from './profile-service';
 
 const app = getApp();
@@ -9,6 +9,7 @@ const app = getApp();
  */
 Page({
   data: {
+    accountId: '',
     displayName: '',
     avatar: '',
     saving: false,
@@ -27,9 +28,14 @@ Page({
   syncSession(session) {
     const user = session && session.user;
     this.setData({
+      accountId: (user && user.id) || '',
       displayName: (user && user.displayName) || '',
       avatar: (user && user.avatar) || '',
     });
+  },
+
+  onCopyAccountId() {
+    if (this.data.accountId) wx.setClipboardData({ data: this.data.accountId });
   },
 
   onNameInput(e) {
@@ -60,9 +66,7 @@ Page({
     try {
       await updateMyProfile(name);
       // 重新读取服务端会话，让昵称更新同步到所有页面与全局事件总线。
-      const session = await bootstrapSession();
-      app.globalData.session = session;
-      app.eventBus.emit('session-changed', session);
+      await app.refreshSession();
       this.setData({ saving: false });
       wx.showToast({ title: '已保存', icon: 'none' });
     } catch (err) {

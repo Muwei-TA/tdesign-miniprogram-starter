@@ -12,8 +12,13 @@ const USAGE_ALERT_LABELS = {
 
 function canAccess(session) {
   return !!session
+    && !!session.club
     && session.memberStatus === 'active'
     && (session.role === 'admin' || session.role === 'moderator');
+}
+
+function sessionScope(session) {
+  return session ? [session.user && session.user.id, session.club && session.club.id, session.role, session.memberStatus].join(':') : '';
 }
 
 function requiredCount(value, field) {
@@ -124,6 +129,12 @@ Page({
 
   applySession(session) {
     if (!session) return;
+    const changed = this.sessionScope !== sessionScope(session);
+    this.sessionScope = sessionScope(session);
+    if (changed) {
+      this.usageRequestId = (this.usageRequestId || 0) + 1;
+      this.setData({ usageStatus: null, usageLoading: false, usageErrorText: '' });
+    }
     if (!canAccess(session)) {
       this.usageRequestId = (this.usageRequestId || 0) + 1;
       this.setData({
@@ -136,7 +147,7 @@ Page({
       return;
     }
 
-    const shouldLoad = this.data.accessState !== 'allowed';
+    const shouldLoad = changed || this.data.accessState !== 'allowed';
     this.setData({ session, accessState: 'allowed' }, () => {
       if (shouldLoad) this.loadUsageStatus();
     });

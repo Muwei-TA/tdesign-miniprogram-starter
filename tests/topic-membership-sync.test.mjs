@@ -33,7 +33,7 @@ let topicFetches = 0;
 let sessionReads = 0;
 const modalCalls = [];
 const navigations = [];
-const app = { eventBus: createEventBus() };
+const app = { globalData: { session }, eventBus: createEventBus() };
 const source = read('pages/topics/index.js')
   .replace(
     "import { fetchTopics, submitTopic, toggleFollow, TOPIC_CATEGORIES } from '~/services/topics';",
@@ -97,7 +97,8 @@ page.onLoad();
 assert.equal(page.data.isMember, false, 'cold start may begin with a guest placeholder');
 assert.equal(app.eventBus.count('session-changed'), 1, 'page subscribes to session changes');
 
-session = { role: 'moderator', memberStatus: 'active', user: { id: 'moderator-1' } };
+session = { role: 'moderator', memberStatus: 'active', user: { id: 'moderator-1' }, club: { id: 'club-a' } };
+app.globalData.session = session;
 app.eventBus.emit('session-changed', session);
 assert.equal(page.data.isMember, true, 'bootstrap session change promotes the page to member');
 

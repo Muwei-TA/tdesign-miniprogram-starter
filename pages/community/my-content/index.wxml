@@ -1,5 +1,7 @@
 <view class="hg-page hg-my-content">
-  <hg-nav title="我的内容" />
+  <hg-nav title="{{ historyOnly ? '我的历史内容' : '我的内容' }}" />
+
+  <view wx:if="{{ historyOnly }}" class="hg-my-content__history-note">这是你在该社团发布的历史帖子。这里仅提供本人内容的查看和删除，不显示社内动态、收藏或关注。</view>
 
   <scroll-view class="hg-my-content__tabs" scroll-x enhanced show-scrollbar="{{ false }}">
     <view
@@ -104,7 +106,7 @@
             >删除</view
           >
           <view
-            wx:if="{{ item.status === 'rejected' }}"
+            wx:if="{{ !historyOnly && item.status === 'rejected' }}"
             class="hg-my-content__post-appeal"
             data-id="{{ item.id }}"
             catchtap="onEditRejected"
@@ -113,7 +115,7 @@
             重新编辑
           </view>
           <view
-            wx:if="{{ item.status === 'rejected' || item.status === 'hidden' }}"
+            wx:if="{{ !historyOnly && (item.status === 'rejected' || item.status === 'hidden') }}"
             class="hg-my-content__post-appeal"
             data-id="{{ item.id }}"
             catchtap="onAppealContent"
@@ -145,7 +147,7 @@
         icon="root-list"
         title="这里还没有内容"
         desc="{{ tab === 'pending' ? '待审核或需要修改的内容会出现在这里。' : tab === 'private' ? '只留给自己的文字会放在这里。' : '写下第一笔，之后可以在这里找回。' }}"
-        action="{{ tab === 'published' || tab === 'private' ? '写一笔' : '' }}"
+        action="{{ !historyOnly && (tab === 'published' || tab === 'private') ? '写一笔' : '' }}"
         bind:action="onNewDraft"
       />
     </block>

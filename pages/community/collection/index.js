@@ -4,6 +4,10 @@ import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();
 
+function sessionScope(session) {
+  return session ? [session.user && session.user.id, session.club && session.club.id, session.role, session.memberStatus].join(':') : '';
+}
+
 Page({
   data: {
     id: '',
@@ -23,9 +27,13 @@ Page({
     this.setData({ id: options.id || '' });
     this.syncSession(getSession());
     this.onSessionChanged = (session) => {
-      const wasEnabled = this.data.anthologyEnabled;
+      const changed = this.sessionScope !== sessionScope(session);
       this.syncSession(session);
-      if (wasEnabled !== this.data.anthologyEnabled || this.data.anthologyEnabled) this.loadDetail();
+      if (changed) {
+        this.collectionRequestId = (this.collectionRequestId || 0) + 1;
+        this.setData({ collection: null, entries: [], loading: this.data.anthologyEnabled, errorText: '', unavailable: false });
+      }
+      if (this.data.anthologyEnabled) this.loadDetail();
     };
     app.eventBus.on('session-changed', this.onSessionChanged);
 
@@ -34,6 +42,7 @@ Page({
   },
 
   onUnload() {
+    this.collectionRequestId = (this.collectionRequestId || 0) + 1;
     app.eventBus.off('session-changed', this.onSessionChanged);
   },
 
@@ -47,6 +56,7 @@ Page({
       isMember: session.memberStatus === 'active',
       anthologyEnabled: getCapabilities().anthology === true,
     });
+    this.sessionScope = sessionScope(session);
   },
 
   async loadDetail() {
@@ -64,9 +74,12 @@ Page({
       return;
     }
 
+    const requestId = (this.collectionRequestId || 0) + 1;
+    this.collectionRequestId = requestId;
     this.setData({ loading: true, unavailable: false, errorText: '', errorKind: '' });
     try {
       const data = (await fetchCollectionDetail(this.data.id)) || {};
+      if (requestId !== this.collectionRequestId) return;
       if (!data.collection) {
         const err = new Error('当前文集不可访问');
         err.kind = 'not_accessible';
@@ -82,6 +95,7 @@ Page({
         errorKind: '',
       });
     } catch (err) {
+      if (requestId !== this.collectionRequestId) return;
       this.setData({
         loading: false,
         stale: !!this.data.collection,

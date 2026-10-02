@@ -1,7 +1,6 @@
 import { submitPost } from '~/services/posts';
 import { fetchBoards } from '~/services/boards';
 import { saveDraft, getDraft, removeDraft } from './drafts';
-import { bootstrapSession } from '~/services/session';
 import {
   IMAGE_STATUS,
   LIMITS,
@@ -65,7 +64,19 @@ Page({
   onLoad(options) {
     this.pageOptions = options || {};
     this.onSessionChanged = (session) => this.applySession(session);
+    this.onClubContextChanging = () => {
+      if (this.editorClubId && this.editorClubId === (app.globalData.session
+        && app.globalData.session.club && app.globalData.session.club.id)) {
+        this.persistDraft({ silent: true });
+      }
+      if (this.uploadControl) this.uploadControl.canceled = true;
+    };
+    this.onClubSwitchFailed = () => {
+      this.setData({ canPublish: !!this.editorClubId && this.data.session.memberStatus === 'active' });
+    };
     app.eventBus.on('session-changed', this.onSessionChanged);
+    app.eventBus.on('club-context-changing', this.onClubContextChanging);
+    app.eventBus.on('club-switch-failed', this.onClubSwitchFailed);
     if (app.globalData.session) this.applySession(app.globalData.session);
     else this.restoreSession();
   },
@@ -74,18 +85,41 @@ Page({
     if (this.uploadControl) this.uploadControl.canceled = true;
     this.boardRequestId = (this.boardRequestId || 0) + 1;
     app.eventBus.off('session-changed', this.onSessionChanged);
+    app.eventBus.off('club-context-changing', this.onClubContextChanging);
+    app.eventBus.off('club-switch-failed', this.onClubSwitchFailed);
     if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
     this.persistDraft({ silent: true });
   },
 
   async restoreSession() {
-    const session = await bootstrapSession();
-    app.globalData.session = session;
-    app.eventBus.emit('session-changed', session);
+    if (app.sessionInitialization) await app.sessionInitialization;
+    const { session } = app.globalData;
+    if (session && session.club) this.applySession(session);
+    else navigateTo('/pages/community/clubs/index');
   },
 
   applySession(session) {
     if (!session) return;
+    const nextClubId = session.club && session.club.id;
+    if (this.editorClubId && this.editorClubId !== nextClubId) {
+      if (this.uploadControl) this.uploadControl.canceled = true;
+      this.boardRequestId = (this.boardRequestId || 0) + 1;
+      this.editorClubId = '';
+      this.editorInitialized = true;
+      this.setData({
+        session,
+        sessionReady: true,
+        canPublish: false,
+        capabilities: { publicScope: false, video: false, publishing: false, uploads: false },
+        draftId: '',
+        idempotencyKey: '',
+        title: '', body: '', images: [], video: null, topic: null, board: null, collectionId: '',
+        boards: [], boardNextCursor: null, boardsLoading: false, boardsErrorText: '',
+        submitting: false, uploadPhase: '',
+      });
+      wx.showToast({ title: '已切换社团，草稿保留在原社团', icon: 'none' });
+      return;
+    }
     const capabilities = {
       publicScope: false,
       video: false,
@@ -128,7 +162,9 @@ Page({
   },
 
   initializeEditor(options = {}) {
+    if (!this.data.session || !this.data.session.club || !this.data.session.club.id) return;
     this.editorInitialized = true;
+    this.editorClubId = this.data.session.club && this.data.session.club.id;
     const patch = { capabilities: this.data.capabilities };
     if (options.mode === 'article') patch.mode = 'article';
     if (options.topicId) patch.topic = { id: options.topicId, title: options.topicTitle || '已选择的话题' };
@@ -497,6 +533,8 @@ Page({
       video,
       idempotencyKey,
     } = this.data;
+    if (!this.editorClubId || !this.data.session || !this.data.session.club
+      || this.editorClubId !== this.data.session.club.id) return null;
     if (!body.trim() && !title.trim() && images.length === 0 && !video) return null;
 
     const draft = saveDraft({
@@ -514,6 +552,7 @@ Page({
       collectionId,
       consentGranted,
       video,
+      clubId: this.editorClubId,
     });
     this.setData({ draftId: draft.id, idempotencyKey: draft.idempotencyKey });
     app.eventBus.emit('draft-changed', { draftId: draft.id });
@@ -531,6 +570,11 @@ Page({
   },
 
   async onSubmit() {
+    if (!this.editorClubId || !app.globalData.session || !app.globalData.session.club
+      || this.editorClubId !== app.globalData.session.club.id || app.globalData.clubSwitching) {
+      wx.showToast({ title: '社团已切换，请回到当前社团重新编辑', icon: 'none' });
+      return;
+    }
     const error = this.validate();
     if (error) {
       wx.showToast({ title: error, icon: 'none' });

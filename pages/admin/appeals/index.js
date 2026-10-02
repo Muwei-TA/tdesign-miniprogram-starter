@@ -4,8 +4,13 @@ const app = getApp();
 
 function canAccess(session) {
   return !!session
+    && !!session.club
     && session.memberStatus === 'active'
     && (session.role === 'admin' || session.role === 'moderator');
+}
+
+function sessionScope(session) {
+  return session ? [session.user && session.user.id, session.club && session.club.id, session.role, session.memberStatus].join(':') : '';
 }
 
 Page({
@@ -41,11 +46,17 @@ Page({
 
   applySession(session) {
     if (!session) return;
+    const changed = this.sessionScope !== sessionScope(session);
+    this.sessionScope = sessionScope(session);
+    if (changed) {
+      this.appealsRequestId = (this.appealsRequestId || 0) + 1;
+      this.setData({ appeals: [], loading: false, errorText: '', reasonSheetVisible: false, pendingAction: null });
+    }
     if (!canAccess(session)) {
       this.setData({ session, accessState: 'denied', appeals: [], loading: false });
       return;
     }
-    const firstLoad = this.data.accessState !== 'allowed';
+    const firstLoad = changed || this.data.accessState !== 'allowed';
     this.setData({ session, accessState: 'allowed' }, () => {
       if (firstLoad) this.loadAppeals();
     });
@@ -53,11 +64,15 @@ Page({
 
   async loadAppeals({ silent = false } = {}) {
     if (this.data.accessState !== 'allowed') return;
+    const requestId = (this.appealsRequestId || 0) + 1;
+    this.appealsRequestId = requestId;
     this.setData({ loading: true, ...(silent ? {} : { errorText: '' }) });
     try {
       const result = await fetchAdminAppeals({ limit: 50 });
+      if (requestId !== this.appealsRequestId) return;
       this.setData({ appeals: result.items || [], loading: false, errorText: '' });
     } catch (err) {
+      if (requestId !== this.appealsRequestId) return;
       this.setData({ loading: false, errorText: err.message || '申诉队列暂时无法读取。' });
       if (err.kind === 'forbidden' || err.kind === 'membership_invalid') {
         this.setData({ accessState: 'denied', appeals: [] });

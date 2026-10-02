@@ -20,6 +20,7 @@ function harness() {
   let timerId = 0;
   vm.runInNewContext(source, {
     Page: (value) => { page = value; },
+    getApp: () => ({ globalData: { session: { role: 'member', memberStatus: 'active', user: { id: 'u1' }, club: { id: 'club-a' } }, clubSwitching: false }, eventBus: { on() {}, off() {}, emit() {} } }),
     search: (input) => { const pending = deferred(); calls.push({ ...input, ...pending }); return pending.promise; },
     fetchSuggestions: async () => ({ items: [] }), navigateTo() {}, wx: { showToast() {} },
     __searchController: searchController,

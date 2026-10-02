@@ -38,7 +38,7 @@ function createPage({ fetchMyLevels, checkInForToday, request = async () => ({})
 }
 
 function activeSession(id) {
-  return { memberStatus: 'active', role: 'member', user: { id, displayName: id } };
+  return { memberStatus: 'active', role: 'member', user: { id, displayName: id }, club: { id: 'club-a' } };
 }
 
 function snapshot({ totalXp = 135, awardedXp } = {}) {

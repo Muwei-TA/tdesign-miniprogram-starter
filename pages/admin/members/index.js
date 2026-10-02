@@ -10,7 +10,11 @@ const app = getApp();
 const DAY_SECONDS = 24 * 60 * 60;
 
 function canAccess(session) {
-  return !!session && session.memberStatus === 'active' && session.role === 'moderator';
+  return !!session && !!session.club && session.memberStatus === 'active' && session.role === 'moderator';
+}
+
+function sessionScope(session) {
+  return session ? [session.user && session.user.id, session.club && session.club.id, session.role, session.memberStatus].join(':') : '';
 }
 
 function currentUserId(session) {
@@ -70,11 +74,17 @@ Page({
 
   applySession(session) {
     if (!session) return;
+    const changed = this.sessionScope !== sessionScope(session);
+    this.sessionScope = sessionScope(session);
+    if (changed) {
+      this.membersRequestId = (this.membersRequestId || 0) + 1;
+      this.setData({ members: [], loading: false, errorText: '', reasonSheetVisible: false, pendingAction: null, inviteCode: '' });
+    }
     if (!canAccess(session)) {
       this.setData({ session, accessState: 'denied', members: [], loading: false });
       return;
     }
-    const firstLoad = this.data.accessState !== 'allowed';
+    const firstLoad = changed || this.data.accessState !== 'allowed';
     this.setData({ session, accessState: 'allowed' }, () => {
       if (firstLoad) this.loadMembers();
     });
@@ -82,9 +92,12 @@ Page({
 
   async loadMembers({ silent = false } = {}) {
     if (this.data.accessState !== 'allowed') return;
+    const requestId = (this.membersRequestId || 0) + 1;
+    this.membersRequestId = requestId;
     this.setData({ loading: true, ...(silent ? {} : { errorText: '' }) });
     try {
       const result = await fetchMembers({ limit: 100 });
+      if (requestId !== this.membersRequestId) return;
       const userId = currentUserId(this.data.session);
       this.setData({
         members: (result.items || []).map((item) => decorateMember(item, userId)),
@@ -92,6 +105,7 @@ Page({
         errorText: '',
       });
     } catch (err) {
+      if (requestId !== this.membersRequestId) return;
       this.setData({ loading: false, errorText: err.message || '成员名册暂时无法读取。' });
       if (err.kind === 'forbidden' || err.kind === 'membership_invalid') {
         this.setData({ accessState: 'denied', members: [] });

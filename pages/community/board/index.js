@@ -5,6 +5,10 @@ import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();
 
+function sessionScope(session) {
+  return session ? [session.user && session.user.id, session.club && session.club.id, session.role, session.memberStatus].join(':') : '';
+}
+
 function showAnonymousNotice() {
   wx.showModal({
     title: '树洞身份',
@@ -34,22 +38,23 @@ Page({
     this.setData({ id: options.id || '' });
     this.syncSession(getSession());
     this.onSessionChanged = (session) => {
-      const wasMember = this.data.isMember;
+      const changed = this.sessionScope !== sessionScope(session);
       this.syncSession(session);
-      if (!wasMember && this.data.isMember) this.loadDetail();
-      if (wasMember && !this.data.isMember) {
+      if (changed) {
         this.boardRequestId = (this.boardRequestId || 0) + 1;
+        this.boardFirstPageLoading = false;
         this.setData({
           board: null,
           list: [],
           canPost: false,
-          loading: false,
+          loading: this.data.isMember,
           loadingMore: false,
           nextCursor: null,
           hasMore: false,
           errorText: '',
           errorKind: '',
         });
+        if (this.data.isMember) this.loadDetail();
       }
     };
     app.eventBus.on('session-changed', this.onSessionChanged);
@@ -80,6 +85,7 @@ Page({
   syncSession(session) {
     if (!session) return;
     this.setData({ isMember: session.memberStatus === 'active' });
+    this.sessionScope = sessionScope(session);
   },
 
   async loadDetail({ append = false } = {}) {

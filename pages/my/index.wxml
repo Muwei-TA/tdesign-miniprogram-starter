@@ -180,6 +180,8 @@
     </view>
   </block>
 
+  <view wx:if="{{ showDeveloper }}" class="hg-my__row" bindtap="onDeveloperTap" aria-role="button" aria-label="开发者社团管理">开发者 · 社团管理</view>
+
   <view wx:if="{{ showLevelRules && isMember }}" class="hg-my__rules-scrim" bindtap="onLevelRulesClose">
     <view class="hg-my__rules-sheet" catchtap="stopLevelRulesTap">
       <view class="hg-my__rules-header">
