@@ -1,4 +1,4 @@
-<view class="hg-page hg-page--tab hg-home">
+<view class="hg-page hg-page--tab hg-home {{ isBlackbox ? 'hg-home--blackbox' : '' }}">
   <hg-nav
     theme="transparent"
     show-back="{{ false }}"
@@ -53,6 +53,28 @@
       <view class="hg-home__skeleton" wx:for="{{ [1, 2, 3] }}" wx:key="*this">
         <view class="hg-home__skeleton-line"></view>
         <view class="hg-home__skeleton-line hg-home__skeleton-line--short"></view>
+      </view>
+    </block>
+
+    <block wx:elif="{{ list.length > 0 && isBlackbox }}">
+      <view class="hg-home__waterfall">
+        <view wx:for="{{ waterfallColumns }}" wx:for-item="column" wx:key="id" class="hg-home__waterfall-column">
+          <post-card
+            wx:for="{{ column.items }}"
+            wx:for-item="postItem"
+            wx:key="id"
+            post="{{ list[postItem.index] }}"
+            mode="waterfall"
+            bind:tapbody="onTapBody"
+            bind:tapmedia="onTapMedia"
+            bind:taptopic="onTapTopic"
+            bind:tapboard="onTapBoard"
+            bind:tapauthor="onTapAuthor"
+            bind:more="onMore"
+            bind:react="onReact"
+            bind:bookmark="onBookmark"
+          />
+        </view>
       </view>
     </block>
 

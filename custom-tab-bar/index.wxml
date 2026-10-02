@@ -1,4 +1,4 @@
-<view class="hg-tabbar">
+<view class="hg-tabbar {{ isBlackbox ? 'hg-tabbar--blackbox' : '' }}">
   <view
     class="hg-tabbar__item {{ value === item.value ? 'hg-tabbar__item--on' : '' }}"
     wx:for="{{ list }}"

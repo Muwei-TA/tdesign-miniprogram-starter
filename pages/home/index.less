@@ -213,6 +213,54 @@
   }
 }
 
+.hg-home--blackbox {
+  background: @hg-blackbox-paper;
+  color: @hg-blackbox-ink;
+
+  hg-nav {
+    background: @hg-blackbox-paper;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .hg-nav__title,
+  .hg-nav__tool {
+    color: @hg-blackbox-ink;
+  }
+
+  .hg-home__club-name,
+  .hg-home__club-switch,
+  .hg-home__notice,
+  .hg-home__board-more,
+  .hg-home__filter,
+  .hg-home__filter--on {
+    color: @hg-blackbox-ink;
+  }
+
+  .hg-home__filter--on {
+    border-bottom-color: @hg-blackbox-orange;
+  }
+
+  .hg-home__fab {
+    background: @hg-blackbox-orange;
+    color: #fff;
+
+    &--hover {
+      background: darken(@hg-blackbox-orange, 7%);
+    }
+  }
+}
+
+.hg-home__waterfall {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: @hg-sp-2;
+}
+
+.hg-home__waterfall-column {
+  min-width: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hg-home__notice,
   .hg-home__club-switch,

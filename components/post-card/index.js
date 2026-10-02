@@ -18,7 +18,7 @@ Component({
 
   properties: {
     post: { type: Object, value: null },
-    /** feed | article | compact | mine */
+    /** feed | article | compact | mine | waterfall */
     mode: { type: String, value: 'feed' },
     showActions: { type: Boolean, value: true },
     /** 可读文章的回应入口可展示给访客；共鸣与收藏仅对有效成员启用。 */
@@ -75,7 +75,7 @@ Component({
         showComments: mode !== 'article' || !!viewer.canComment || !!(post.counters && post.counters.comments > 0),
         // 管理入口只由服务端返回的本人权限决定，不跟随互动区显隐。
         showMoreActions: showActions && viewer.isOwner && (viewer.canDelete || viewer.canShrinkVisibility),
-        isGrid: media.type === 'image' && (media.images || []).length > 1,
+        isGrid: mode !== 'waterfall' && media.type === 'image' && (media.images || []).length > 1,
         durationText: video ? formatDuration(video.duration) : '',
       });
     },

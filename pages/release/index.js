@@ -51,6 +51,7 @@ Page({
 
     session: null,
     sessionReady: false,
+    isBlackbox: false,
     canPublish: false,
     capabilities: { publicScope: false, video: false, publishing: false, uploads: false },
     draftId: '',
@@ -101,6 +102,7 @@ Page({
   applySession(session) {
     if (!session) return;
     const nextClubId = session.club && session.club.id;
+    const isBlackbox = nextClubId === 'blackbox-animation';
     if (this.editorClubId && this.editorClubId !== nextClubId) {
       if (this.uploadControl) this.uploadControl.canceled = true;
       this.boardRequestId = (this.boardRequestId || 0) + 1;
@@ -109,6 +111,7 @@ Page({
       this.setData({
         session,
         sessionReady: true,
+        isBlackbox,
         canPublish: false,
         capabilities: { publicScope: false, video: false, publishing: false, uploads: false },
         draftId: '',
@@ -128,7 +131,7 @@ Page({
       ...(session.capabilities || {}),
     };
     const canPublish = session.memberStatus === 'active' && capabilities.publishing === true;
-    this.setData({ session, sessionReady: true, capabilities, canPublish }, () => {
+    this.setData({ session, sessionReady: true, isBlackbox, capabilities, canPublish }, () => {
       if (session.memberStatus !== 'active') {
         this.promptMembership();
         return;

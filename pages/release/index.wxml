@@ -1,4 +1,4 @@
-<view class="hg-page hg-compose">
+<view class="hg-page hg-compose {{ isBlackbox ? 'hg-compose--blackbox' : '' }}">
   <hg-nav title="{{ mode === 'article' ? '写文稿' : '写一笔' }}">
   </hg-nav>
 
