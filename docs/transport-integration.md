@@ -4,9 +4,9 @@
 
 ## 运行 profile
 
-`nasProduction` 是当前默认值，使用 `https://api.muwei.xyz`；回退 profile `cloudbase` 仍指向在线的 `api` 云函数。`nasLanDevelopment` 仅用于微信开发者工具连接局域网 NAS。Pangolin HTTPS 路由、可信证书和小程序 `request` / `downloadFile` 域名已验证，模拟器已到达 API 并收到 HTTP 503；stage API 当前停止，等待导入后启动。此切换只选择传输 profile，不代表 NAS 业务 API 已可用。代码没有改变 `project.config.json` 的 `urlCheck: true`。
+`nasProduction` 是当前默认值，使用 `https://api.muwei.xyz`；回退 profile `cloudbase` 仍指向在线的 `api` 云函数。`nasLanDevelopment` 仅用于微信开发者工具连接局域网 NAS。Pangolin HTTPS 路由、可信证书和小程序 `request` / `downloadFile` 域名已验证；stage API 已导入一次真实快照并启动，通过模拟器和真机预览验证。此切换只选择传输 profile，正式切流仍需最终一致性快照和正式版发布。代码没有改变 `project.config.json` 的 `urlCheck: true`。
 
-生产 NAS origin 只接受 ASCII DNS hostname 加可选合法端口的裸 `https://` origin；不接受尾部斜线、路径、查询、片段、用户名/密码或空白。`https://api.muwei.xyz` 的可信完整证书、Pangolin HTTPS 路由和小程序域名配置已验证；当前上游返回 503，因为 stage API 停止待导入。若 Pangolin SSO 保护此 API origin，小程序的 `wx.request` 无法完成浏览器交互式 SSO；NAS 入口必须兼容微信 code 换短时 token 流程，不能在客户端加入 Basic 凭据或静态密钥绕过 SSO。
+生产 NAS origin 只接受 ASCII DNS hostname 加可选合法端口的裸 `https://` origin；不接受尾部斜线、路径、查询、片段、用户名/密码或空白。`https://api.muwei.xyz` 的可信完整证书、Pangolin HTTPS 路由和小程序域名配置已验证；当前 stage API 健康检查正常。若 Pangolin SSO 保护此 API origin，小程序的 `wx.request` 无法完成浏览器交互式 SSO；NAS 入口必须兼容微信 code 换短时 token 流程，不能在客户端加入 Basic 凭据或静态密钥绕过 SSO。
 
 局域网 profile 使用 `http://192.168.50.28:18118`，只适合连接同一局域网的开发者工具。开发者工具可能需要在本机项目设置中关闭合法域名校验；不要把这个设置写进共享项目配置。真机和体验版必须使用有效 HTTPS 公网域名，并通过微信服务器域名校验。
 
@@ -47,4 +47,4 @@ NAS profile 首次请求用 `wx.login` 取得一次性 `code`，向 `POST /v1/au
 - NAS 出站调用微信登录 code-session 接口可用；AppSecret 不进入小程序、请求日志或错误响应。服务端拒绝客户端自报的 OpenID、角色和成员状态。
 - 真实验收覆盖访客、有效成员、被移除成员、管理员、过期/撤销 token；检查登录、普通 action、图片签名下载、2 MiB 图片上传与审核、弱网/超时幂等、API 重启和 fail-closed。
 
-代码 profile、开发者工具请求成功或 HTTP health check 都不等于体验版/真机验收。当前默认已切换为 NAS；NAS API 启动并完成真实登录、action、图片签名下载、上传与角色场景验收后，才具备后续体验版评估条件。回退到 CloudBase 时将 `config.js` 的 `activeProfile` 改回 `cloudbase`。
+代码 profile、开发者工具请求成功或 HTTP health check 都不等于正式版验收。当前默认已切换为 NAS；模拟器和真机预览已验证登录、首页和签名图片，发帖、审核决定等会写入真实业务数据的流程仍未执行。回退到 CloudBase 时将 `config.js` 的 `activeProfile` 改回 `cloudbase`。
