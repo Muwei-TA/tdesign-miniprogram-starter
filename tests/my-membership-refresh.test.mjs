@@ -106,6 +106,7 @@ assert.ok(appHarness.events.some(([name, session]) => name === 'session-changed'
 
 function loadMyPage(app, getSession, { request = async () => ({ stats: { posts: 0, bookmarks: 0, topics: 0 } }), wxOverrides = {} } = {}) {
   const source = read('pages/my/index.js')
+    .replace("import Page from '~/utils/themed-page';", '')
     .replace("import request from '~/api/request';", 'const request = __request;')
     .replace("import { fetchMyLevels, checkInForToday } from '~/services/levels';", 'const { fetchMyLevels, checkInForToday } = __levels;')
     .replace(

@@ -6,6 +6,7 @@ import vm from 'node:vm';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const source = readFileSync(join(ROOT, 'pages/community/my-content/index.js'), 'utf8')
+  .replace("import Page from '~/utils/themed-page';", '')
   .replace(
     "import { deletePost, fetchMyContents, fetchPostDetail, toggleBookmark } from '~/services/posts';",
     'const deletePost = __deletePost; const fetchMyContents = __fetchMyContents; const fetchPostDetail = __fetchPostDetail; const toggleBookmark = __toggleBookmark;',

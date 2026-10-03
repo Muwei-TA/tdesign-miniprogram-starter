@@ -23,12 +23,12 @@
     align-items: center;
     justify-content: center;
     background: @hg-green-soft;
-    color: #7b956b;
+    color: @hg-topic-card-symbol;
     border-radius: @hg-radius-lg;
 
     &--warm {
-      background: #efe7d9;
-      color: #aa8861;
+      background: @hg-topic-card-warm-bg;
+      color: @hg-topic-card-warm-fg;
     }
   }
 
@@ -81,7 +81,7 @@
     padding: 0 20rpx;
     border: 1rpx solid @hg-green-line;
     border-radius: @hg-radius-pill;
-    color: #7b916c;
+    color: @hg-topic-card-follow;
     font-size: @hg-fs-xs;
 
     &--on {
@@ -102,6 +102,6 @@
 
   .hg-topic__desc {
     font-size: @hg-fs-sm;
-    color: #7a8a70;
+    color: @hg-topic-card-banner-desc;
   }
 }

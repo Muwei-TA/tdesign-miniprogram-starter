@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { getSession } from '~/services/session';
 import { updateMyProfile } from './profile-service';
 

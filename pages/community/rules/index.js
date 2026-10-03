@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { fetchClub } from '~/services/clubs';
 
 const app = getApp();

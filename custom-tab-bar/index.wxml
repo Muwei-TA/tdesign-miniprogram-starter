@@ -7,13 +7,13 @@
     hover-class="hg-tabbar__item--hover"
     bindtap="handleChange"
     aria-role="button"
-    aria-label="{{ item.label }}"
+    aria-label="{{ isBlackbox && item.value === 'home' ? '首页' : item.label }}"
   >
     <t-icon
       class="hg-tabbar__icon"
       name="{{ value === item.value ? item.iconActive : item.icon }}"
       size="44rpx"
     />
-    <text class="hg-tabbar__label">{{ item.label }}</text>
+    <text class="hg-tabbar__label">{{ isBlackbox && item.value === 'home' ? '首页' : item.label }}</text>
   </view>
 </view>

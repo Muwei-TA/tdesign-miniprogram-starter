@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { fetchBoards, submitBoard } from '~/services/boards';
 import { getSession } from '~/services/session';
 import { navigateTo } from '~/utils/navigate';
@@ -255,7 +256,9 @@ Page({
   askJoin() {
     wx.showModal({
       title: '需要成员资格',
-      content: '加入文学社后，可以浏览社内板块或提交板块建议。',
+      content: this.data.clubTheme === 'blackbox'
+        ? '加入当前社团后，可以浏览社内板块或提交板块建议。'
+        : '加入文学社后，可以浏览社内板块或提交板块建议。',
       confirmText: '去了解',
       success: (res) => {
         if (res.confirm) navigateTo('/pages/community/join/index?from=boards');

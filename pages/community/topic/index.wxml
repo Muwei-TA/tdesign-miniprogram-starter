@@ -1,3 +1,4 @@
+<page-meta page-style="{{ clubThemeStyle }}" />
 <view class="hg-page hg-topic-detail">
   <hg-nav title="话题详情" />
 
@@ -42,7 +43,7 @@
         wx:elif="{{ !loading && !stale }}"
         icon="pen"
         title="还没有人写下内容"
-        desc="如果你愿意，可以从一个具体的片段开始。"
+        desc="{{ clubTheme === 'blackbox' ? '发布与这个话题相关的内容。' : '如果你愿意，可以从一个具体的片段开始。' }}"
       />
     </view>
 
@@ -52,7 +53,7 @@
         bindtap="onWrite"
         aria-role="button"
       >
-        {{ topic.status === 'archived' ? '话题已归档' : (canPost ? '我也写一笔' : '加入后参与共写') }}
+        {{ topic.status === 'archived' ? '话题已归档' : (canPost ? (clubTheme === 'blackbox' ? '发布作品' : '我也写一笔') : (clubTheme === 'blackbox' ? '加入后参与创作' : '加入后参与共写')) }}
       </view>
       <view class="hg-topic-detail__note">每条内容只关联一个主话题，发布时由你决定身份与可见范围。</view>
     </view>

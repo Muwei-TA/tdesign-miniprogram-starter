@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import request from '~/api/request';
 import { fetchMyLevels, checkInForToday } from '~/services/levels';
 import { getSession, isAdmin } from '~/services/session';

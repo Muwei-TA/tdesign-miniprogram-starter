@@ -1,3 +1,4 @@
+<page-meta page-style="{{ clubThemeStyle }}" />
 <view class="hg-page hg-members">
   <hg-nav title="成员与邀请" />
 

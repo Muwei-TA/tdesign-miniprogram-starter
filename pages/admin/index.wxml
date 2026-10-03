@@ -1,3 +1,4 @@
+<page-meta page-style="{{ clubThemeStyle }}" />
 <view class="hg-page hg-admin">
   <hg-nav title="社团管理" />
 

@@ -25,7 +25,7 @@
     margin: @hg-sp-3 @hg-page-x 0;
     padding: @hg-sp-3;
     background: @hg-green-soft;
-    border: 1rpx solid fade(@hg-green, 12%);
+    border: 1rpx solid @hg-green-border-faint;
     border-radius: @hg-radius-lg;
     color: @hg-green;
   }
@@ -37,7 +37,7 @@
     justify-content: center;
     width: 72rpx;
     height: 72rpx;
-    background: fade(@hg-green, 9%);
+    background: @hg-green-bg-faint;
     border-radius: @hg-radius-md;
   }
 
@@ -147,7 +147,7 @@
     }
 
     &--limit_reached {
-      background: fade(@hg-danger, 12%);
+      background: @hg-danger-bg-faint;
       color: @hg-danger;
     }
 

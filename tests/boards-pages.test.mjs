@@ -10,7 +10,7 @@ const pause = () => new Promise((resolve) => setImmediate(resolve));
 
 function evaluatePage(source, imports, runtime) {
   let definition;
-  let transformed = source;
+  let transformed = source.replace("import Page from '~/utils/themed-page';", '');
   Object.entries(imports).forEach(([statement, replacement]) => {
     transformed = transformed.replace(statement, replacement);
   });

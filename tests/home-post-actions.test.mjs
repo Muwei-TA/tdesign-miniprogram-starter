@@ -14,6 +14,7 @@ const postCardStyles = readFileSync(join(ROOT, 'components/post-card/index.less'
 const postServiceSource = readFileSync(join(ROOT, 'services/posts.js'), 'utf8');
 const postCardSource = readFileSync(join(ROOT, 'components/post-card/index.js'), 'utf8');
 const homeSource = readFileSync(join(ROOT, 'pages/home/index.js'), 'utf8')
+  .replace("import Page from '~/utils/themed-page';", '')
   .replace(
     // \r? 兼容 Windows 检出的 CRLF 工作副本，否则导入块剥不掉会导致 vm 报 import 语法错误
     /import \{[\s\S]*?FEED_FILTERS,\r?\n\} from '~\/services\/posts';/,

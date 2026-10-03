@@ -54,7 +54,12 @@
   }
 }
 
-.hg-tabbar--blackbox { background: @hg-blackbox-paper; }
+.hg-tabbar--blackbox {
+  background: @hg-blackbox-paper;
+  border-color: var(--hg-line, #e5e5e5);
+
+  .hg-tabbar__item { color: var(--hg-tab-inactive, #888); }
+}
 
 .hg-tabbar--blackbox .hg-tabbar__item--on {
   color: @hg-blackbox-orange;

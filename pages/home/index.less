@@ -240,7 +240,7 @@
   .hg-home__club-name { font-family: @hg-font-sans; }
 
   .hg-empty__icon {
-    background: #fff1e8;
+    background: var(--hg-empty-icon-bg, #fff1e8);
     color: @hg-blackbox-orange;
     border-radius: @hg-radius-sm;
     box-shadow: none;
@@ -266,7 +266,7 @@
 
   .hg-home__fab {
     background: @hg-blackbox-orange;
-    color: #fff;
+    color: var(--hg-paper, #fff);
 
     &--hover {
       background: darken(@hg-blackbox-orange, 7%);

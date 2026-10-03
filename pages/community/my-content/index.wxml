@@ -1,3 +1,4 @@
+<page-meta page-style="{{ clubThemeStyle }}" />
 <view class="hg-page hg-my-content">
   <hg-nav title="{{ historyOnly ? '我的历史内容' : '我的内容' }}" />
 
@@ -75,8 +76,8 @@
         wx:else
         icon="file-copy"
         title="还没有草稿"
-        desc="没写完的句子可以先留在这里。"
-        action="写一笔"
+        desc="{{ clubTheme === 'blackbox' ? '未完成的内容会保存在这里。' : '没写完的句子可以先留在这里。' }}"
+        action="{{ clubTheme === 'blackbox' ? '发布作品' : '写一笔' }}"
         bind:action="onNewDraft"
       />
     </block>
@@ -146,8 +147,8 @@
         wx:if="{{ list.length === 0 && unavailable.length === 0 }}"
         icon="root-list"
         title="这里还没有内容"
-        desc="{{ tab === 'pending' ? '待审核或需要修改的内容会出现在这里。' : tab === 'private' ? '只留给自己的文字会放在这里。' : '写下第一笔，之后可以在这里找回。' }}"
-        action="{{ !historyOnly && (tab === 'published' || tab === 'private') ? '写一笔' : '' }}"
+        desc="{{ tab === 'pending' ? '待审核或需要修改的内容会出现在这里。' : tab === 'private' ? (clubTheme === 'blackbox' ? '只留给自己的内容会放在这里。' : '只留给自己的文字会放在这里。') : (clubTheme === 'blackbox' ? '发布内容后，可以在这里查看。' : '写下第一笔，之后可以在这里找回。') }}"
+        action="{{ !historyOnly && (tab === 'published' || tab === 'private') ? (clubTheme === 'blackbox' ? '发布作品' : '写一笔') : '' }}"
         bind:action="onNewDraft"
       />
     </block>

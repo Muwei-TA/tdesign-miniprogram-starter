@@ -41,6 +41,7 @@ const app = {
   refreshUnreadCount: async () => {},
 };
 const source = readFileSync(join(ROOT, 'pages/home/index.js'), 'utf8')
+  .replace("import Page from '~/utils/themed-page';", '')
   .replace(/import \{[\s\S]*?FEED_FILTERS,\r?\n\} from '~\/services\/posts';/, 'const { fetchFeed, toggleReaction, toggleBookmark, shrinkVisibility, deletePost, FEED_FILTERS } = __posts;')
   .replace("import { fetchBoards } from '~/services/boards';", 'const { fetchBoards } = __boards;')
   .replace("import { previewPostImage } from '~/services/image-preview';", 'const { previewPostImage } = __helpers;')

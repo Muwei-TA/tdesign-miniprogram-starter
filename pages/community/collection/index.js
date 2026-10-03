@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { fetchCollectionDetail } from '~/services/collections';
 import { getCapabilities, getSession } from '~/services/session';
 import { navigateTo } from '~/utils/navigate';

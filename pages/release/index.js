@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { submitPost } from '~/services/posts';
 import { fetchBoards } from '~/services/boards';
 import { saveDraft, getDraft, removeDraft } from './drafts';
@@ -146,7 +147,9 @@ Page({
     const isArticle = this.pageOptions && this.pageOptions.mode === 'article';
     wx.showModal({
       title: '需要成员资格',
-      content: isArticle ? '写文稿需要先加入当前社团。' : '写一笔需要先加入当前社团。',
+      content: isArticle
+        ? '写文稿需要先加入当前社团。'
+        : `${this.data.isBlackbox ? '发布作品' : '写一笔'}需要先加入当前社团。`,
       confirmText: '去了解',
       cancelText: '返回',
       success: (res) => {

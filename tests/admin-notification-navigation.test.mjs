@@ -9,7 +9,7 @@ const read = (path) => readFileSync(join(ROOT, path), 'utf8');
 
 function loadPage(path, replacements, globals = {}) {
   let definition;
-  let source = read(path);
+  let source = read(path).replace("import Page from '~/utils/themed-page';", '');
   replacements.forEach(([pattern, replacement]) => {
     source = source.replace(pattern, replacement);
   });

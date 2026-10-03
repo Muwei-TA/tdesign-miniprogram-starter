@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { fetchTopics, submitTopic, toggleFollow, TOPIC_CATEGORIES } from '~/services/topics';
 import { getSession } from '~/services/session';
 import { navigateTo } from '~/utils/navigate';
@@ -164,7 +165,7 @@ Page({
     if (!session || session.memberStatus !== 'active') {
       wx.showModal({
         title: '需要成员资格',
-        content: '发起话题需要先加入文学社。',
+        content: this.data.clubTheme === 'blackbox' ? '发起话题需要先加入当前社团。' : '发起话题需要先加入文学社。',
         confirmText: '去了解',
         success: (res) => {
           if (res.confirm) navigateTo('/pages/community/join/index?from=topics');

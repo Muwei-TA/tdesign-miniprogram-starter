@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { fetchAdminAppeals, decideAppeal } from '../governance';
 
 const app = getApp();

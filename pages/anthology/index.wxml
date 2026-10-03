@@ -1,14 +1,21 @@
-<view class="hg-page hg-page--tab hg-manuscript">
+<page-meta page-style="{{ clubThemeStyle }}" />
+<view class="hg-page hg-page--tab hg-manuscript {{ clubTheme === 'blackbox' ? 'hg-manuscript--blackbox' : '' }}">
   <hg-nav title="文稿" show-back="{{ false }}" />
 
   <view class="hg-manuscript__intro">
     <view class="hg-manuscript__copy">
-      <view class="hg-manuscript__eyebrow">长文 · 知识分享</view>
-      <view class="hg-manuscript__title">
-        <view>把知道的，</view>
-        <view>认真写下来。</view>
-      </view>
-      <view class="hg-manuscript__desc">读一篇完整的文章，也分享你实践过的经验。</view>
+      <block wx:if="{{ clubTheme === 'blackbox' }}">
+        <view class="hg-manuscript__eyebrow">社内长文</view>
+        <view class="hg-manuscript__desc">长文与知识分享。</view>
+      </block>
+      <block wx:else>
+        <view class="hg-manuscript__eyebrow">长文 · 知识分享</view>
+        <view class="hg-manuscript__title">
+          <view>把知道的，</view>
+          <view>认真写下来。</view>
+        </view>
+        <view class="hg-manuscript__desc">读一篇完整的文章，也分享你实践过的经验。</view>
+      </block>
     </view>
     <view
       wx:if="{{ canPublish }}"

@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import {
   fetchQueue,
   fetchAssetReviewStatuses,

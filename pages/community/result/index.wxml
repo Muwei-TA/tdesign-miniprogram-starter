@@ -1,3 +1,4 @@
+<page-meta page-style="{{ clubThemeStyle }}" />
 <view class="hg-page hg-result">
   <hg-nav title="" show-back="{{ false }}" />
 
@@ -15,12 +16,12 @@
 
   <view class="hg-result__btns">
     <view class="hg-result__primary" bindtap="onPrimary" aria-role="button">{{ primary }}</view>
-    <view class="hg-result__secondary" bindtap="onBackHome" aria-role="button">回树洞</view>
+    <view class="hg-result__secondary" bindtap="onBackHome" aria-role="button">{{ clubTheme === 'blackbox' ? '回首页' : '回树洞' }}</view>
   </view>
 
-  <view class="hg-result__again" bindtap="onWriteAgain" aria-role="button">继续写一笔</view>
+  <view class="hg-result__again" bindtap="onWriteAgain" aria-role="button">{{ clubTheme === 'blackbox' ? '继续发布' : '继续写一笔' }}</view>
 
   <view class="hg-footnote">
-    继续写一笔会新建一条默认「仅社内可见」的内容，不会沿用上一条的身份与范围。
+    {{ clubTheme === 'blackbox' ? '继续发布会新建一条默认「仅社内可见」的内容，不会沿用上一条的身份与范围。' : '继续写一笔会新建一条默认「仅社内可见」的内容，不会沿用上一条的身份与范围。' }}
   </view>
 </view>

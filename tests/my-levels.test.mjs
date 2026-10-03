@@ -6,6 +6,7 @@ import vm from 'node:vm';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const source = readFileSync(join(ROOT, 'pages/my/index.js'), 'utf8')
+  .replace("import Page from '~/utils/themed-page';", '')
   .replace("import request from '~/api/request';", 'const request = __request;')
   .replace("import { fetchMyLevels, checkInForToday } from '~/services/levels';", 'const { fetchMyLevels, checkInForToday } = __levels;')
   .replace("import { getSession, isAdmin } from '~/services/session';", 'const { getSession, isAdmin } = __session;')

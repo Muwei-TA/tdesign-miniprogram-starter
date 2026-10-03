@@ -1,7 +1,11 @@
-.platform { padding: 32rpx; background: #f8f6f0; min-height: 100vh; }
+@import '/styles/tokens.less';
+
+.platform { padding: 32rpx; background: var(--hg-paper, #f8f6f0); min-height: 100vh; font-family: var(--hg-font-sans, inherit); }
 .platform text, .platform label { display: block; margin: 16rpx 0; }
 .title { font-size: 36rpx; font-weight: 600; }
-.club { padding: 20rpx; border-bottom: 1rpx solid #ccc; }
-input { height: 80rpx; line-height: 80rpx; padding: 0 12rpx; background: white; }
-textarea { width: 100%; height: 160rpx; background: white; }
+.club { padding: 20rpx; border-bottom: 1rpx solid var(--hg-line, #ccc); }
+input, textarea { box-sizing: border-box; padding: 0 12rpx; background: var(--hg-surface, #fff); }
+input { height: 80rpx; line-height: 80rpx; }
+textarea { width: 100%; height: 160rpx; }
 button { margin: 16rpx 0; }
+.platform--blackbox button { background: @hg-green; color: @hg-on-green; border-radius: @hg-radius-sm; }

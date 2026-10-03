@@ -9,6 +9,7 @@ const read = (path) => readFileSync(join(ROOT, path), 'utf8');
 
 function loadJoinPage(harness) {
   const source = read('pages/community/join/index.js')
+    .replace("import Page from '~/utils/themed-page';", '')
     .replace(/import \{[\s\S]*?\} from '\.\.\/membership';/, 'const { fetchMyMembershipApplication, submitMembershipApplication, fetchMembershipSession } = __membership;')
     .replace("import { fetchClub } from '~/services/clubs';", 'const { fetchClub } = __clubs;')
     .replace("import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;');

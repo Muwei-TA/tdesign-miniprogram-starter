@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { fetchMembershipSession, fetchMyMembershipApplication } from '../membership';
 import { navigateTo } from '~/utils/navigate';
 

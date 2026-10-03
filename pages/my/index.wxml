@@ -1,4 +1,5 @@
-<view class="hg-page hg-page--tab hg-my">
+<page-meta page-style="{{ clubThemeStyle }}" />
+<view class="hg-page hg-page--tab hg-my {{ clubTheme === 'blackbox' ? 'hg-my--blackbox' : '' }}">
   <hg-nav
     title="我的"
     show-back="{{ false }}"

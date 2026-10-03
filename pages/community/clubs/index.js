@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { fetchMyClubs, fetchClubs } from '~/services/clubs';
 import { navigateTo } from '~/utils/navigate';
 

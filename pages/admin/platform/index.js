@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { fetchInitialSession } from '~/services/session';
 import { fetchPlatformClubs, managePlatformClub } from '~/services/platform';
 

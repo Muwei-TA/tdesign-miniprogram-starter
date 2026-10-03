@@ -1,3 +1,4 @@
+<page-meta page-style="{{ clubThemeStyle }}" />
 <view class="hg-page hg-compose {{ isBlackbox ? 'hg-compose--blackbox' : '' }}">
   <hg-nav title="{{ isBlackbox ? '发布作品' : (mode === 'article' ? '写文稿' : '写一笔') }}">
   </hg-nav>
@@ -23,8 +24,8 @@
     wx:elif="{{ !canPublish }}"
     icon="time"
     title="发布功能暂未开放"
-    desc="当前服务端没有开放发布能力，可以先回到树洞阅读内容。"
-    action="回树洞"
+    desc="{{ isBlackbox ? '当前服务端没有开放发布能力，可以先回到首页浏览内容。' : '当前服务端没有开放发布能力，可以先回到树洞阅读内容。' }}"
+    action="{{ isBlackbox ? '回首页' : '回树洞' }}"
     bind:action="onBackHome"
   />
 

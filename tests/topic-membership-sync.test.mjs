@@ -35,6 +35,7 @@ const modalCalls = [];
 const navigations = [];
 const app = { globalData: { session }, eventBus: createEventBus() };
 const source = read('pages/topics/index.js')
+  .replace("import Page from '~/utils/themed-page';", '')
   .replace(
     "import { fetchTopics, submitTopic, toggleFollow, TOPIC_CATEGORIES } from '~/services/topics';",
     'const { fetchTopics, submitTopic, toggleFollow, TOPIC_CATEGORIES } = __topics;',

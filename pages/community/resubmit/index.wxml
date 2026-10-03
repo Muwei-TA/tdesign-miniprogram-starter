@@ -1,3 +1,4 @@
+<page-meta page-style="{{ clubThemeStyle }}" />
 <view class="hg-page hg-resubmit">
   <hg-nav title="重新编辑" />
   <view wx:if="{{ loading }}" class="hg-resubmit__notice">正在读取原稿…</view>

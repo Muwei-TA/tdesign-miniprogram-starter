@@ -1,3 +1,4 @@
+<page-meta page-style="{{ clubThemeStyle }}" />
 <view class="hg-page hg-rules">
   <hg-nav title="社区约定" />
 
@@ -78,7 +79,7 @@
     </view>
 
     <view class="hg-rules__footnote"
-      >阅读并理解这些约定，是申请加入文学社前需要完成的一步。返回时，原页面已填写的内容会保留。</view
+      >阅读并理解这些约定，是申请加入{{ clubTheme === 'blackbox' ? '当前社团' : '文学社' }}前需要完成的一步。返回时，原页面已填写的内容会保留。</view
     >
   </block>
 </view>

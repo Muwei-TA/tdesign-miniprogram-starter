@@ -6,6 +6,7 @@ import vm from 'node:vm';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const pageSource = readFileSync(join(ROOT, 'pages/release/index.js'), 'utf8')
+  .replace("import Page from '~/utils/themed-page';", '')
   .replace("import { submitPost } from '~/services/posts';", 'const { submitPost } = __posts;')
   .replace("import { fetchBoards } from '~/services/boards';", 'const { fetchBoards } = __boards;')
   .replace("import { saveDraft, getDraft, removeDraft } from './drafts';", 'const { saveDraft, getDraft, removeDraft } = __drafts;')

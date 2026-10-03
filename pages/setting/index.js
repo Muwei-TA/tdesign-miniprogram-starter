@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { getCapabilities, getSession, scopedKey } from '~/services/session';
 import { requestAccountDeletion, requestContentExport } from './account';
 import { navigateTo } from '~/utils/navigate';

@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { fetchPostDetail, resubmitRejectedPost } from '~/services/posts';
 import { scopedKey } from '~/services/session';
 import { createIdempotencyKey } from '~/utils/idempotency';

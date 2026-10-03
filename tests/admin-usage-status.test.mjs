@@ -31,6 +31,7 @@ assert.deepEqual(usageCalls, ['/admin/usage/status']);
 
 function loadAdminPage(fetchUsageStatus, { mediaFetcher, wxApi } = {}) {
   const source = readFileSync(join(ROOT, 'pages/admin/index.js'), 'utf8')
+    .replace("import Page from '~/utils/themed-page';", '')
     .replace(
       /import \{[\s\S]*?\} from '\.\/moderation';/,
       'const { QUEUES, fetchQueue, fetchAssetReviewStatuses, submitDecision, decideComment, decideTopic, decideMembership, decideReport, decideCollection } = __moderation;',
@@ -67,6 +68,7 @@ function loadAdminPage(fetchUsageStatus, { mediaFetcher, wxApi } = {}) {
 
 function loadReviewsPage(mediaFetcher, wxApi) {
   const source = readFileSync(join(ROOT, 'pages/admin/reviews/index.js'), 'utf8')
+    .replace("import Page from '~/utils/themed-page';", '')
     .replace(
       /import \{[\s\S]*?\} from '\.\.\/moderation';/,
       'const { fetchQueue, fetchAssetReviewStatuses, submitDecision, decideComment, decideTopic, decideMembership, decideReport, decideCollection } = __moderation;',

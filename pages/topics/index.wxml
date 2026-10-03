@@ -1,7 +1,12 @@
+<page-meta page-style="{{ clubThemeStyle }}" />
 <view class="hg-page hg-page--tab hg-topics">
   <hg-nav title="话题" show-back="{{ false }}" />
 
-  <view class="hg-topics__intro">
+  <view wx:if="{{ clubTheme === 'blackbox' }}" class="hg-topics__intro hg-topics__intro--blackbox">
+    <view class="hg-topics__desc">每条内容最多关联一个主话题。</view>
+  </view>
+
+  <view wx:else class="hg-topics__intro">
     <view class="hg-topics__title">
       <view>不知道写什么的时候，</view>
       <view>从一个具体的问题开始。</view>
@@ -51,7 +56,7 @@
       wx:elif="{{ !loading }}"
       icon="chat-bubble-1"
       title="还没有话题"
-      desc="{{ isMember ? '发起一个具体的问题，比讨论宏大议题更容易开始。' : '先了解一下这个社团，或者申请加入。' }}"
+      desc="{{ isMember ? (clubTheme === 'blackbox' ? '发起话题，交流创作与想法。' : '发起一个具体的问题，比讨论宏大议题更容易开始。') : '先了解一下这个社团，或者申请加入。' }}"
       action="{{ isMember ? '发起一个话题' : '了解社团' }}"
       bind:action="onEmptyAction"
     />

@@ -10,7 +10,7 @@ const searchController = await loadPageModule(new URL('../pages/search/controlle
 
 function loadPage(relativePath, replacements, globals = {}) {
   let definition;
-  let source = readFileSync(join(ROOT, relativePath), 'utf8');
+  let source = readFileSync(join(ROOT, relativePath), 'utf8').replace("import Page from '~/utils/themed-page';", '');
   replacements.forEach(([pattern, replacement]) => {
     source = source.replace(pattern, replacement);
   });

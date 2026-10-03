@@ -6,6 +6,7 @@ import vm from 'node:vm';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const source = readFileSync(join(root, 'pages/community/resubmit/index.js'), 'utf8')
+  .replace("import Page from '~/utils/themed-page';", '')
   .replace("import { fetchPostDetail, resubmitRejectedPost } from '~/services/posts';", 'const fetchPostDetail = __fetchPostDetail; const resubmitRejectedPost = __resubmitRejectedPost;')
   .replace("import { scopedKey } from '~/services/session';", 'const scopedKey = __scopedKey;')
   .replace("import { createIdempotencyKey } from '~/utils/idempotency';", 'const createIdempotencyKey = __createIdempotencyKey;');

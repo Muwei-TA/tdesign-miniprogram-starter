@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { fetchProfile } from '../profile-service';
 import { previewPostImage } from '~/services/image-preview';
 import { navigateTo } from '~/utils/navigate';

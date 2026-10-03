@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { fetchMyAppeals, createAppeal } from '../governance';
 import { navigateTo } from '~/utils/navigate';
 

@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { deletePost, fetchMyContents, fetchPostDetail, toggleBookmark } from '~/services/posts';
 import { listDrafts, removeDraft } from '../drafts';
 import { formatRelativeTime } from '../format';

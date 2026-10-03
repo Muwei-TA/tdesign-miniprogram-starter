@@ -14,9 +14,9 @@
     position: relative;
     height: 388rpx;
     padding: 40rpx 36rpx 24rpx;
-    background: #738773;
-    color: #f7f3e6;
-    border-left: 16rpx solid rgba(48, 79, 59, 0.22);
+    background: @hg-book-cover-bg;
+    color: @hg-book-cover-fg;
+    border-left: 16rpx solid @hg-book-spine;
     border-radius: 6rpx @hg-radius-md @hg-radius-md 6rpx;
     box-shadow: @hg-shadow-book;
     overflow: hidden;
@@ -28,13 +28,13 @@
       bottom: -72rpx;
       width: 280rpx;
       height: 280rpx;
-      border: 1rpx solid rgba(233, 240, 220, 0.35);
+      border: 1rpx solid @hg-book-cover-ring;
       border-radius: 50%;
     }
 
     &--cream {
-      background: #c4b899;
-      color: #fffced;
+      background: @hg-book-cover-cream-bg;
+      color: @hg-book-cover-cream-fg;
     }
   }
 

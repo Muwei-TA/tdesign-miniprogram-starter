@@ -1,3 +1,4 @@
+<page-meta page-style="{{ clubThemeStyle }}" />
 <view class="hg-page hg-setting">
   <hg-nav title="设置与隐私" />
 

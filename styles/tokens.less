@@ -3,96 +3,126 @@
 // 设计基线宽度 375px，1px = 2rpx。
 
 // ---------- 色彩 ----------
-@hg-paper: #f8f6f0; // 页面底色（暖纸白）
+@hg-paper: var(--hg-paper, #f8f6f0); // 页面底色（暖纸白）
 @hg-blackbox-paper: #ffffff;
 @hg-blackbox-ink: #292929;
 @hg-blackbox-orange: #df6b2f;
-@hg-paper-deep: #eaece5; // 页面外框（评审用）
-@hg-surface: #fffefa; // 卡片 / 内容面
-@hg-surface-sunk: #efeee6; // 搜索框 / 分段控件底
-@hg-surface-soft: #f1f2e8; // 操作条底
+@hg-paper-deep: var(--hg-paper-deep, #eaece5); // 页面外框（评审用）
+@hg-surface: var(--hg-surface, #fffefa); // 卡片 / 内容面
+@hg-surface-sunk: var(--hg-surface-sunk, #efeee6); // 搜索框 / 分段控件底
+@hg-surface-soft: var(--hg-surface-soft, #f1f2e8); // 操作条底
 
-@hg-ink: #223b32; // 正文主色（深墨）
-@hg-ink-2: #4c5b4a; // 卡片正文
-@hg-ink-3: #7d8177; // 次要文字
-@hg-ink-4: #9ca393; // 时间 / 计数 / 占位
+@hg-ink: var(--hg-ink, #223b32); // 正文主色（深墨）
+@hg-ink-2: var(--hg-ink-2, #4c5b4a); // 卡片正文
+@hg-ink-3: var(--hg-ink-3, #7d8177); // 次要文字
+@hg-ink-4: var(--hg-ink-4, #9ca393); // 时间 / 计数 / 占位
 
-@hg-green: #315948; // 主色
-@hg-green-dark: #294e3d; // 主色按下态
-@hg-green-soft: #e9eee4; // 话题块
-@hg-green-mist: #e6ecdf; // 区块背景（hero / 周话题）
-@hg-green-line: #d9dfcf; // 次按钮描边
+@hg-green: var(--hg-green, #315948); // 主色
+@hg-green-dark: var(--hg-green-dark, #294e3d); // 主色按下态
+@hg-green-soft: var(--hg-green-soft, #e9eee4); // 话题块
+@hg-green-mist: var(--hg-green-mist, #e6ecdf); // 区块背景（hero / 周话题）
+@hg-green-line: var(--hg-green-line, #d9dfcf); // 次按钮描边
 
-@hg-clay: #ad724c; // 强调：本周话题、未读点、激活共鸣
-@hg-clay-soft: #f3e7d7; // 提示条背景
-@hg-clay-ink: #987750; // 提示条文字
+@hg-clay: var(--hg-clay, #ad724c); // 强调：本周话题、未读点、激活共鸣
+@hg-clay-soft: var(--hg-clay-soft, #f3e7d7); // 提示条背景
+@hg-clay-ink: var(--hg-clay-ink, #987750); // 提示条文字
 
-@hg-danger: #a85648; // 危险操作与错误
+@hg-danger: var(--hg-danger, #a85648); // 危险操作与错误
 
 // 用户等级名牌（与 docs/08-user-levels-draft.md 对齐）
-@hg-level-1-ink: #4c5b4a;
-@hg-level-1-bg: #f1f2e8;
-@hg-level-2-ink: #315948;
-@hg-level-2-bg: #e9eee4;
-@hg-level-3-ink: #2c625c;
-@hg-level-3-bg: #e2efeb;
-@hg-level-4-ink: #315a78;
-@hg-level-4-bg: #e7f0f5;
-@hg-level-5-ink: #664b73;
-@hg-level-5-bg: #f0eaf2;
-@hg-level-6-ink: #805130;
-@hg-level-6-bg: #f6ede3;
-@hg-level-7-ink: #82465c;
-@hg-level-7-bg: #f8ebef;
-@hg-level-8-ink: #714f23;
-@hg-level-8-bg: #f7f0df;
+@hg-level-1-ink: var(--hg-level-1-ink, #4c5b4a);
+@hg-level-1-bg: var(--hg-level-1-bg, #f1f2e8);
+@hg-level-2-ink: var(--hg-level-2-ink, #315948);
+@hg-level-2-bg: var(--hg-level-2-bg, #e9eee4);
+@hg-level-3-ink: var(--hg-level-3-ink, #2c625c);
+@hg-level-3-bg: var(--hg-level-3-bg, #e2efeb);
+@hg-level-4-ink: var(--hg-level-4-ink, #315a78);
+@hg-level-4-bg: var(--hg-level-4-bg, #e7f0f5);
+@hg-level-5-ink: var(--hg-level-5-ink, #664b73);
+@hg-level-5-bg: var(--hg-level-5-bg, #f0eaf2);
+@hg-level-6-ink: var(--hg-level-6-ink, #805130);
+@hg-level-6-bg: var(--hg-level-6-bg, #f6ede3);
+@hg-level-7-ink: var(--hg-level-7-ink, #82465c);
+@hg-level-7-bg: var(--hg-level-7-bg, #f8ebef);
+@hg-level-8-ink: var(--hg-level-8-ink, #714f23);
+@hg-level-8-bg: var(--hg-level-8-bg, #f7f0df);
 
-@hg-line: #e7e7dd; // 分割线 / 卡片描边
-@hg-line-strong: #d7ddcf; // 区块分隔
+@hg-line: var(--hg-line, #e7e7dd); // 分割线 / 卡片描边
+@hg-line-strong: var(--hg-line-strong, #d7ddcf); // 区块分隔
 
-@hg-reading-bg: #26362d; // 夜间阅读底
-@hg-reading-fg: #d1d8c9; // 夜间阅读文字
-@hg-reading-line: #43513f;
-@hg-reading-muted: #9aab90;
+@hg-reading-bg: var(--hg-reading-bg, #26362d); // 夜间阅读底
+@hg-reading-fg: var(--hg-reading-fg, #d1d8c9); // 夜间阅读文字
+@hg-reading-line: var(--hg-reading-line, #43513f);
+@hg-reading-muted: var(--hg-reading-muted, #9aab90);
 
 // 范围标识
-@hg-scope-club-bg: #f0f2e9;
-@hg-scope-club-fg: #7a866d;
-@hg-scope-public-bg: #f1eadf;
-@hg-scope-public-fg: #9e7950;
-@hg-scope-private-bg: #ecebf0;
-@hg-scope-private-fg: #837b92;
-@hg-status-pending-bg: #f4e8d2;
-@hg-status-pending-fg: #9a7d4e;
+@hg-scope-club-bg: var(--hg-scope-club-bg, #f0f2e9);
+@hg-scope-club-fg: var(--hg-scope-club-fg, #7a866d);
+@hg-scope-public-bg: var(--hg-scope-public-bg, #f1eadf);
+@hg-scope-public-fg: var(--hg-scope-public-fg, #9e7950);
+@hg-scope-private-bg: var(--hg-scope-private-bg, #ecebf0);
+@hg-scope-private-fg: var(--hg-scope-private-fg, #837b92);
+@hg-status-pending-bg: var(--hg-status-pending-bg, #f4e8d2);
+@hg-status-pending-fg: var(--hg-status-pending-fg, #9a7d4e);
 
 // 表面变体（原先散落在页面 / 组件中的裸色值，统一收敛）
-@hg-surface-glass: rgba(255, 254, 250, 0.95); // 毛玻璃底栏
-@hg-paper-glass: rgba(248, 246, 240, 0.85); // 透明导航滚动后
-@hg-img-placeholder: #e6e8db; // 图片加载前底色
-@hg-skeleton: #e9ece1; // 骨架屏
-@hg-scrim: rgba(32, 52, 40, 0.72); // 媒体遮罩 / 时长角标
-@hg-on-scrim: #f3f4ea; // 遮罩上的文字
-@hg-on-green: #f5f4e9; // 主色块上的文字
-@hg-emblem-fg: #f5edda; // 社徽文字
-@hg-tab-inactive: #969d92; // 底栏未选中
-@hg-green-muted: #6e8061; // 周话题眉题 / 箭头
-@hg-green-muted-2: #7c896f; // 周话题描述
-@hg-topic-bg: #f1f3e9;
-@hg-topic-fg: #718566;
-@hg-empty-icon-bg: #e8eddf;
-@hg-empty-icon-bg-2: #dce5ce;
-@hg-empty-icon-fg: #7e9672;
-@hg-empty-title: #4d6546;
+@hg-surface-glass: var(--hg-surface-glass, rgba(255, 254, 250, 0.95)); // 毛玻璃底栏
+@hg-paper-glass: var(--hg-paper-glass, rgba(248, 246, 240, 0.85)); // 透明导航滚动后
+@hg-img-placeholder: var(--hg-img-placeholder, #e6e8db); // 图片加载前底色
+@hg-skeleton: var(--hg-skeleton, #e9ece1); // 骨架屏
+@hg-scrim: var(--hg-scrim, rgba(32, 52, 40, 0.72)); // 媒体遮罩 / 时长角标
+@hg-on-scrim: var(--hg-on-scrim, #f3f4ea); // 遮罩上的文字
+@hg-on-green: var(--hg-on-green, #f5f4e9); // 主色块上的文字
+@hg-emblem-fg: var(--hg-emblem-fg, #f5edda); // 社徽文字
+@hg-tab-inactive: var(--hg-tab-inactive, #969d92); // 底栏未选中
+@hg-green-muted: var(--hg-green-muted, #6e8061); // 周话题眉题 / 箭头
+@hg-green-muted-2: var(--hg-green-muted-2, #7c896f); // 周话题描述
+@hg-topic-bg: var(--hg-topic-bg, #f1f3e9);
+@hg-topic-fg: var(--hg-topic-fg, #718566);
+@hg-empty-icon-bg: var(--hg-empty-icon-bg, #e8eddf);
+@hg-empty-icon-bg-2: var(--hg-empty-icon-bg-2, #dce5ce);
+@hg-empty-icon-fg: var(--hg-empty-icon-fg, #7e9672);
+@hg-empty-icon-radius: var(--hg-empty-icon-radius, 50%);
+@hg-empty-icon-shadow: var(--hg-empty-icon-shadow, 0 4rpx 16rpx rgba(126, 150, 114, 0.15));
+@hg-empty-title: var(--hg-empty-title, #4d6546);
+
+// Semi-transparent values stay concrete so Less does not need to evaluate a CSS variable.
+@hg-green-border-faint: var(--hg-green-border-faint, rgba(49, 89, 72, 0.12));
+@hg-green-bg-faint: var(--hg-green-bg-faint, rgba(49, 89, 72, 0.09));
+@hg-danger-border-faint: var(--hg-danger-border-faint, rgba(168, 86, 72, 0.2));
+@hg-danger-bg-faint: var(--hg-danger-bg-faint, rgba(168, 86, 72, 0.12));
+@hg-ink-scrim: var(--hg-ink-scrim, rgba(34, 59, 50, 0.4));
+@hg-surface-fade-60: var(--hg-surface-fade-60, rgba(255, 254, 250, 0.6));
+
+// Component accents preserve their literary colors unless a club theme overrides them.
+@hg-topic-card-symbol: var(--hg-topic-card-symbol, #7b956b);
+@hg-topic-card-warm-bg: var(--hg-topic-card-warm-bg, #efe7d9);
+@hg-topic-card-warm-fg: var(--hg-topic-card-warm-fg, #aa8861);
+@hg-topic-card-follow: var(--hg-topic-card-follow, #7b916c);
+@hg-topic-card-banner-desc: var(--hg-topic-card-banner-desc, #7a8a70);
+@hg-book-cover-bg: var(--hg-book-cover-bg, #738773);
+@hg-book-cover-fg: var(--hg-book-cover-fg, #f7f3e6);
+@hg-book-spine: var(--hg-book-spine, rgba(48, 79, 59, 0.22));
+@hg-book-cover-ring: var(--hg-book-cover-ring, rgba(233, 240, 220, 0.35));
+@hg-book-cover-cream-bg: var(--hg-book-cover-cream-bg, #c4b899);
+@hg-book-cover-cream-fg: var(--hg-book-cover-cream-fg, #fffced);
+
+// Button details are separate from shared radii so existing literary geometry is unchanged.
+@hg-btn-primary-radius: var(--hg-btn-primary-radius, 44rpx);
+@hg-btn-primary-shadow: var(--hg-btn-primary-shadow, 0 4rpx 12rpx rgba(49, 89, 72, 0.18));
+@hg-btn-secondary-radius: var(--hg-btn-secondary-radius, 42rpx);
+@hg-btn-secondary-border: var(--hg-btn-secondary-border, rgba(49, 89, 72, 0.15));
+@hg-hover-sink: var(--hg-hover-sink, rgba(233, 238, 228, 0.45));
 
 // 头像
-@hg-avatar-bg: #e0e7d4;
-@hg-avatar-fg: #62734d;
-@hg-avatar-anon-bg: #eee9dd;
-@hg-avatar-anon-fg: #9e947c;
+@hg-avatar-bg: var(--hg-avatar-bg, #e0e7d4);
+@hg-avatar-fg: var(--hg-avatar-fg, #62734d);
+@hg-avatar-anon-bg: var(--hg-avatar-anon-bg, #eee9dd);
+@hg-avatar-anon-fg: var(--hg-avatar-anon-fg, #9e947c);
 
 // ---------- 字体 ----------
-@hg-font-serif: 'Songti SC', 'Noto Serif CJK SC', 'SimSun', serif;
-@hg-font-sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+@hg-font-serif: var(--hg-font-serif, 'Songti SC', 'Noto Serif CJK SC', 'SimSun', serif);
+@hg-font-sans: var(--hg-font-sans, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif);
 
 @hg-fs-display: 54rpx; // 页面大标题
 @hg-fs-title: 48rpx; // 弹层 / 结果页标题
@@ -121,17 +151,17 @@
 @hg-block-x: 32rpx; // 区块 hero 内边距（从 38 改为 32）
 
 // ---------- 圆角 ----------
-@hg-radius-sm: 8rpx;  // 从 10 改为 8
-@hg-radius-md: 12rpx; // 从 16 改为 12
-@hg-radius-lg: 16rpx; // 从 26 改为 16，更小巧
-@hg-radius-xl: 32rpx; // 从 46 改为 32
-@hg-radius-pill: 999rpx;
+@hg-radius-sm: var(--hg-radius-sm, 8rpx);  // 从 10 改为 8
+@hg-radius-md: var(--hg-radius-md, 12rpx); // 从 16 改为 12
+@hg-radius-lg: var(--hg-radius-lg, 16rpx); // 从 26 改为 16，更小巧
+@hg-radius-xl: var(--hg-radius-xl, 32rpx); // 从 46 改为 32
+@hg-radius-pill: var(--hg-radius-pill, 999rpx);
 
 // ---------- 阴影 ----------
-@hg-shadow-card: 0 2rpx 8rpx rgba(34, 59, 50, 0.06), 0 0 1rpx rgba(34, 59, 50, 0.08); // 双层阴影，更清晰
-@hg-shadow-fab: 0 8rpx 20rpx rgba(49, 89, 72, 0.25); // 增强对比
-@hg-shadow-book: 4rpx 8rpx 16rpx rgba(35, 56, 39, 0.12);
-@hg-shadow-sheet: 0 -6rpx 24rpx rgba(24, 43, 37, 0.15); // 增强深度
+@hg-shadow-card: var(--hg-shadow-card, 0 2rpx 8rpx rgba(34, 59, 50, 0.06), 0 0 1rpx rgba(34, 59, 50, 0.08)); // 双层阴影，更清晰
+@hg-shadow-fab: var(--hg-shadow-fab, 0 8rpx 20rpx rgba(49, 89, 72, 0.25)); // 增强对比
+@hg-shadow-book: var(--hg-shadow-book, 4rpx 8rpx 16rpx rgba(35, 56, 39, 0.12));
+@hg-shadow-sheet: var(--hg-shadow-sheet, 0 -6rpx 24rpx rgba(24, 43, 37, 0.15)); // 增强深度
 
 // ---------- 结构尺寸 ----------
 @hg-nav-height: 100rpx; // 自定义导航内容区高度（不含状态栏）

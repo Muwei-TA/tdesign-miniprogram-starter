@@ -33,10 +33,10 @@
   padding: 0 @hg-sp-4;
   background: @hg-green;
   color: @hg-surface;
-  border-radius: 44rpx;
+  border-radius: @hg-btn-primary-radius;
   font-size: @hg-fs-sm;
   font-weight: 600;
-  box-shadow: 0 4rpx 12rpx rgba(49, 89, 72, 0.18);
+  box-shadow: @hg-btn-primary-shadow;
 }
 
 // 次按钮
@@ -47,8 +47,8 @@
   min-height: 84rpx;
   padding: 0 @hg-sp-4;
   background: @hg-surface;
-  border: 2rpx solid rgba(49, 89, 72, 0.15);
-  border-radius: 42rpx;
+  border: 2rpx solid @hg-btn-secondary-border;
+  border-radius: @hg-btn-secondary-radius;
   color: @hg-ink-2;
   font-size: @hg-fs-sm;
   font-weight: 500;
@@ -89,7 +89,7 @@
 }
 
 .hg-hover-sink() {
-  background: rgba(233, 238, 228, 0.45);
+  background: @hg-hover-sink;
 }
 
 // 赭色提示条（边界说明 / 隐私提示）

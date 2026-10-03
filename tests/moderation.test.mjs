@@ -257,6 +257,7 @@ const boardDecisionCalls = [];
 const adminModals = [];
 const navigations = [];
 const reviewPageSource = pageSource
+  .replace("import Page from '~/utils/themed-page';", '')
   .replace(/import \{[\s\S]*?\} from '\.\.\/moderation';/, 'const { fetchQueue, fetchAssetReviewStatuses, submitDecision, decideComment, decideTopic, decideMembership, decideReport, decideCollection } = __moderation;')
   .replace("import { decideBoard } from '~/services/boards';", 'const { decideBoard } = __boards;')
   .replace("import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;');

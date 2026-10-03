@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { search, fetchSuggestions } from './search';
 import { navigateTo } from '~/utils/navigate';
 import { createSearchController } from './controller';

@@ -10,6 +10,16 @@
     border-bottom: 1rpx solid @hg-line;
   }
 
+  &--blackbox .hg-manuscript__intro {
+    align-items: center;
+    padding-top: @hg-sp-2;
+    padding-bottom: @hg-sp-3;
+  }
+
+  &--blackbox .hg-manuscript__write {
+    border-radius: @hg-radius-md;
+  }
+
   &__copy {
     flex: 1;
     min-width: 0;
@@ -129,6 +139,18 @@
     width: 58%;
     height: 26rpx;
     margin-top: @hg-sp-2;
+  }
+}
+
+.hg-manuscript--blackbox {
+  .hg-manuscript__intro {
+    align-items: center;
+    padding-top: @hg-sp-2;
+    padding-bottom: @hg-sp-3;
+  }
+
+  .hg-manuscript__write {
+    border-radius: @hg-radius-md;
   }
 }
 

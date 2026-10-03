@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { fetchBoardDetail } from '~/services/boards';
 import { previewPostImage } from '~/services/image-preview';
 import { getSession } from '~/services/session';
@@ -206,7 +207,9 @@ Page({
   askJoin() {
     wx.showModal({
       title: '需要成员资格',
-      content: '加入文学社后，可以浏览已开放的板块并在其中发帖。',
+      content: this.data.clubTheme === 'blackbox'
+        ? '加入当前社团后，可以浏览已开放的板块并在其中发布内容。'
+        : '加入文学社后，可以浏览已开放的板块并在其中发帖。',
       confirmText: '去了解',
       success: (res) => {
         if (res.confirm) navigateTo('/pages/community/join/index?from=board');

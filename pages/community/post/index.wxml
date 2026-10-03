@@ -1,3 +1,4 @@
+<page-meta page-style="{{ clubThemeStyle }}" />
 <view class="hg-page hg-detail {{ nightMode && post.kind === 'article' ? 'hg-detail--night' : '' }} {{ isBlackbox ? 'hg-detail--blackbox-layout hg-detail--blackbox' : '' }}">
   <hg-nav
     title="{{ post && post.kind === 'article' ? '' : '内容' }}"
@@ -12,7 +13,7 @@
     icon="lock-on"
     title="这条内容当前不可访问"
     desc="它可能已被作者调整了可见范围，\n或者需要社内成员资格。"
-    action="回树洞"
+    action="{{ clubTheme === 'blackbox' ? '回首页' : '回树洞' }}"
     bind:action="onBackHome"
   />
 

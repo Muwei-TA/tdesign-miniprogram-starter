@@ -1,3 +1,4 @@
+<page-meta page-style="{{ clubThemeStyle }}" />
 <view class="hg-page hg-board-detail">
   <hg-nav title="板块详情" />
 
@@ -57,7 +58,7 @@
         wx:elif="{{ !loading && !stale }}"
         icon="pen"
         title="这里还很安静"
-        desc="愿意的话，可以从一句话或一张照片开始。"
+        desc="{{ clubTheme === 'blackbox' ? '发布与这个板块相关的内容。' : '愿意的话，可以从一句话或一张照片开始。' }}"
       />
     </view>
 
@@ -67,7 +68,7 @@
         bindtap="onWrite"
         aria-role="button"
       >
-        {{ board.status === 'pending' ? '等待审核' : (board.status === 'archived' ? '板块已归档' : (canPost ? '在此写一笔' : '当前不能发帖')) }}
+        {{ board.status === 'pending' ? '等待审核' : (board.status === 'archived' ? '板块已归档' : (canPost ? (clubTheme === 'blackbox' ? '发布作品' : '在此写一笔') : '当前不能发帖')) }}
       </view>
       <view class="hg-board-detail__note">发帖仍由你决定身份与可见范围；板块审核与帖子审核彼此独立。</view>
     </view>

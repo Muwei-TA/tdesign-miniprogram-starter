@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { fetchTopicDetail, toggleFollow } from '~/services/topics';
 import { previewPostImage } from '~/services/image-preview';
 import { getSession } from '~/services/session';
@@ -150,7 +151,9 @@ Page({
   askJoin() {
     wx.showModal({
       title: '需要成员资格',
-      content: '关注话题和参与共写需要先加入文学社。',
+      content: this.data.clubTheme === 'blackbox'
+        ? '关注话题和参与创作需要先加入当前社团。'
+        : '关注话题和参与共写需要先加入文学社。',
       confirmText: '去了解',
       success: (res) => {
         if (res.confirm) navigateTo('/pages/community/join/index?from=topic');

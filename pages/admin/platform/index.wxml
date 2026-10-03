@@ -1,4 +1,5 @@
-<view class="platform">
+<page-meta page-style="{{ clubThemeStyle }}" />
+<view class="platform {{ clubTheme === 'blackbox' ? 'platform--blackbox' : '' }}">
   <text class="title">开发者 · 社团管理</text>
   <text>管理社团配置与负责人；内容治理仍需对应社团资格。</text>
   <view wx:if="{{ loading }}">读取中…</view>

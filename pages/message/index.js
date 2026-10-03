@@ -1,3 +1,4 @@
+import Page from '~/utils/themed-page';
 import { fetchNotifications, markAllRead } from '~/services/notifications';
 import { navigateTo } from '~/utils/navigate';
 

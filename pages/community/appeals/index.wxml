@@ -1,3 +1,4 @@
+<page-meta page-style="{{ clubThemeStyle }}" />
 <view class="hg-page hg-appeals">
   <hg-nav title="我的申诉" />
 
