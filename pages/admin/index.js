@@ -1,5 +1,6 @@
 import Page from '~/utils/themed-page';
 import { fetchUsageStatus } from './usage';
+import { fetchGovernanceOverview } from './governance';
 import { navigateTo } from '~/utils/navigate';
 
 const app = getApp();
@@ -10,6 +11,7 @@ const USAGE_ALERT_LABELS = {
   limit_reached: '已达限额',
   disabled: '未配置 / 已关闭',
 };
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function canAccess(session) {
   return !!session
@@ -20,6 +22,17 @@ function canAccess(session) {
 
 function sessionScope(session) {
   return session ? [session.user && session.user.id, session.club && session.club.id, session.role, session.memberStatus].join(':') : '';
+}
+
+function termReminder(endAt, now = Date.now()) {
+  if (!endAt) return { text: '', tone: 'notice' };
+  const endTime = new Date(endAt).getTime();
+  if (!Number.isFinite(endTime)) return { text: '', tone: 'notice' };
+  const days = Math.ceil((endTime - now) / DAY_MS);
+  if (days > 30) return { text: '', tone: 'notice' };
+  if (days > 7) return { text: `本届任期剩余 ${days} 天，请安排换届准备。`, tone: 'notice' };
+  if (days >= 0) return { text: `本届任期剩余 ${days} 天，请尽快确认交接安排。`, tone: 'urgent' };
+  return { text: `本届任期已结束 ${Math.abs(days)} 天；权限不会自动撤销，请尽快处理换届。`, tone: 'urgent' };
 }
 
 function requiredCount(value, field) {
@@ -111,6 +124,10 @@ Page({
     usageStatus: null,
     usageLoading: false,
     usageErrorText: '',
+    governanceOverview: null,
+    termReminderText: '',
+    termReminderTone: 'notice',
+    termReminderErrorText: '',
   },
 
   onLoad() {
@@ -121,11 +138,12 @@ Page({
 
   onUnload() {
     this.usageRequestId = (this.usageRequestId || 0) + 1;
+    this.overviewRequestId = (this.overviewRequestId || 0) + 1;
     app.eventBus.off('session-changed', this.onSessionChanged);
   },
 
   onPullDownRefresh() {
-    this.loadUsageStatus().finally(() => wx.stopPullDownRefresh());
+    Promise.all([this.loadUsageStatus(), this.loadGovernanceOverview()]).finally(() => wx.stopPullDownRefresh());
   },
 
   applySession(session) {
@@ -134,23 +152,34 @@ Page({
     this.sessionScope = sessionScope(session);
     if (changed) {
       this.usageRequestId = (this.usageRequestId || 0) + 1;
-      this.setData({ usageStatus: null, usageLoading: false, usageErrorText: '' });
+      this.overviewRequestId = (this.overviewRequestId || 0) + 1;
+      this.setData({
+        usageStatus: null, usageLoading: false, usageErrorText: '',
+        governanceOverview: null, termReminderText: '', termReminderErrorText: '',
+      });
     }
     if (!canAccess(session)) {
       this.usageRequestId = (this.usageRequestId || 0) + 1;
+      this.overviewRequestId = (this.overviewRequestId || 0) + 1;
       this.setData({
         session,
         accessState: 'denied',
         usageStatus: null,
         usageLoading: false,
         usageErrorText: '',
+        governanceOverview: null,
+        termReminderText: '',
+        termReminderErrorText: '',
       });
       return;
     }
 
     const shouldLoad = changed || this.data.accessState !== 'allowed';
     this.setData({ session, accessState: 'allowed' }, () => {
-      if (shouldLoad) this.loadUsageStatus();
+      if (shouldLoad) {
+        this.loadUsageStatus();
+        this.loadGovernanceOverview();
+      }
     });
   },
 
@@ -169,12 +198,36 @@ Page({
     }
   },
 
+  async loadGovernanceOverview() {
+    if (this.data.accessState !== 'allowed' || !canAccess(this.data.session)) return;
+    const requestId = (this.overviewRequestId || 0) + 1;
+    this.overviewRequestId = requestId;
+    try {
+      const overview = await fetchGovernanceOverview();
+      if (requestId !== this.overviewRequestId) return;
+      const reminder = termReminder(overview && overview.term && overview.term.endAt);
+      this.setData({
+        governanceOverview: overview,
+        termReminderText: reminder.text,
+        termReminderTone: reminder.tone,
+        termReminderErrorText: '',
+      });
+    } catch (err) {
+      if (requestId !== this.overviewRequestId) return;
+      this.setData({ termReminderErrorText: err.message || '任期提醒暂时无法读取。' });
+    }
+  },
+
   onUsageRefresh() {
     return this.loadUsageStatus();
   },
 
   onReviewsPage() {
     navigateTo('/pages/admin/reviews/index');
+  },
+
+  onTermReminderTap() {
+    navigateTo('/pages/admin/management/index');
   },
 
   onMembersPage() {

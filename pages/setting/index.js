@@ -51,6 +51,14 @@ Page({
     navigateTo('/pages/community/rules/index');
   },
 
+  onWebLoginTap() {
+    navigateTo('/pages/admin/web-login/index');
+  },
+
+  onManagementInboxTap() {
+    navigateTo('/pages/admin/management/index');
+  },
+
   onNightToggle(e) {
     const nightMode = e.detail.value;
     this.setData({ nightMode });

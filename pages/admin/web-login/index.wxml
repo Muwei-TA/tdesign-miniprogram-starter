@@ -1,0 +1,38 @@
+<page-meta page-style="{{ clubThemeStyle }}" />
+<view class="hg-page hg-web-login">
+  <hg-nav title="确认 Web 登录" />
+  <view class="hg-web-login__intro">
+    <view class="hg-web-login__eyebrow">ACCOUNT SECURITY</view>
+    <view class="hg-web-login__title">让这次登录有迹可循</view>
+    <view class="hg-web-login__copy">使用小程序扫码并确认登录；仅显示当前账号有权管理的社团。换届或权限变化后需重新登录。请核对确认页中的访问地址。</view>
+  </view>
+
+  <view class="hg-web-login__identity hg-card">
+    <view class="hg-web-login__label">当前小程序账号</view>
+    <view class="hg-web-login__account">{{ identity || '正在确认账号…' }}</view>
+    <view class="hg-web-login__scope">{{ scopeText || '登录后续操作将按服务端当前权限逐次核验。' }}</view>
+  </view>
+
+  <view wx:if="{{ errorText }}" class="hg-web-login__error" role="alert">{{ errorText }}</view>
+  <view wx:if="{{ status === 'pending' || status === 'approved' || status === 'rejected' || status === 'expired' }}" class="hg-web-login__request hg-card">
+    <view class="hg-web-login__request-head">
+      <view>
+        <view class="hg-web-login__label">登录来源</view>
+        <view class="hg-web-login__origin">{{ origin }}</view>
+      </view>
+      <view class="hg-web-login__state hg-web-login__state--{{ status }}">{{ statusText }}</view>
+    </view>
+    <view class="hg-web-login__expiry">请求有效至 {{ expiresAt }}</view>
+    <view class="hg-web-login__scope-note">{{ scopeText }}</view>
+    <view wx:if="{{ status === 'pending' }}" class="hg-web-login__actions">
+      <button class="hg-web-login__approve" data-decision="approve" bindtap="onDecisionTap" disabled="{{ busy }}">{{ busy ? '处理中…' : '批准登录' }}</button>
+      <button class="hg-web-login__reject" data-decision="reject" bindtap="onDecisionTap" disabled="{{ busy }}">拒绝</button>
+    </view>
+  </view>
+
+  <button wx:if="{{ status === 'idle' || status === 'invalid' || status === 'expired' || status === 'approved' || status === 'rejected' }}" class="hg-web-login__scan" bindtap="onScanTap" disabled="{{ busy }}">
+    {{ status === 'idle' ? '打开相机扫码' : '扫描另一张二维码' }}
+  </button>
+  <view wx:if="{{ status === 'checking' }}" class="hg-web-login__checking">正在核验二维码中的一次性登录请求…</view>
+  <view class="hg-web-login__footnote">如果访问地址、账号或权限范围与你预期不符，请拒绝本次登录。</view>
+</view>

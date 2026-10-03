@@ -19,6 +19,13 @@
       <text>审核与社团管理入口</text>
     </view>
 
+    <view wx:if="{{ termReminderText }}" class="hg-admin__term-reminder hg-admin__term-reminder--{{ termReminderTone }}" role="status" bindtap="onTermReminderTap" aria-role="button">
+      <view class="hg-admin__term-reminder-title">本届任期提醒</view>
+      <view>{{ termReminderText }}</view>
+      <view class="hg-admin__term-reminder-link">查看管理确认事项 ›</view>
+    </view>
+    <view wx:if="{{ termReminderErrorText }}" class="hg-admin__term-reminder-error" role="status">{{ termReminderErrorText }}</view>
+
     <view class="hg-admin__review-entry" bindtap="onReviewsPage" aria-role="button">
       <view class="hg-admin__review-entry-icon"><t-icon name="task" size="38rpx" /></view>
       <view class="hg-admin__review-entry-main">

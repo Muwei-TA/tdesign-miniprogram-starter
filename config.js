@@ -13,6 +13,10 @@ const profiles = {
     transport: 'nas',
     apiBaseUrl: 'http://192.168.50.28:18118',
   },
+  nasLocalDevelopment: {
+    transport: 'nas',
+    apiBaseUrl: 'http://127.0.0.1:18884',
+  },
   nasProduction: {
     transport: 'nas',
     apiBaseUrl: 'https://api.muwei.xyz',

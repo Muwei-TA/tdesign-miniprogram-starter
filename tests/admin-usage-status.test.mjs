@@ -38,6 +38,7 @@ function loadAdminPage(fetchUsageStatus, { mediaFetcher, wxApi } = {}) {
     )
     .replace("import { fetchPendingBoards, decideBoard } from '~/services/boards';", 'const { fetchPendingBoards, decideBoard } = __boards;')
     .replace("import { fetchUsageStatus } from './usage';", 'const { fetchUsageStatus } = __usage;')
+    .replace("import { fetchGovernanceOverview } from './governance';", 'const { fetchGovernanceOverview } = __governance;')
     .replace("import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;');
 
   let definition;
@@ -58,6 +59,7 @@ function loadAdminPage(fetchUsageStatus, { mediaFetcher, wxApi } = {}) {
       decideCollection() {},
     },
     __usage: { fetchUsageStatus },
+    __governance: { fetchGovernanceOverview: async () => ({ term: null }) },
     __boards: { fetchPendingBoards: async () => ({ items: [], nextCursor: null }), decideBoard() {} },
     __navigation: { navigateTo() {} },
     wx: wxApi,

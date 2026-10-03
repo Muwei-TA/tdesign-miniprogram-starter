@@ -9,7 +9,7 @@ const plain = (value) => JSON.parse(JSON.stringify(value));
 const calls = [];
 
 const serviceSource = readFileSync(join(ROOT, 'pages/admin/governance.js'), 'utf8')
-  .replace("import request, { withPath, withQuery } from '~/api/request';", 'const request = __request; const withPath = __withPath; const withQuery = __withQuery;')
+  .replace("import request, { requestForClub, withPath, withQuery } from '~/api/request';", 'const request = __request; const requestForClub = __requestForClub; const withPath = __withPath; const withQuery = __withQuery;')
   .replace("import endpoints from '~/api/endpoints';", 'const endpoints = __endpoints;')
   .replace(/export const /g, 'const ')
   .replace(/export function /g, 'function ')
@@ -21,6 +21,17 @@ const endpoints = {
   adminMemberMute: '/admin/members/:targetUserId/mute',
   adminMemberRole: '/admin/members/:targetUserId/role',
   adminInvites: '/admin/invites',
+  adminInviteRevoke: '/admin/invites/:inviteId/revoke',
+  accountWebLoginInfo: '/account/web-login/info',
+  accountWebLoginApprove: '/account/web-login/approve',
+  accountWebLoginReject: '/account/web-login/reject',
+  accountHandovers: '/account/handovers',
+  accountRecoveries: '/account/recovery',
+  accountRecoveryInfo: '/account/recovery/:id',
+  accountRecoveryAccept: '/account/recovery/accept',
+  accountRecoveryDecline: '/account/recovery/decline',
+  adminHandoverAccept: '/admin/handovers/:id/accept',
+  adminHandoverDecline: '/admin/handovers/:id/decline',
   myAppeals: '/appeals/mine',
   appeals: '/appeals',
   adminAppeals: '/admin/appeals',
@@ -56,14 +67,19 @@ const request = (url, options = {}) => {
   }
   return Promise.resolve({ ok: true, code: 'AB12CD34EF56' });
 };
+const requestForClub = (url, clubId, options = {}) => {
+  calls.push({ url, clubId, options });
+  return Promise.resolve({ ok: true });
+};
 
 const module = { exports: {} };
 vm.runInNewContext(
-  `${serviceSource}\nmodule.exports = { normalizeMember, normalizeMembers, normalizeAppeal, normalizeAppeals, fetchMembers, removeMember, muteMember, changeMemberRole, createInvite, fetchMyAppeals, fetchAdminAppeals, createAppeal, decideAppeal };`,
+  `${serviceSource}\nmodule.exports = { normalizeMember, normalizeMembers, normalizeInvite, normalizeInvites, normalizeAppeal, normalizeAppeals, fetchMembers, fetchInvites, removeMember, muteMember, changeMemberRole, createInvite, revokeInvite, fetchWebLoginInfo, approveWebLogin, rejectWebLogin, fetchAccountHandovers, fetchAccountRecoveries, fetchAccountRecovery, acceptHandover, declineHandover, acceptRecovery, declineRecovery, fetchMyAppeals, fetchAdminAppeals, createAppeal, decideAppeal };`,
   {
     module,
     exports: module.exports,
     __request: request,
+    __requestForClub: requestForClub,
     __withPath: withPath,
     __withQuery: withQuery,
     __endpoints: endpoints,
@@ -90,7 +106,22 @@ assert.equal(calls[0].url, '/admin/members?limit=100');
 await governance.removeMember('u-1', 2, '理由');
 await governance.muteMember('u-1', 3, null, '解除');
 await governance.changeMemberRole('u-1', 4, 'moderator', '轮值');
-await governance.createInvite({ maxUses: 2, ttlSeconds: 3600 });
+await governance.createInvite({ mode: 'application', maxUses: 2, ttlSeconds: 3600, reason: '测试公开招新码' });
+const safeInvites = governance.normalizeInvites({ items: [{ inviteId: 'i-1', mode: 'direct', status: 'active', code: 'must-not-leak', codeHash: 'secret-hash', version: 3 }] });
+assert.equal(safeInvites.items[0].code, undefined);
+assert.equal(safeInvites.items[0].codeHash, undefined);
+await governance.fetchInvites({ limit: 20, status: 'active' });
+await governance.revokeInvite('i-1', 3, '停止这次邀请');
+await governance.fetchWebLoginInfo('pair-12345678');
+await governance.approveWebLogin('pair-12345678');
+await governance.rejectWebLogin('pair-12345678');
+await governance.fetchAccountHandovers({ limit: 50, cursor: 'handover-page-2' });
+await governance.fetchAccountRecoveries({ limit: 50, cursor: 'recovery-page-2' });
+await governance.fetchAccountRecovery('r-1');
+await governance.acceptHandover('h-1', 4, 'club-a');
+await governance.declineHandover('h-1', 4, '稍后接任', 'club-a');
+await governance.acceptRecovery('r-1', 2, 'club-a');
+await governance.declineRecovery('r-1', 2, '拒绝恢复', 'club-a');
 await governance.fetchMyAppeals({ limit: 20 });
 await governance.fetchAdminAppeals({ limit: 20 });
 await governance.createAppeal({ postId: 'p-1', contentVersion: 3, reason: '请复核' });
@@ -100,14 +131,33 @@ assert.deepEqual(calls.slice(1).map((call) => call.url), [
   '/admin/members/u-1/mute',
   '/admin/members/u-1/role',
   '/admin/invites',
+  '/admin/invites?limit=20&status=active',
+  '/admin/invites/i-1/revoke',
+  '/account/web-login/info',
+  '/account/web-login/approve',
+  '/account/web-login/reject',
+  '/account/handovers?limit=50&cursor=handover-page-2',
+  '/account/recovery?limit=50&cursor=recovery-page-2',
+  '/account/recovery/r-1',
+  '/admin/handovers/h-1/accept',
+  '/admin/handovers/h-1/decline',
+  '/account/recovery/accept',
+  '/account/recovery/decline',
   '/appeals/mine?limit=20',
   '/admin/appeals?limit=20',
   '/appeals',
   '/admin/appeals/a-1/decision',
 ]);
 assert.equal(calls[4].options.data.ttlSeconds, 3600);
-assert.equal(calls[7].options.data.contentVersion, 3);
-assert.equal(calls[8].options.data.decision, 'approve');
+assert.equal(calls[4].options.data.mode, 'application');
+assert.equal(calls[4].options.data.reason, '测试公开招新码');
+assert.equal(calls[13].clubId, 'club-a');
+assert.equal(calls[7].options.data.id, 'pair-12345678');
+assert.equal(calls[14].clubId, 'club-a');
+assert.equal(calls[15].clubId, 'club-a');
+assert.equal(calls[16].clubId, 'club-a');
+assert.equal(calls[19].options.data.contentVersion, 3);
+assert.equal(calls[20].options.data.decision, 'approve');
 
 const communitySource = readFileSync(join(ROOT, 'pages/community/governance.js'), 'utf8')
   .replace("import request, { withQuery } from '~/api/request';", 'const request = __request; const withQuery = __withQuery;')

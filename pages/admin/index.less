@@ -18,6 +18,41 @@
     margin: @hg-sp-3 @hg-page-x 0;
   }
 
+  &__term-reminder {
+    margin: @hg-sp-3 @hg-page-x 0;
+    padding: @hg-sp-3;
+    border: 1rpx solid @hg-green-line;
+    border-radius: @hg-radius-md;
+    background: @hg-green-soft;
+    color: @hg-ink-2;
+    font-size: @hg-fs-xs;
+    line-height: @hg-lh-base;
+  }
+
+  &__term-reminder--urgent {
+    border-color: @hg-danger-border-faint;
+    background: @hg-danger-bg-faint;
+    color: @hg-danger;
+  }
+
+  &__term-reminder-title {
+    margin-bottom: @hg-sp-1;
+    color: @hg-ink;
+    font-weight: 600;
+  }
+
+  &__term-reminder-link {
+    margin-top: @hg-sp-2;
+    font-weight: 600;
+    text-decoration: underline;
+  }
+
+  &__term-reminder-error {
+    margin: @hg-sp-2 @hg-page-x 0;
+    color: @hg-ink-4;
+    font-size: @hg-fs-2xs;
+  }
+
   &__review-entry {
     display: flex;
     align-items: center;

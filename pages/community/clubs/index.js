@@ -101,6 +101,14 @@ Page({
     navigateTo(`/pages/community/my-content/index?clubId=${encodeURIComponent(id)}&historyOnly=1&tab=published`);
   },
 
+  onManagementInboxTap() {
+    navigateTo('/pages/admin/management/index');
+  },
+
+  onWebLoginTap() {
+    navigateTo('/pages/admin/web-login/index');
+  },
+
   onRetry() {
     return this.loadClubs();
   },

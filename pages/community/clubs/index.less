@@ -10,6 +10,34 @@
     line-height: @hg-lh-base;
   }
 
+  &__account-tools {
+    display: flex;
+    gap: 12rpx;
+    margin: 0 @hg-page-x 28rpx;
+  }
+
+  &__account-tool {
+    flex: 1;
+    min-width: 0;
+    padding: 20rpx;
+    border: 1rpx solid @hg-line;
+    border-radius: @hg-radius-lg;
+    background: @hg-surface;
+  }
+
+  &__account-tool-title {
+    color: @hg-green;
+    font-size: @hg-fs-xs;
+    font-weight: 600;
+  }
+
+  &__account-tool-copy {
+    margin-top: 8rpx;
+    color: @hg-ink-3;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+  }
+
   &__state,
   &__empty {
     padding: 28rpx 0;

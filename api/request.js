@@ -177,7 +177,9 @@ function apiUrl(path) {
     && (!httpsOriginMatch[2] || Number(httpsOriginMatch[2]) <= 65535);
   const isConfiguredLanDevelopmentOrigin = config.profile === 'nasLanDevelopment'
     && baseUrl === 'http://192.168.50.28:18118';
-  if (!isHttpsOrigin && !isConfiguredLanDevelopmentOrigin) {
+  const isConfiguredLocalDevelopmentOrigin = config.profile === 'nasLocalDevelopment'
+    && baseUrl === 'http://127.0.0.1:18884';
+  if (!isHttpsOrigin && !isConfiguredLanDevelopmentOrigin && !isConfiguredLocalDevelopmentOrigin) {
     const code = baseUrl ? 'api_base_url_invalid' : 'api_base_url_missing';
     throw new ApiError({
       kind: 'server',
@@ -322,7 +324,11 @@ function requestNas(url, { method, data, timeout, clubId }) {
 
 function independentClubPath(url) {
   const path = String(url || '').split('?')[0].replace(/\/+$/, '') || '/';
-  return path.startsWith('/platform/') || path === '/account/me' || path === '/clubs' || path === '/clubs/mine' || path === '/me/account';
+  return path.startsWith('/platform/')
+    || path.startsWith('/account/')
+    || path === '/clubs'
+    || path === '/clubs/mine'
+    || path === '/me/account';
 }
 
 function requestContext(url, explicitClubId) {

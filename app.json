@@ -68,7 +68,9 @@
         "index",
         "reviews/index",
         "members/index",
-        "appeals/index"
+        "appeals/index",
+        "web-login/index",
+        "management/index"
       ]
     }
   ],

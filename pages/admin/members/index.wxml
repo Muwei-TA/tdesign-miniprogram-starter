@@ -18,10 +18,18 @@
     </view>
 
     <view class="hg-members__invite hg-card">
-      <view class="hg-members__section-title">生成邀请码</view>
-      <view class="hg-members__invite-hint">邀请码只显示给当前 moderator 一次，服务端会限制使用次数和有效期。</view>
+      <view class="hg-members__section-title">创建邀请码</view>
+      <view class="hg-members__invite-hint">公开申请码进入人工审核；定向直邀只绑定一个已有账号。移除成员使用任一种码都必须人工恢复。</view>
+      <radio-group class="hg-members__invite-modes" bindchange="onInviteModeChange">
+        <label class="hg-members__invite-mode"><radio value="application" checked="{{ inviteMode === 'application' }}" />公开申请</label>
+        <label class="hg-members__invite-mode"><radio value="direct" checked="{{ inviteMode === 'direct' }}" />定向直邀</label>
+      </radio-group>
+      <view wx:if="{{ inviteMode === 'direct' }}" class="hg-members__field">
+        <text class="hg-members__label">绑定账号 ID</text>
+        <input class="hg-members__input" value="{{ inviteTargetUserId }}" maxlength="128" placeholder="只能由这个已有账号领取" bindinput="onInviteTargetInput" />
+      </view>
       <view class="hg-members__invite-fields">
-        <view class="hg-members__field">
+        <view wx:if="{{ inviteMode === 'application' }}" class="hg-members__field">
           <text class="hg-members__label">使用次数</text>
           <input class="hg-members__input" type="number" value="{{ inviteMaxUses }}" maxlength="4" bindinput="onInviteMaxUsesInput" />
         </view>
@@ -30,18 +38,57 @@
           <input class="hg-members__input" type="number" value="{{ inviteTtlDays }}" maxlength="2" bindinput="onInviteTtlDaysInput" />
         </view>
       </view>
+      <view class="hg-members__field hg-members__invite-reason">
+        <text class="hg-members__label">创建理由</text>
+        <textarea class="hg-members__reason" maxlength="500" placeholder="至少 10 字，说明用途与对象" value="{{ inviteReason }}" bindinput="onInviteReasonInput" />
+      </view>
       <view class="hg-members__invite-btn {{ inviteBusy ? 'hg-members__btn--disabled' : '' }}" bindtap="onCreateInvite" aria-role="button">
-        {{ inviteBusy ? '生成中…' : '生成邀请码' }}
+        {{ inviteBusy ? '创建中…' : (inviteMode === 'direct' ? '创建定向直邀' : '创建公开申请码') }}
       </view>
       <view wx:if="{{ inviteCode }}" class="hg-members__invite-result">
-        <text class="hg-members__invite-code">{{ inviteCode }}</text>
+        <view class="hg-members__invite-result-main">
+          <text class="hg-members__invite-code">{{ inviteCode }}</text>
+          <text class="hg-members__invite-once">原码只显示一次 · 有效至 {{ inviteExpiresAt }}</text>
+        </view>
         <view class="hg-members__copy" bindtap="copyInviteCode" aria-role="button">复制</view>
       </view>
     </view>
 
     <view class="hg-members__heading">
+      <view class="hg-members__section-title">邀请码记录</view>
+      <view class="hg-members__count">{{ invites.length }} 条</view>
+    </view>
+    <view class="hg-members__filters">
+      <view class="hg-members__filter {{ inviteStatus === 'all' ? 'hg-members__filter--active' : '' }}" data-status="all" bindtap="onInviteStatusTap" aria-role="button">全部</view>
+      <view class="hg-members__filter {{ inviteStatus === 'active' ? 'hg-members__filter--active' : '' }}" data-status="active" bindtap="onInviteStatusTap" aria-role="button">可用</view>
+      <view class="hg-members__filter {{ inviteStatus === 'exhausted' ? 'hg-members__filter--active' : '' }}" data-status="exhausted" bindtap="onInviteStatusTap" aria-role="button">已用完</view>
+      <view class="hg-members__filter {{ inviteStatus === 'expired' ? 'hg-members__filter--active' : '' }}" data-status="expired" bindtap="onInviteStatusTap" aria-role="button">已过期</view>
+      <view class="hg-members__filter {{ inviteStatus === 'revoked' ? 'hg-members__filter--active' : '' }}" data-status="revoked" bindtap="onInviteStatusTap" aria-role="button">已撤销</view>
+    </view>
+    <view wx:if="{{ invitesErrorText }}" class="hg-members__error" bindtap="loadInvites" aria-role="button">{{ invitesErrorText }} · 点此重试</view>
+    <view wx:if="{{ invitesLoading && !invites.length }}" class="hg-members__loading">正在读取邀请码记录…</view>
+    <view wx:elif="{{ !invitesLoading && !invites.length && !invitesErrorText }}" class="hg-members__empty">还没有邀请码记录。</view>
+    <view wx:for="{{ invites }}" wx:key="inviteId" class="hg-members__invite-row hg-card">
+      <view class="hg-members__invite-main">
+        <view class="hg-members__invite-title">{{ item.modeText }} · {{ item.statusText }}</view>
+        <view class="hg-members__invite-meta">{{ item.usedCount }} 已用 · {{ item.reservedCount }} 处理中 · 上限 {{ item.maxUses || '不限' }}</view>
+        <view class="hg-members__invite-meta">有效至 {{ item.expiresAt || '长期' }}</view>
+        <view wx:if="{{ item.targetUserId }}" class="hg-members__invite-meta">绑定账号 {{ item.targetUserId }}</view>
+      </view>
+      <view wx:if="{{ item.status === 'active' }}" class="hg-members__invite-revoke" data-id="{{ item.inviteId }}" bindtap="onInviteRevokeTap" aria-role="button">撤销</view>
+    </view>
+    <view wx:if="{{ invitesHasMore }}" class="hg-members__load-more" bindtap="onLoadMoreInvites" aria-role="button">{{ invitesLoading ? '读取中…' : '加载更多邀请码' }}</view>
+
+    <view class="hg-members__heading">
       <view class="hg-members__section-title">成员名册</view>
       <view class="hg-members__count">{{ members.length }} 人</view>
+    </view>
+
+    <view class="hg-members__filters">
+      <view class="hg-members__filter {{ memberStatus === 'all' ? 'hg-members__filter--active' : '' }}" data-status="all" bindtap="onMemberStatusTap" aria-role="button">全部</view>
+      <view class="hg-members__filter {{ memberStatus === 'active' ? 'hg-members__filter--active' : '' }}" data-status="active" bindtap="onMemberStatusTap" aria-role="button">正常</view>
+      <view class="hg-members__filter {{ memberStatus === 'removed' ? 'hg-members__filter--active' : '' }}" data-status="removed" bindtap="onMemberStatusTap" aria-role="button">已移除</view>
+      <view class="hg-members__filter {{ memberStatus === 'pending' ? 'hg-members__filter--active' : '' }}" data-status="pending" bindtap="onMemberStatusTap" aria-role="button">待处理</view>
     </view>
 
     <view wx:if="{{ loading }}" class="hg-members__loading">正在读取成员名册…</view>
@@ -62,7 +109,7 @@
         <view wx:if="{{ item.isSelf }}" class="hg-members__self">当前账号</view>
         <view wx:elif="{{ item.status === 'active' }}" class="hg-members__actions">
           <view class="hg-members__action" data-id="{{ item.targetUserId }}" data-key="{{ item.role === 'moderator' ? 'demote' : 'promote' }}" bindtap="onActionTap" aria-role="button">
-            {{ item.role === 'moderator' ? '降为成员' : '设为 moderator' }}
+            {{ item.role === 'moderator' ? '撤销负责人权限' : '设为负责人' }}
           </view>
           <view class="hg-members__action" data-id="{{ item.targetUserId }}" data-key="{{ item.mutedUntil ? 'unmute' : 'mute' }}" bindtap="onActionTap" aria-role="button">
             {{ item.mutedUntil ? '解除禁言' : '禁言 24 小时' }}
@@ -71,15 +118,16 @@
         </view>
       </view>
     </view>
+    <view wx:if="{{ membersHasMore }}" class="hg-members__load-more" bindtap="onLoadMoreMembers" aria-role="button">{{ loading ? '读取中…' : '加载更多成员' }}</view>
 
     <view wx:if="{{ reasonSheetVisible }}" class="hg-members__sheet-wrap">
       <view class="hg-members__mask" catchtap="onReasonCancel"></view>
       <view class="hg-members__sheet" catchtap="onStopPropagation">
         <view class="hg-members__sheet-head">
-          <view class="hg-members__section-title">填写处理理由</view>
+          <view class="hg-members__section-title">{{ pendingAction.inviteId ? '填写撤销理由' : '填写处理理由' }}</view>
           <view class="hg-members__close" bindtap="onReasonCancel" aria-role="button">取消</view>
         </view>
-        <view class="hg-members__sheet-hint">理由会写入审计记录并通知相关成员，最多 500 字。</view>
+        <view class="hg-members__sheet-hint">理由会写入审计记录，最多 500 字。</view>
         <textarea class="hg-members__reason" maxlength="500" placeholder="请填写理由" value="{{ reason }}" bindinput="onReasonInput" />
         <view class="hg-members__submit {{ actionBusy ? 'hg-members__btn--disabled' : '' }}" bindtap="onReasonSubmit" aria-role="button">确认操作</view>
       </view>

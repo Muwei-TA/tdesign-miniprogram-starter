@@ -1,0 +1,69 @@
+<page-meta page-style="{{ clubThemeStyle }}" />
+<view class="hg-page hg-management-inbox">
+  <hg-nav title="管理确认事项" />
+  <view class="hg-management-inbox__intro">
+    <view class="hg-management-inbox__eyebrow">GOVERNANCE INBOX</view>
+    <view class="hg-management-inbox__title">交接，需要本人确认</view>
+    <view class="hg-management-inbox__copy">当前账号：{{ identity || '正在确认账号…' }}。接受后会立即完成服务端核验、权限交接和审计。</view>
+  </view>
+
+  <view wx:if="{{ errorText }}" class="hg-management-inbox__error" role="alert">{{ errorText }}</view>
+  <view wx:if="{{ loading }}" class="hg-management-inbox__loading">正在读取发给当前账号的确认事项…</view>
+
+  <view wx:if="{{ !loading && !handovers.length && !recoveries.length && !errorText }}" class="hg-management-inbox__empty hg-card">
+    <view class="hg-management-inbox__empty-title">目前没有待确认事项</view>
+    <view class="hg-management-inbox__empty-copy">换届或负责人恢复安排送达后，会显示在这里。</view>
+  </view>
+
+  <view wx:for="{{ handovers }}" wx:key="id" class="hg-management-inbox__item hg-card">
+    <view class="hg-management-inbox__item-head">
+      <view>
+        <view class="hg-management-inbox__label">社团换届</view>
+        <view class="hg-management-inbox__club">{{ item.clubName }}</view>
+      </view>
+      <view class="hg-management-inbox__status">{{ item.status === 'proposed' ? '等待你确认' : item.status }}</view>
+    </view>
+    <view class="hg-management-inbox__reason">{{ item.reason || '现任管理团队邀请你接任。' }}</view>
+    <view wx:if="{{ item.memberSummary }}" class="hg-management-inbox__team">拟任团队：{{ item.memberSummary }}</view>
+    <view class="hg-management-inbox__expiry">有效至 {{ item.expiresAtText }}</view>
+    <view wx:if="{{ item.status === 'proposed' }}" class="hg-management-inbox__actions">
+      <button data-kind="handover" data-id="{{ item.id }}" bindtap="onAcceptTap" disabled="{{ busyId }}">{{ busyId === item.id ? '处理中…' : '接受交接' }}</button>
+      <button class="hg-management-inbox__decline" data-kind="handover" data-id="{{ item.id }}" bindtap="onDeclineTap" disabled="{{ busyId }}">拒绝</button>
+    </view>
+    <view wx:else class="hg-management-inbox__closed">这项安排已关闭。</view>
+  </view>
+
+  <view wx:for="{{ recoveries }}" wx:key="id" class="hg-management-inbox__item hg-card">
+    <view class="hg-management-inbox__item-head">
+      <view>
+        <view class="hg-management-inbox__label">负责人失联恢复</view>
+        <view class="hg-management-inbox__club">{{ item.clubName }}</view>
+      </view>
+      <view class="hg-management-inbox__status">{{ item.acceptedAt ? '已确认，等待平台复核' : item.status === 'recovery_requested' ? '等待你确认' : item.status }}</view>
+    </view>
+    <view class="hg-management-inbox__reason">{{ item.reason || '平台开发者发起了负责人恢复安排。' }}</view>
+    <view class="hg-management-inbox__team">恢复完成后仅目标账号保留管理权限，现有其他管理员降为普通成员。</view>
+    <view wx:if="{{ item.acceptedAt }}" class="hg-management-inbox__expiry">已于 {{ item.acceptedAtText }} 确认</view>
+    <view wx:else class="hg-management-inbox__expiry">有效至 {{ item.expiresAtText }}</view>
+    <view wx:if="{{ item.status === 'recovery_requested' && !item.acceptedAt }}" class="hg-management-inbox__actions">
+      <button data-kind="recovery" data-id="{{ item.id }}" bindtap="onAcceptTap" disabled="{{ busyId }}">{{ busyId === item.id ? '处理中…' : '接受恢复安排' }}</button>
+      <button class="hg-management-inbox__decline" data-kind="recovery" data-id="{{ item.id }}" bindtap="onDeclineTap" disabled="{{ busyId }}">拒绝</button>
+    </view>
+    <view wx:elif="{{ item.acceptedAt }}" class="hg-management-inbox__closed">已确认，等待平台复核。</view>
+    <view wx:else class="hg-management-inbox__closed">这项安排已关闭。</view>
+  </view>
+
+  <view wx:if="{{ !loading }}" class="hg-management-inbox__refresh" bindtap="onRetry" aria-role="button">刷新确认事项</view>
+
+  <view wx:if="{{ reasonVisible }}" class="hg-management-inbox__sheet-wrap">
+    <view class="hg-management-inbox__mask" catchtap="onReasonCancel"></view>
+    <view class="hg-management-inbox__sheet" catchtap="onStopPropagation">
+      <view class="hg-management-inbox__sheet-title">填写拒绝理由</view>
+      <textarea class="hg-management-inbox__reason-input" maxlength="500" placeholder="说明当前无法接任的原因" value="{{ reason }}" bindinput="onReasonInput" />
+      <view class="hg-management-inbox__sheet-actions">
+        <view bindtap="onReasonCancel" aria-role="button">返回</view>
+        <view class="hg-management-inbox__sheet-submit" bindtap="onReasonSubmit" aria-role="button">确认拒绝</view>
+      </view>
+    </view>
+  </view>
+</view>

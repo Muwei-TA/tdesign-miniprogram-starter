@@ -4,6 +4,17 @@
 
   <view class="hg-clubs__intro">每次进入一个社团；成员身份、管理权限和经验分别计算。</view>
 
+  <view class="hg-clubs__account-tools">
+    <view class="hg-clubs__account-tool" bindtap="onManagementInboxTap" aria-role="button" aria-label="打开管理确认事项">
+      <view class="hg-clubs__account-tool-title">管理确认事项</view>
+      <view class="hg-clubs__account-tool-copy">处理发给此账号的换届或恢复确认</view>
+    </view>
+    <view class="hg-clubs__account-tool" bindtap="onWebLoginTap" aria-role="button" aria-label="扫码确认 Web 登录">
+      <view class="hg-clubs__account-tool-title">扫码确认 Web 登录</view>
+      <view class="hg-clubs__account-tool-copy">核对访问地址并确认本次登录</view>
+    </view>
+  </view>
+
   <view wx:if="{{ loading }}" class="hg-clubs__state">正在读取社团…</view>
   <empty-state
     wx:elif="{{ errorText }}"

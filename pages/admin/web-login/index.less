@@ -1,0 +1,66 @@
+@import '/styles/tokens.less';
+@import '/styles/mixins.less';
+
+.hg-web-login {
+  min-height: 100vh;
+  padding: 0 @hg-page-x 64rpx;
+
+  &__intro {
+    margin-top: @hg-sp-4;
+    padding: @hg-sp-4 0 @hg-sp-3;
+    border-bottom: 1rpx solid @hg-line-strong;
+  }
+
+  &__eyebrow {
+    color: @hg-clay;
+    font-size: 20rpx;
+    letter-spacing: 3rpx;
+  }
+
+  &__title {
+    margin-top: @hg-sp-2;
+    color: @hg-ink;
+    .hg-serif(@hg-fs-display);
+  }
+
+  &__copy,
+  &__scope,
+  &__scope-note,
+  &__expiry,
+  &__footnote {
+    color: @hg-ink-3;
+    font-size: @hg-fs-xs;
+    line-height: @hg-lh-base;
+  }
+
+  &__copy { margin-top: @hg-sp-2; }
+
+  &__identity,
+  &__request {
+    .hg-card();
+    margin-top: @hg-sp-3;
+    padding: @hg-sp-3;
+  }
+
+  &__label { color: @hg-ink-4; font-size: @hg-fs-2xs; }
+  &__account { margin-top: @hg-sp-1; color: @hg-ink; font-size: @hg-fs-body; font-weight: 600; }
+  &__scope { margin-top: @hg-sp-2; }
+  &__error { margin-top: @hg-sp-2; color: @hg-danger; font-size: @hg-fs-xs; }
+
+  &__request-head { display: flex; align-items: flex-start; justify-content: space-between; gap: @hg-sp-2; }
+  &__origin { margin-top: @hg-sp-1; color: @hg-ink; font-size: 28rpx; word-break: break-all; }
+  &__state { flex: 0 0 auto; padding: 8rpx 14rpx; border-radius: 999rpx; background: @hg-clay-soft; color: @hg-clay-ink; font-size: @hg-fs-2xs; }
+  &__state--approved { background: @hg-green-soft; color: @hg-green; }
+  &__state--rejected,
+  &__state--expired { background: @hg-danger-bg-faint; color: @hg-danger; }
+  &__expiry { margin-top: @hg-sp-2; }
+  &__scope-note { margin-top: @hg-sp-2; padding-top: @hg-sp-2; border-top: 1rpx solid @hg-line; }
+  &__actions { display: flex; gap: @hg-sp-2; margin-top: @hg-sp-3; }
+  &__approve,
+  &__reject,
+  &__scan { .hg-btn-primary(); margin: @hg-sp-3 0 0; }
+  &__actions button { flex: 1; }
+  &__reject { background: @hg-surface; border: 1rpx solid @hg-danger-border-faint; color: @hg-danger; }
+  &__checking { margin-top: @hg-sp-4; color: @hg-ink-3; font-size: @hg-fs-sm; text-align: center; }
+  &__footnote { margin-top: @hg-sp-4; text-align: center; }
+}

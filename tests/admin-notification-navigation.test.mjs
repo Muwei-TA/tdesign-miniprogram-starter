@@ -35,6 +35,48 @@ function pageContext(definition, patch = {}) {
   return context;
 }
 
+const termReminderNavigations = [];
+const termReminderPage = loadPage(
+  'pages/admin/index.js',
+  [
+    ["import { fetchUsageStatus } from './usage';", 'const { fetchUsageStatus } = __usage;'],
+    ["import { fetchGovernanceOverview } from './governance';", 'const { fetchGovernanceOverview } = __governance;'],
+    ["import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;'],
+  ],
+  {
+    __usage: { async fetchUsageStatus() { return null; } },
+    __governance: { async fetchGovernanceOverview() { return null; } },
+    __navigation: { navigateTo: (url) => termReminderNavigations.push(url) },
+    getApp: () => ({ globalData: {} }),
+  },
+);
+const termReminderPageContext = pageContext(termReminderPage);
+termReminderPage.onTermReminderTap.call(termReminderPageContext);
+assert.equal(termReminderNavigations[0], '/pages/admin/management/index', 'the term reminder opens the existing management confirmation inbox');
+assert.match(read('pages/admin/index.wxml'), /termReminderText[\s\S]*?bindtap="onTermReminderTap"/);
+
+const accountLevelRoutes = [];
+const clubsPage = loadPage(
+  'pages/community/clubs/index.js',
+  [
+    ["import { fetchMyClubs, fetchClubs } from '~/services/clubs';", 'const { fetchMyClubs, fetchClubs } = __clubs;'],
+    ["import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;'],
+  ],
+  {
+    __clubs: { async fetchMyClubs() { return []; }, async fetchClubs() { return []; } },
+    __navigation: { navigateTo: (url) => accountLevelRoutes.push(url) },
+    getApp: () => ({ globalData: {}, eventBus: { on() {}, off() {} } }),
+  },
+);
+const clubsPageContext = pageContext(clubsPage, { currentClubId: '', myClubs: [] });
+clubsPage.onManagementInboxTap.call(clubsPageContext);
+clubsPage.onWebLoginTap.call(clubsPageContext);
+assert.deepEqual(accountLevelRoutes, [
+  '/pages/admin/management/index',
+  '/pages/admin/web-login/index',
+], 'directory account tools remain reachable without a current club or membership');
+assert.match(read('pages/community/clubs/index.wxml'), /hg-clubs__account-tools[\s\S]*?<view wx:if="\{\{ loading \}\}"/);
+
 const navigations = [];
 const modals = [];
 let notificationFetches = 0;
@@ -150,10 +192,12 @@ const adminPage = loadPage(
   'pages/admin/index.js',
   [
     ["import { fetchUsageStatus } from './usage';", 'const { fetchUsageStatus } = __usage;'],
+    ["import { fetchGovernanceOverview } from './governance';", 'const { fetchGovernanceOverview } = __governance;'],
     ["import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;'],
   ],
   {
     __usage: { fetchUsageStatus: async () => ({}) },
+    __governance: { fetchGovernanceOverview: async () => ({ term: null }) },
     __navigation: { navigateTo: (url) => adminNavigations.push(url) },
     getApp: () => ({ eventBus: appBus, globalData: { session: null } }),
     wx: { getStorageSync() { return ''; }, setStorageSync() {}, removeStorageSync() {}, navigateTo() {} },

@@ -47,6 +47,20 @@
     line-height: @hg-lh-base;
   }
 
+  &__invite-modes {
+    display: flex;
+    gap: @hg-sp-4;
+    margin-top: @hg-sp-3;
+    color: @hg-ink-2;
+    font-size: @hg-fs-xs;
+  }
+
+  &__invite-mode {
+    display: flex;
+    align-items: center;
+    min-height: @hg-touch-min;
+  }
+
   &__invite-fields {
     display: flex;
     gap: @hg-sp-2;
@@ -96,6 +110,14 @@
     border-radius: @hg-radius-sm;
   }
 
+  &__invite-result-main,
+  &__invite-main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+  }
+
   &__invite-code {
     color: @hg-green;
     font-size: 34rpx;
@@ -110,12 +132,79 @@
     line-height: @hg-touch-min;
   }
 
+  &__invite-once,
+  &__invite-meta {
+    margin-top: @hg-sp-1;
+    color: @hg-ink-3;
+    font-size: @hg-fs-2xs;
+    line-height: @hg-lh-base;
+    word-break: break-all;
+  }
+
+  &__invite-row {
+    .hg-card();
+
+    display: flex;
+    align-items: flex-start;
+    gap: @hg-sp-2;
+    margin: @hg-sp-2 @hg-page-x 0;
+    padding: @hg-sp-3;
+  }
+
+  &__invite-title {
+    color: @hg-ink;
+    font-size: @hg-fs-sm;
+    font-weight: 600;
+  }
+
+  &__invite-revoke {
+    flex: 0 0 auto;
+    min-height: @hg-touch-min;
+    color: @hg-danger;
+    font-size: @hg-fs-xs;
+    line-height: @hg-touch-min;
+  }
+
   &__heading {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     margin: @hg-sp-5 @hg-page-x @hg-sp-2;
   }
+
+  &__filters {
+    display: flex;
+    gap: @hg-sp-1;
+    overflow-x: auto;
+    padding: 0 @hg-page-x;
+    white-space: nowrap;
+  }
+
+  &__filter {
+    min-height: 56rpx;
+    padding: 0 @hg-sp-2;
+    border: 1rpx solid @hg-line;
+    border-radius: 999rpx;
+    color: @hg-ink-3;
+    font-size: @hg-fs-2xs;
+    line-height: 56rpx;
+  }
+
+  &__filter--active {
+    border-color: @hg-green-line;
+    background: @hg-green-soft;
+    color: @hg-green;
+  }
+
+  &__load-more,
+  &__empty {
+    margin: @hg-sp-3 @hg-page-x;
+    color: @hg-green;
+    font-size: @hg-fs-xs;
+    text-align: center;
+  }
+
+  &__invite-reason { margin-top: @hg-sp-3; }
 
   &__count {
     color: @hg-ink-4;

@@ -122,6 +122,34 @@ assert.deepEqual(plain(resolveTransport('/admin/usage/status', 'GET', {})), {
   action: 'admin/usage/status',
   payload: {},
 });
+assert.deepEqual(plain(resolveTransport('/account/web-login/info', 'POST', { id: 'pair-12345678' })), {
+  action: 'account/web-login/info',
+  payload: { id: 'pair-12345678' },
+});
+assert.deepEqual(plain(resolveTransport('/account/handovers', 'GET', {})), {
+  action: 'account/handovers/list',
+  payload: {},
+});
+assert.deepEqual(plain(resolveTransport('/account/recovery/r-1', 'GET', {})), {
+  action: 'account/recovery/info',
+  payload: { recoveryId: 'r-1' },
+});
+assert.deepEqual(plain(resolveTransport('/account/recovery/accept', 'POST', { recoveryId: 'r-1', expectedVersion: 3 })), {
+  action: 'account/recovery/accept',
+  payload: { recoveryId: 'r-1', expectedVersion: 3 },
+});
+assert.deepEqual(plain(resolveTransport('/admin/invites?limit=20&cursor=c1&status=active', 'GET', {})), {
+  action: 'admin/invites/list',
+  payload: { limit: '20', cursor: 'c1', status: 'active' },
+});
+assert.deepEqual(plain(resolveTransport('/admin/invites/i-1/revoke', 'POST', { expectedVersion: 2, reason: '不再招新' })), {
+  action: 'admin/invites/revoke',
+  payload: { expectedVersion: 2, reason: '不再招新', inviteId: 'i-1' },
+});
+assert.deepEqual(plain(resolveTransport('/membership/applications/a-1/cancel', 'POST', { expectedVersion: 4, reason: '本人撤回' })), {
+  action: 'membership/cancel',
+  payload: { expectedVersion: 4, reason: '本人撤回', applicationId: 'a-1' },
+});
 
 const first = withIdempotency({ body: 'draft' }, 'post-key-1');
 const retry = withIdempotency(first, 'post-key-1');
@@ -138,7 +166,9 @@ assert.match(appSource, /env:\s*config\.env/);
 assert.match(appSource, /config\.transport !== 'cloudbase'/);
 assert.match(configSource, /activeProfile = 'nasProduction'/);
 assert.match(configSource, /nasLanDevelopment:[\s\S]*apiBaseUrl: 'http:\/\/192\.168\.50\.28:18118'/);
+assert.match(configSource, /nasLocalDevelopment:[\s\S]*apiBaseUrl: 'http:\/\/127\.0\.0\.1:18884'/);
 assert.match(configSource, /nasProduction:[\s\S]*apiBaseUrl: 'https:\/\/api\.muwei\.xyz'/);
+assert.match(requestSource, /profile === 'nasLocalDevelopment'/);
 assert.match(requestSource, /wx\.cloud\.callFunction/);
 assert.match(requestSource, /wx\.request/);
 assert.match(requestSource, /Authorization: `Bearer \$\{token\}`/);

@@ -1,0 +1,38 @@
+@import '/styles/tokens.less';
+@import '/styles/mixins.less';
+
+.hg-management-inbox {
+  min-height: 100vh;
+  padding: 0 @hg-page-x 80rpx;
+
+  &__intro { margin-top: @hg-sp-4; padding: @hg-sp-4 0 @hg-sp-3; border-bottom: 1rpx solid @hg-line-strong; }
+  &__eyebrow { color: @hg-clay; font-size: 20rpx; letter-spacing: 3rpx; }
+  &__title { margin-top: @hg-sp-2; color: @hg-ink; .hg-serif(@hg-fs-display); }
+  &__copy,
+  &__reason,
+  &__team,
+  &__expiry,
+  &__empty-copy { margin-top: @hg-sp-2; color: @hg-ink-3; font-size: @hg-fs-xs; line-height: @hg-lh-base; }
+  &__error { margin-top: @hg-sp-3; color: @hg-danger; font-size: @hg-fs-xs; }
+  &__loading { padding: @hg-sp-5 0; color: @hg-ink-3; font-size: @hg-fs-sm; text-align: center; }
+  &__empty,
+  &__item { .hg-card(); margin-top: @hg-sp-3; padding: @hg-sp-3; }
+  &__empty-title { color: @hg-ink; .hg-serif(@hg-fs-h3); }
+  &__item-head { display: flex; justify-content: space-between; align-items: flex-start; gap: @hg-sp-2; }
+  &__label { color: @hg-ink-4; font-size: @hg-fs-2xs; }
+  &__club { margin-top: @hg-sp-1; color: @hg-ink; font-size: @hg-fs-body; font-weight: 600; }
+  &__status { flex: 0 0 auto; color: @hg-clay-ink; font-size: @hg-fs-2xs; }
+  &__expiry { padding-top: @hg-sp-2; border-top: 1rpx solid @hg-line; }
+  &__actions { display: flex; gap: @hg-sp-2; margin-top: @hg-sp-3; }
+  &__actions button { flex: 1; .hg-btn-primary(); }
+  &__actions .hg-management-inbox__decline { background: @hg-surface; border: 1rpx solid @hg-danger-border-faint; color: @hg-danger; }
+  &__closed { margin-top: @hg-sp-3; color: @hg-ink-4; font-size: @hg-fs-xs; }
+  &__refresh { margin-top: @hg-sp-4; color: @hg-green; font-size: @hg-fs-sm; text-align: center; text-decoration: underline; }
+  &__sheet-wrap { position: fixed; z-index: 20; inset: 0; }
+  &__mask { position: absolute; inset: 0; background: var(--hg-ink-scrim, rgba(34, 59, 50, 0.4)); }
+  &__sheet { position: absolute; right: 0; bottom: 0; left: 0; padding: @hg-sp-4 @hg-page-x calc(@hg-sp-4 + env(safe-area-inset-bottom)); background: @hg-surface; border-radius: @hg-radius-lg @hg-radius-lg 0 0; }
+  &__sheet-title { color: @hg-ink; .hg-serif(@hg-fs-h2); }
+  &__reason-input { box-sizing: border-box; width: 100%; min-height: 200rpx; margin-top: @hg-sp-3; padding: @hg-sp-2; background: @hg-surface-sunk; border-radius: @hg-radius-sm; color: @hg-ink; font-size: @hg-fs-sm; }
+  &__sheet-actions { display: flex; justify-content: space-between; align-items: center; margin-top: @hg-sp-3; color: @hg-ink-3; font-size: @hg-fs-sm; }
+  &__sheet-submit { color: @hg-danger; font-weight: 600; }
+}

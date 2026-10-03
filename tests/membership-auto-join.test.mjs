@@ -10,7 +10,7 @@ const read = (path) => readFileSync(join(ROOT, path), 'utf8');
 function loadJoinPage(harness) {
   const source = read('pages/community/join/index.js')
     .replace("import Page from '~/utils/themed-page';", '')
-    .replace(/import \{[\s\S]*?\} from '\.\.\/membership';/, 'const { fetchMyMembershipApplication, submitMembershipApplication, fetchMembershipSession } = __membership;')
+    .replace(/import \{[\s\S]*?\} from '\.\.\/membership';/, 'const { fetchMyMembershipApplication, cancelMembershipApplication, submitMembershipApplication, fetchMembershipSession } = __membership;')
     .replace("import { fetchClub } from '~/services/clubs';", 'const { fetchClub } = __clubs;')
     .replace("import { navigateTo } from '~/utils/navigate';", 'const { navigateTo } = __navigation;');
   let definition;
@@ -22,7 +22,7 @@ function loadJoinPage(harness) {
     __navigation: { navigateTo() {} },
     wx: {
       showToast: (value) => harness.toasts.push(value),
-      showModal() {},
+      showModal(options) { if (options && options.success) options.success({ confirm: true }); },
       switchTab() {},
     },
   });
@@ -58,6 +58,7 @@ function createHarness({ refreshes, submit, application = null }) {
   const toasts = [];
   const submitCalls = [];
   const applicationCalls = [];
+  const cancelCalls = [];
   const eventBus = {
     on(name, callback) {
       const callbacks = listeners.get(name) || new Set();
@@ -99,12 +100,16 @@ function createHarness({ refreshes, submit, application = null }) {
       applicationCalls.push(arguments[0]);
       return typeof application === 'function' ? application() : application;
     },
+    async cancelMembershipApplication(...args) {
+      cancelCalls.push(args);
+      return { state: 'cancelled' };
+    },
     async submitMembershipApplication(payload) {
       submitCalls.push(payload);
       return submit(payload);
     },
   };
-  const harness = { app, membership, toasts, emitted, submitCalls, applicationCalls };
+  const harness = { app, membership, toasts, emitted, submitCalls, applicationCalls, cancelCalls };
   harness.page = loadJoinPage(harness);
   return harness;
 }
@@ -208,12 +213,33 @@ assert.equal(applicationCannotPromote.page.data.status, 'uncertain');
 assert.notEqual(applicationCannotPromote.page.data.status, 'active');
 
 const joinMarkup = read('pages/community/join/index.wxml');
-assert.match(joinMarkup, /有效邀请码通过服务端验证后会直接加入/);
-assert.match(joinMarkup, /验证邀请码并加入/);
+assert.match(joinMarkup, /公开申请码会进入人工审核/);
+assert.match(joinMarkup, /提交申请或验证定向邀请/);
 assert.match(joinMarkup, /status === 'uncertain'[\s\S]*?重新确认状态/);
 assert.match(joinMarkup, /wx:if="\{\{ status === 'pending' \|\| status === 'duplicate' \|\| status === 'uncertain' \}\}"/);
 assert.match(joinMarkup, /status === 'pending' && showPendingReapplyForm/);
 assert.doesNotMatch(joinMarkup, /加入需要管理员确认/);
 assert.doesNotMatch(read('pages/community/club/index.js'), /管理员确认后，成员资格会在会话刷新时生效/);
+
+let pendingApplicationReads = 0;
+const pendingApplicationCanBeWithdrawn = createHarness({
+  refreshes: [{ ...visitor, memberStatus: 'pending' }, { ...visitor, memberStatus: 'none' }],
+  submit: async () => ({ state: 'pending' }),
+  application: () => {
+    pendingApplicationReads += 1;
+    return pendingApplicationReads === 1 ? { state: 'manual_join', applicationId: 'application-1', version: 7 } : null;
+  },
+});
+await pendingApplicationCanBeWithdrawn.page.onLoad({ from: 'my', clubId: 'club-test' });
+assert.equal(pendingApplicationCanBeWithdrawn.page.data.status, 'pending');
+assert.equal(pendingApplicationCanBeWithdrawn.page.data.membershipApplication.applicationId, 'application-1');
+assert.equal(pendingApplicationCanBeWithdrawn.page.data.membershipApplication.version, 7);
+assert.equal(pendingApplicationCanBeWithdrawn.page.data.membershipApplication.state, 'pending');
+await pendingApplicationCanBeWithdrawn.page.submitCancelApplication(pendingApplicationCanBeWithdrawn.page.data.membershipApplication);
+assert.equal(pendingApplicationCanBeWithdrawn.cancelCalls.length, 1);
+assert.deepEqual(pendingApplicationCanBeWithdrawn.cancelCalls[0], [
+  'application-1', 7, '本人主动撤回待处理入社申请', 'club-test',
+]);
+assert.equal(pendingApplicationCanBeWithdrawn.page.data.status, 'idle');
 
 console.log('OK: invite success uses refreshed server membership, uncertain submissions reconcile safely, and removed-member pending remains guarded');

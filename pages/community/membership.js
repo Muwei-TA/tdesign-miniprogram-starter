@@ -1,4 +1,4 @@
-import request, { requestForClub } from '~/api/request';
+import request, { requestForClub, withPath } from '~/api/request';
 import endpoints from '~/api/endpoints';
 
 /**
@@ -18,6 +18,15 @@ export function fetchMyMembershipApplication(clubId) {
     : request(endpoints.membershipMine);
 }
 
+export function cancelMembershipApplication(applicationId, expectedVersion, reason, clubId) {
+  const call = clubId ? requestForClub : request;
+  const args = clubId ? [withPath(endpoints.membershipCancel, { id: applicationId }), clubId] : [withPath(endpoints.membershipCancel, { id: applicationId })];
+  return call(...args, {
+    method: 'POST',
+    data: { expectedVersion, reason },
+  });
+}
+
 export function submitMembershipApplication({ displayName, inviteCode, rulesVersion }, clubId) {
   const call = clubId ? requestForClub : request;
   const args = clubId ? [endpoints.membershipApply, clubId] : [endpoints.membershipApply];
@@ -30,5 +39,6 @@ export function submitMembershipApplication({ displayName, inviteCode, rulesVers
 export default {
   fetchMembershipSession,
   fetchMyMembershipApplication,
+  cancelMembershipApplication,
   submitMembershipApplication,
 };

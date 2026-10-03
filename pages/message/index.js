@@ -128,6 +128,14 @@ Page({
     if (!item) return;
 
     const { target } = item;
+    if (this.data.tab === 'system' && target && target.type === 'handover' && typeof target.id === 'string' && target.id) {
+      navigateTo(`/pages/admin/management/index?handoverId=${encodeURIComponent(target.id)}`);
+      return;
+    }
+    if (this.data.tab === 'system' && target && target.type === 'management_recovery' && typeof target.id === 'string' && target.id) {
+      navigateTo(`/pages/admin/management/index?recoveryId=${encodeURIComponent(target.id)}`);
+      return;
+    }
     // 目标失效时给中性提示，不泄露原内容
     if (!target || typeof target !== 'object' || target.accessible !== true) {
       wx.showModal({

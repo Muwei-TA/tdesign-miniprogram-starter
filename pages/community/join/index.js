@@ -1,6 +1,7 @@
 import Page from '~/utils/themed-page';
 import {
   fetchMyMembershipApplication,
+  cancelMembershipApplication,
   submitMembershipApplication,
   fetchMembershipSession,
 } from '../membership';
@@ -33,7 +34,7 @@ const STATUS_META = {
   },
   pending: {
     label: '入社状态待确认',
-    desc: '历史待处理申请或成员资格被移除后的重新申请仍需确认；首次凭有效邀请码会直接加入。',
+    desc: '公开申请码和被移除成员的恢复申请会进入人工审核；仅发给新账号的定向直邀可以直接加入。',
     icon: 'time',
     tone: 'notice',
   },
@@ -71,8 +72,8 @@ const ORIGIN_TABS = {
 };
 
 function normalizeStatus(value) {
-  if (value === 'active' || value === 'approved') return 'active';
-  if (value === 'pending') return 'pending';
+  if (value === 'active' || value === 'approved' || value === 'direct_joined') return 'active';
+  if (value === 'pending' || value === 'manual_join' || value === 'manual_restore' || value === 'recovery_pending') return 'pending';
   if (value === 'rejected' || value === 'removed') return 'rejected';
   if (value === 'duplicate') return 'duplicate';
   return 'idle';
@@ -113,6 +114,8 @@ Page({
     loading: true,
     loadError: '',
     submitting: false,
+    cancelBusy: false,
+    membershipApplication: null,
     showPendingReapplyForm: false,
   },
 
@@ -183,7 +186,10 @@ Page({
   },
 
   applyApplication(application) {
-    if (!application) return null;
+    if (!application) {
+      this.setData({ membershipApplication: null });
+      return null;
+    }
     const status = normalizeStatus(application.state);
     // Only /session/me can establish active membership; an application DTO cannot promote the UI.
     if (status === 'active' && (!this.data.session || this.data.session.memberStatus !== 'active')) {
@@ -194,8 +200,18 @@ Page({
       });
       return 'uncertain';
     }
-    if (status === 'idle') return null;
+    if (status === 'idle') {
+      this.setData({ membershipApplication: null, status, statusMeta: STATUS_META.idle, statusReason: '' });
+      return null;
+    }
+    const version = Number(application.version);
+    const membershipApplication = {
+      applicationId: application.applicationId || application.id || '',
+      version: Number.isSafeInteger(version) ? version : null,
+      state: status,
+    };
     this.setData({
+      membershipApplication,
       status,
       statusMeta: STATUS_META[status] || STATUS_META.idle,
       statusReason: application.reason || '',
@@ -408,6 +424,45 @@ Page({
     if (this.data.submitting) return;
     if (this.data.status === 'uncertain') return this.reconcileJoinOutcome();
     this.loadPage();
+  },
+
+  onCancelApplication() {
+    const application = this.data.membershipApplication;
+    if (this.data.cancelBusy || !application || !application.applicationId || application.version === null) return;
+    wx.showModal({
+      title: '撤回入社申请',
+      content: '撤回后，这条待处理申请会关闭并释放邀请码预留次数。你之后可以使用新的邀请码重新申请。',
+      confirmText: '撤回申请',
+      confirmColor: '#a85648',
+      success: (result) => {
+        if (result.confirm) this.submitCancelApplication(application);
+      },
+    });
+  },
+
+  async submitCancelApplication(application) {
+    this.setData({ cancelBusy: true, statusReason: '' });
+    try {
+      await cancelMembershipApplication(
+        application.applicationId,
+        application.version,
+        '本人主动撤回待处理入社申请',
+        this.data.clubId,
+      );
+      this.setData({
+        cancelBusy: false,
+        membershipApplication: null,
+        status: 'idle',
+        statusMeta: STATUS_META.idle,
+        statusReason: '',
+        showPendingReapplyForm: false,
+      });
+      wx.showToast({ title: '已撤回，邀请码次数已释放', icon: 'success' });
+      await this.loadPage();
+    } catch (err) {
+      this.setData({ cancelBusy: false, statusReason: err.message || '撤回未完成，请刷新后重试。' });
+      if (err.kind === 'conflict') await this.loadPage();
+    }
   },
 
   onPendingReapply() {

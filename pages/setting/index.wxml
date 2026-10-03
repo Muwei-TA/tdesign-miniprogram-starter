@@ -81,6 +81,20 @@
         </view>
         <t-icon name="chevron-right" size="32rpx" />
       </view>
+      <view class="hg-setting__row" bindtap="onWebLoginTap" aria-role="button">
+        <view class="hg-setting__row-main">
+          <view class="hg-setting__row-title">扫码确认 Web 管理台登录</view>
+          <view class="hg-setting__row-sub">检查来源后批准一次性登录</view>
+        </view>
+        <t-icon name="chevron-right" size="32rpx" />
+      </view>
+      <view class="hg-setting__row" bindtap="onManagementInboxTap" aria-role="button">
+        <view class="hg-setting__row-main">
+          <view class="hg-setting__row-title">管理确认事项</view>
+          <view class="hg-setting__row-sub">查看发给当前账号的换届与恢复安排</view>
+        </view>
+        <t-icon name="chevron-right" size="32rpx" />
+      </view>
       <view class="hg-setting__row" bindtap="onDeleteAccount" aria-role="button">
         <view class="hg-setting__row-main">
           <view class="hg-setting__row-title hg-setting__danger">注销账号</view>
