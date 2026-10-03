@@ -104,6 +104,14 @@
     />
 
     <empty-state
+      wx:elif="{{ isBlackbox }}"
+      icon="image"
+      title="还没有作品"
+      desc="分享你的第一件作品"
+      action="{{ isMember ? '发布作品' : '' }}"
+      bind:action="onCompose"
+    />
+    <empty-state
       wx:else
       icon="pen"
       title="这里还很安静"
@@ -114,9 +122,9 @@
   </view>
 
   <!-- 写一笔 -->
-  <view class="hg-home__fab" hover-class="hg-home__fab--hover" bindtap="onCompose" aria-role="button" aria-label="写一笔">
-    <t-icon name="pen" size="34rpx" />
-    <text>写一笔</text>
+  <view class="hg-home__fab" hover-class="hg-home__fab--hover" bindtap="onCompose" aria-role="button" aria-label="{{ isBlackbox ? '发布作品' : '写一笔' }}">
+    <t-icon name="{{ isBlackbox ? 'add' : 'pen' }}" size="34rpx" />
+    <text>{{ isBlackbox ? '发布作品' : '写一笔' }}</text>
   </view>
 
   <scope-picker

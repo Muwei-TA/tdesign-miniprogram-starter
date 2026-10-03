@@ -20,7 +20,7 @@ assert.match(manuscript, /fetchFeed\(\{[\s\S]*filter: 'article'/);
 assert.match(read('pages/anthology/index.wxml'), /mode="article"/);
 assert.match(read('app.json'), /"text": "文稿"/);
 const releaseMarkup = read('pages/release/index.wxml');
-assert.match(releaseMarkup, /title="\{\{ mode === 'article' \? '写文稿' : '写一笔' \}\}"/);
+assert.ok(releaseMarkup.includes('title="{{ isBlackbox ? \'发布作品\' : (mode === \'article\' ? \'写文稿\' : \'写一笔\') }}"'));
 assert.match(releaseMarkup, /placeholder="给这篇文稿一个标题"/);
 assert.match(releaseMarkup, /\n\s+文稿\n/);
 

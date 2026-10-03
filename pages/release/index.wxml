@@ -1,5 +1,5 @@
 <view class="hg-page hg-compose {{ isBlackbox ? 'hg-compose--blackbox' : '' }}">
-  <hg-nav title="{{ mode === 'article' ? '写文稿' : '写一笔' }}">
+  <hg-nav title="{{ isBlackbox ? '发布作品' : (mode === 'article' ? '写文稿' : '写一笔') }}">
   </hg-nav>
 
   <view wx:if="{{ !sessionReady }}" class="hg-compose__session-loading">
