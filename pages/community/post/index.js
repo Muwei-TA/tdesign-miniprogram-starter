@@ -154,7 +154,10 @@ Page({
     try {
       const post = await fetchPostDetail(this.data.id, this.data.historyOnly ? this.data.clubId : '');
       const commentIdentityMode = post.viewer.isOwner && post.identityMode === 'anonymous' ? 'anonymous' : 'named';
-      this.setData({ post, loading: false, commentIdentityMode });
+      const visiblePost = this.data.historyOnly
+        ? { ...post, media: { type: 'none', images: [], video: null, count: 0 } }
+        : post;
+      this.setData({ post: visiblePost, loading: false, commentIdentityMode });
       if (post.commentsEnabled || post.counters.comments > 0) this.loadComments();
     } catch (err) {
       if (err.kind === 'not_accessible' || err.kind === 'membership_invalid') {

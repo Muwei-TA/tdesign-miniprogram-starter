@@ -72,6 +72,9 @@ Page({
         this.persistDraft({ silent: true });
       }
       if (this.uploadControl) this.uploadControl.canceled = true;
+      this.uploadGeneration = (this.uploadGeneration || 0) + 1;
+      this.submitRequestId = (this.submitRequestId || 0) + 1;
+      this.retryUploadId = (this.retryUploadId || 0) + 1;
     };
     this.onClubSwitchFailed = () => {
       this.setData({ canPublish: !!this.editorClubId && this.data.session.memberStatus === 'active' });
@@ -104,25 +107,34 @@ Page({
     if (!session) return;
     const nextClubId = session.club && session.club.id;
     const isBlackbox = nextClubId === 'blackbox-animation';
+    let resetEditor = false;
     if (this.editorClubId && this.editorClubId !== nextClubId) {
       if (this.uploadControl) this.uploadControl.canceled = true;
+      this.uploadGeneration = (this.uploadGeneration || 0) + 1;
+      this.submitRequestId = (this.submitRequestId || 0) + 1;
+      this.retryUploadId = (this.retryUploadId || 0) + 1;
       this.boardRequestId = (this.boardRequestId || 0) + 1;
       this.editorClubId = '';
-      this.editorInitialized = true;
+      this.editorInitialized = false;
+      // Deep links can carry A's draft/association into the editor. Preserve
+      // the draft in A's scoped storage, then discard those options before B
+      // gets an editor of its own.
+      this.pageOptions = this.pageOptions && this.pageOptions.mode
+        ? { mode: this.pageOptions.mode }
+        : {};
+      resetEditor = true;
       this.setData({
-        session,
-        sessionReady: true,
-        isBlackbox,
-        canPublish: false,
-        capabilities: { publicScope: false, video: false, publishing: false, uploads: false },
         draftId: '',
         idempotencyKey: '',
         title: '', body: '', images: [], video: null, topic: null, board: null, collectionId: '',
+        consentGranted: false,
+        previewVisible: false,
+        boardPickerVisible: false,
+        scopeVisible: false,
         boards: [], boardNextCursor: null, boardsLoading: false, boardsErrorText: '',
         submitting: false, uploadPhase: '',
       });
       wx.showToast({ title: '已切换社团，草稿保留在原社团', icon: 'none' });
-      return;
     }
     const capabilities = {
       publicScope: false,
@@ -137,7 +149,7 @@ Page({
         this.promptMembership();
         return;
       }
-      if (!this.editorInitialized) this.initializeEditor(this.pageOptions);
+      if (!this.editorInitialized || resetEditor) this.initializeEditor(this.pageOptions);
     });
   },
 
@@ -343,12 +355,19 @@ Page({
       wx.showToast({ title: '请移除后重新选择这张图片', icon: 'none' });
       return;
     }
+    const clubId = this.editorClubId;
+    const retryUploadId = (this.retryUploadId || 0) + 1;
+    this.retryUploadId = retryUploadId;
+    const isCurrentRetry = () => this.retryUploadId === retryUploadId && this.editorClubId === clubId;
     this.setData({ submitting: true });
     this.runImageUploads([index])
       .catch((err) => {
+        if (!isCurrentRetry()) return;
         wx.showToast({ title: err.message || '图片上传未完成', icon: 'none' });
       })
-      .finally(() => this.setData({ submitting: false, uploadPhase: '' }));
+      .finally(() => {
+        if (isCurrentRetry()) this.setData({ submitting: false, uploadPhase: '' });
+      });
   },
 
   onCancelUpload() {
@@ -358,27 +377,38 @@ Page({
 
   async runImageUploads(indices = null) {
     if (this.data.capabilities.uploads !== true || this.data.images.length === 0) return this.data.images;
-    this.uploadControl = { canceled: false };
+    const clubId = this.editorClubId;
+    const uploadControl = { canceled: false, clubId };
+    const generation = (this.uploadGeneration || 0) + 1;
+    this.uploadGeneration = generation;
+    this.uploadControl = uploadControl;
+    const isCurrentUpload = () => this.uploadControl === uploadControl
+      && this.uploadGeneration === generation
+      && this.editorClubId === clubId
+      && this.data.session && this.data.session.club && this.data.session.club.id === clubId;
     this.setData({ uploadPhase: 'media', uploadIndex: indices && indices.length ? indices[0] : -1 });
     try {
       const images = await uploadImages(this.data.images, {
         indices,
-        control: this.uploadControl,
+        control: uploadControl,
         pollIntervalMs: 1000,
         onItemChange: (next, index) => {
+          if (!isCurrentUpload()) return;
           this.setData({ images: next, uploadIndex: index }, () => this.persistDraft({ silent: true }));
         },
       });
+      if (!isCurrentUpload()) return this.data.images;
       this.setData({ images, uploadPhase: '', uploadIndex: -1 }, () => this.persistDraft({ silent: true }));
       return images;
     } catch (err) {
+      if (!isCurrentUpload()) return this.data.images;
       const images = err.items || this.data.images;
       this.setData({ images, uploadPhase: '', uploadIndex: err.index === undefined ? -1 : err.index }, () => {
         this.persistDraft({ silent: true });
       });
       throw err;
     } finally {
-      this.uploadControl = null;
+      if (this.uploadControl === uploadControl) this.uploadControl = null;
     }
   },
 
@@ -591,6 +621,13 @@ Page({
       wx.showToast({ title: '发布功能暂未开放', icon: 'none' });
       return;
     }
+    const clubId = this.editorClubId;
+    const submitRequestId = (this.submitRequestId || 0) + 1;
+    this.submitRequestId = submitRequestId;
+    const isCurrentSubmission = () => this.submitRequestId === submitRequestId
+      && this.editorClubId === clubId
+      && app.globalData.session && app.globalData.session.club
+      && app.globalData.session.club.id === clubId;
 
     // 幂等键随草稿持久化：超时重试时复用同一键，服务端保证只产生一条内容
     const draft = this.persistDraft({ silent: true });
@@ -602,6 +639,7 @@ Page({
       let images = currentImages;
       if (images.length > 0) {
         images = await this.runImageUploads();
+        if (!isCurrentSubmission()) return;
         const pendingImage = images.find((image) => image.status !== IMAGE_STATUS.VERIFIED || !image.assetId);
         if (pendingImage) throw new Error(pendingImage.error || '图片仍在处理中，请稍后重试');
       }
@@ -620,6 +658,7 @@ Page({
         consentGranted: this.data.consentGranted,
       };
       const result = await submitPost(payload, idempotencyKey);
+      if (!isCurrentSubmission()) return;
 
       if (this.data.draftId) removeDraft(this.data.draftId);
       app.eventBus.emit('post-created', { id: result.id, state: result.state });
@@ -628,6 +667,7 @@ Page({
       // redirectTo：返回栈不残留编辑器
       wx.redirectTo({ url: `/pages/community/result/index?${query}` });
     } catch (err) {
+      if (!isCurrentSubmission()) return;
       this.setData({ submitting: false, uploadPhase: '' });
       this.persistDraft({ silent: true });
       wx.showModal({
@@ -636,7 +676,7 @@ Page({
         showCancel: false,
       });
     } finally {
-      this.setData({ submitting: false, uploadPhase: '' });
+      if (isCurrentSubmission()) this.setData({ submitting: false, uploadPhase: '' });
     }
   },
 });

@@ -65,7 +65,7 @@
         </view>
         <view class="hg-detail__end">· · ·</view>
 
-        <view wx:if="{{ post.media.type === 'image' }}" class="hg-detail__images">
+        <view wx:if="{{ !historyOnly && post.media.type === 'image' }}" class="hg-detail__images">
           <image
             wx:for="{{ post.media.images }}"
             wx:key="*this"
@@ -109,7 +109,7 @@
         <view wx:if="{{ post.title }}" class="hg-detail__subtitle">{{ post.title }}</view>
         <view class="hg-detail__body">{{ post.body }}</view>
 
-        <view wx:if="{{ post.media.type === 'image' }}" class="hg-detail__images">
+        <view wx:if="{{ !historyOnly && post.media.type === 'image' }}" class="hg-detail__images">
           <image
             wx:for="{{ post.media.images }}"
             wx:key="*this"
@@ -124,7 +124,7 @@
         </view>
 
         <!-- 视频未完成处理时不提供播放 -->
-        <view wx:if="{{ post.media.type === 'video' }}" class="hg-detail__video">
+        <view wx:if="{{ !historyOnly && post.media.type === 'video' }}" class="hg-detail__video">
           <video
             wx:if="{{ post.media.video.ready && post.media.video.url }}"
             class="hg-detail__video-player"
