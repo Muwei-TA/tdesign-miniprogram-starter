@@ -33,7 +33,12 @@ Component({
 
   lifetimes: {
     ready() {
+      this.onSessionChanged = () => this.syncActive();
+      app.eventBus.on('session-changed', this.onSessionChanged);
       this.syncActive();
+    },
+    detached() {
+      if (this.onSessionChanged) app.eventBus.off('session-changed', this.onSessionChanged);
     },
   },
 

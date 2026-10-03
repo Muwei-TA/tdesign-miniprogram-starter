@@ -82,8 +82,9 @@
     <view class="hg-post__waterfall-author" bindtap="onTapAuthor" aria-role="button" aria-label="{{ authorText }}">
       <view class="hg-post__avatar {{ post.author.isAnonymous ? 'hg-post__avatar--anon' : '' }}">{{ avatarText }}</view>
       <text class="hg-post__waterfall-name">{{ authorText }}</text>
-      <text wx:if="{{ post.author.isAnonymous }}" class="hg-post__identity">树洞身份</text>
-      <visibility-badge scope="{{ post.visibility }}" />
+      <t-icon wx:if="{{ post.author.isAnonymous }}" name="user" size="20rpx" aria-label="匿名作者" />
+      <t-icon wx:if="{{ post.visibility === 'club' }}" name="usergroup" size="20rpx" aria-label="仅社内可见" />
+      <visibility-badge wx:else scope="{{ post.visibility }}" />
     </view>
     <view class="hg-post__waterfall-tools">
       <view wx:if="{{ showInteractions && showMemberActions }}" class="hg-post__waterfall-react {{ post.viewer.reacted ? 'hg-post__waterfall-react--on' : '' }}" catchtap="onReact" aria-role="button" aria-label="{{ post.viewer.reacted ? '取消共鸣' : '共鸣' }}">
